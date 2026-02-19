@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>OU Diffusion: Analytical Laboratory</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #f7f4ef;
+    --ink: #1a1410;
+    --accent: #b5341a;
+    --accent2: #1a3a5c;
+    --muted: #6b5e50;
+    --rule: #c9bfaf;
+    --card: #ffffff;
+    --code-bg: #f0ece4;
+    --math-color: #1a3a5c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.75;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+  }
+
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 48px;
+  }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 2.6em;
+    font-weight: 600;
+    line-height: 1.18;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 1.05em;
+  }
+
+  h2 {
+    font-size: 1.35em;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 52px 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  h2 .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  p { margin-bottom: 1em; }
+
+  .math-block {
+    background: var(--card);
+    border-left: 3px solid var(--accent2);
+    padding: 20px 28px;
+    margin: 24px 0;
+    border-radius: 0 6px 6px 0;
+    overflow-x: auto;
+  }
+
+  .math-block .MathJax { color: var(--math-color); }
+
+  .insight-box {
+    background: linear-gradient(135deg, #fff8f5 0%, #fff 100%);
+    border: 1px solid #e8c8be;
+    border-left: 4px solid var(--accent);
+    padding: 20px 24px;
+    margin: 28px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .insight-box strong { color: var(--accent); }
+
+  .info-box {
+    background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+    border: 1px solid #bdd0e8;
+    border-left: 4px solid var(--accent2);
+    padding: 20px 24px;
+    margin: 28px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .info-box strong { color: var(--accent2); }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 24px 0;
+  }
+
+  .col-card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .col-card h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .timeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 28px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+  }
+
+  .tl-node {
+    text-align: center;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 6px;
+    min-width: 110px;
+  }
+
+  .tl-node.active-node {
+    border-color: var(--accent);
+    background: #fff5f3;
+  }
+
+  .tl-node .tl-top {
+    font-size: 0.9em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .tl-node .tl-main {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .tl-arrow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 6px;
+    color: var(--muted);
+    font-size: 0.75em;
+    gap: 2px;
+  }
+
+  .tl-arrow .arr { font-size: 1.4em; color: var(--accent2); }
+
+  #animation-section {
+    margin-top: 52px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  #animation-header {
+    background: var(--ink);
+    color: #f7f4ef;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #animation-header h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #animation-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    color: #a0c0e0;
+  }
+
+  #plot-container {
+    width: 100%;
+    height: 600px;
+  }
+
+  #controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 24px;
+    background: #f5f2ec;
+    border-top: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    font-weight: 700;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  #btn-play {
+    background: var(--accent2);
+    color: white;
+  }
+  #btn-play:hover { background: #1a4d7a; }
+
+  #btn-reset {
+    background: transparent;
+    color: var(--muted);
+    border: 1.5px solid var(--rule);
+  }
+  #btn-reset:hover { border-color: var(--muted); color: var(--ink); }
+
+  #tau-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  #slider-wrap {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px 16px;
+    background: #f5f2ec;
+  }
+
+  #slider-wrap label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  #tau-slider {
+    flex: 1;
+    accent-color: var(--accent2);
+    height: 4px;
+  }
+
+  .legend-dots {
+    display: flex;
+    gap: 20px;
+    font-size: 0.82em;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .legend-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9em;
+  }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--rule);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+
+  hr.section { border: none; border-top: 1px solid var(--rule); margin: 48px 0; }
+
+  @media (max-width: 640px) {
+    .two-col { grid-template-columns: 1fr; }
+    body { padding: 30px 20px 60px; }
+    h1 { font-size: 1.9em; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">Score-Based Generative Modeling · Analytical Laboratory</div>
+  <h1>Gaussian Mixture Under<br/>Ornstein–Uhlenbeck Diffusion</h1>
+  <p class="subtitle">An exactly solvable experiment: every quantity is known in closed form.</p>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ §1 -->
+<h2><span class="num">§1</span> Why This Experiment?</h2>
+
+<p>In a real diffusion model, the key object we need is the <em>score function</em>:</p>
+
+<div class="math-block">
+$$s(x, t) = \nabla_x \log p_t(x)$$
+</div>
+
+<p>
+This score drives the reverse SDE that generates samples. In practice, we <em>learn</em> it via a neural network because \(p_t(x)\) is intractable. But to build intuition — to understand <em>what the score looks like</em>, how it evolves, and what the geometry of \(p_t\) means — we need a case where everything is known exactly.
+</p>
+
+<div class="insight-box">
+<strong>The key insight:</strong> A Gaussian mixture under OU diffusion stays a Gaussian mixture. Every mean, every covariance, every marginal has a closed-form expression. This is our analytical microscope.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §2 -->
+<h2><span class="num">§2</span> The Setup: Initial Distribution</h2>
+
+<p>We choose a 2D Gaussian mixture with \(K = 2\) components:</p>
+
+<div class="math-block">
+$$p_0(x) = \sum_{k=1}^{2} w_k \, \mathcal{N}(x;\, \mu_{0,k},\, \Sigma_{0,k})$$
+</div>
+
+<p>Concretely, the parameters are:</p>
+
+<table>
+  <thead>
+    <tr><th>Parameter</th><th>Component 1 (red)</th><th>Component 2 (black)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>weight \(w_k\)</td><td>0.55</td><td>0.45</td></tr>
+    <tr><td>mean \(\mu_{0,k}\)</td><td>\([1.2,\ 0.8]^\top\)</td><td>\([2.2,\ 2.8]^\top\)</td></tr>
+    <tr><td>covariance \(\Sigma_{0,k}\)</td>
+      <td>\(\begin{pmatrix}0.25 & 0.18\\ 0.18 & 0.60\end{pmatrix}\)</td>
+      <td>\(\begin{pmatrix}0.35 & -0.15\\ -0.15 & 0.25\end{pmatrix}\)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+The off-diagonal entries in \(\Sigma_{0,k}\) make the ellipses <em>tilted</em>. This is deliberate — it gives the score function nontrivial rotational structure to visualize.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ §3 -->
+<h2><span class="num">§3</span> The Forward Process: OU Diffusion</h2>
+
+<p>The Ornstein–Uhlenbeck (OU) forward SDE gradually destroys structure:</p>
+
+<div class="math-block">
+$$dX_t = -X_t \, dt + \sqrt{2} \, dW_t$$
+</div>
+
+<p>This SDE has an exact solution. If \(X_0\) is any initial point:</p>
+
+<div class="math-block">
+$$X_t = e^{-t} X_0 + \sqrt{1 - e^{-2t}} \, Z, \qquad Z \sim \mathcal{N}(0, I)$$
+</div>
+
+<p>
+Two competing terms: the <strong>signal term</strong> \(e^{-t} X_0\) decays exponentially, while the <strong>noise term</strong> \(\sqrt{1-e^{-2t}}\,Z\) grows. At \(t = 0\) we have pure signal; as \(t \to \infty\) we have pure isotropic noise \(\mathcal{N}(0, I)\).
+</p>
+
+<div class="info-box">
+<strong>Why OU specifically?</strong> Its stationary distribution is \(\mathcal{N}(0, I)\) — a simple, well-understood noise distribution. And crucially, it maps Gaussian inputs to Gaussian outputs, so Gaussian mixtures stay Gaussian mixtures under this process. That's the analytical tractability we need.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §4 -->
+<h2><span class="num">§4</span> Closed-Form Evolution of Each Component</h2>
+
+<p>
+Because OU maps Gaussians to Gaussians, each component \(\mathcal{N}(\mu_{0,k}, \Sigma_{0,k})\) evolves as \(\mathcal{N}(\mu_k(t), \Sigma_k(t))\) where:
+</p>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>Mean evolution</h4>
+    <div class="math-block" style="border-left-color: var(--accent); margin: 0;">
+      $$\mu_k(t) = e^{-t} \mu_{0,k}$$
+    </div>
+    <p style="margin-top:12px; font-size:0.9em;">Exponential decay toward the origin. All structure "forgets" its initial position.</p>
+  </div>
+  <div class="col-card">
+    <h4>Covariance evolution</h4>
+    <div class="math-block" style="border-left-color: var(--accent); margin: 0;">
+      $$\Sigma_k(t) = e^{-2t} \Sigma_{0,k} + (1-e^{-2t}) I$$
+    </div>
+    <p style="margin-top:12px; font-size:0.9em;">Anisotropy decays at rate \(e^{-2t}\). Isotropic noise \(I\) fills in as structure disappears.</p>
+  </div>
+</div>
+
+<p>So the full mixture density at time \(t\) is:</p>
+
+<div class="math-block">
+$$p_t(x) = \sum_{k=1}^{2} w_k \, \mathcal{N}\!\left(x;\; \mu_k(t),\; \Sigma_k(t)\right)$$
+</div>
+
+<p>
+At \(t \to \infty\): both \(\mu_k(t) \to 0\) and \(\Sigma_k(t) \to I\), so the mixture collapses to \(\mathcal{N}(0, I)\) regardless of the initial structure.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ §5 -->
+<h2><span class="num">§5</span> Reverse-Time View: Generation</h2>
+
+<p>The animation runs in <em>reverse time</em>. Define the reverse clock:</p>
+
+<div class="math-block">
+$$\tau = T - t$$
+</div>
+
+<p>
+So \(\tau = 0\) means we are at the pure-noise end (\(t = T\)), and \(\tau = T\) means we are back at the structured data (\(t = 0\)). The animation shows the reconstruction of the bimodal, anisotropic structure from isotropic Gaussian noise.
+</p>
+
+<div class="timeline">
+  <div class="tl-node active-node">
+    <div class="tl-top">τ = 0 (t = T)</div>
+    <div class="tl-main">Pure Noise</div>
+    <div class="tl-top" style="margin-top:4px">\(\mathcal{N}(0, I)\)</div>
+  </div>
+  <div class="tl-arrow">
+    <div class="arr">→</div>
+    <div>Reverse SDE</div>
+    <div>(score-guided)</div>
+  </div>
+  <div class="tl-node">
+    <div class="tl-top">τ = T (t = 0)</div>
+    <div class="tl-main">Structured Data</div>
+    <div class="tl-top" style="margin-top:4px">Mixture \(p_0\)</div>
+  </div>
+</div>
+
+<p>
+In a real diffusion model, running this reverse process requires the score \(\nabla_x \log p_t(x)\), which is unknown. Here, we can compute it analytically for every \(t\) — so we can <em>watch</em> exactly what the reverse dynamics are doing.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ §6 -->
+<h2><span class="num">§6</span> What Each Visual Element Encodes</h2>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>Density contours</h4>
+    <p style="font-size:0.9em;">The full 2D density \(p_t(x)\). Color encodes probability mass. Watch two distinct modes emerge from one blurred blob.</p>
+  </div>
+  <div class="col-card">
+    <h4>Tilted ellipses</h4>
+    <p style="font-size:0.9em;">80% credible regions for each component: \(\{x : (x-\mu_k)^\top \Sigma_k^{-1}(x-\mu_k) = r^2\}\) where \(r^2 = \chi^2_{0.80,\,df=2}\). Watch them tilt and stretch.</p>
+  </div>
+  <div class="col-card">
+    <h4>Bottom marginal</h4>
+    <p style="font-size:0.9em;">The 1D projection \(p_t(x_1) = \sum_k w_k \mathcal{N}(x_1;\, \mu_{k1}(t),\, \Sigma_{k11}(t))\). A Gaussian mixture on the \(x_1\)-axis.</p>
+  </div>
+  <div class="col-card">
+    <h4>Left marginal</h4>
+    <p style="font-size:0.9em;">Similarly \(p_t(x_2)\) along the \(x_2\)-axis. Both marginals are also closed-form mixtures.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ ANIMATION -->
+<h2><span class="num">§7</span> Live Animation</h2>
+<p>Use the slider or Play button to move through reverse time \(\tau \in [0, T]\).</p>
+
+<div id="animation-section">
+  <div id="animation-header">
+    <h3>Reverse-Time Diffusion: \(p_T \to p_0\)</h3>
+    <span id="animation-status">Loading…</span>
+  </div>
+  <div id="plot-container"></div>
+  <div id="controls">
+    <button id="btn-play">▶ Play</button>
+    <button id="btn-reset">↺ Reset</button>
+    <div class="legend-dots">
+      <div class="legend-dot"><div class="dot" style="background:#d62728;"></div> Comp. 1</div>
+      <div class="legend-dot"><div class="dot" style="background:#111;"></div> Comp. 2</div>
+      <div class="legend-dot"><div class="dot" style="background:#333; opacity:0.5;"></div> Marginals</div>
+    </div>
+    <div id="tau-display">τ = 0.000</div>
+  </div>
+  <div id="slider-wrap">
+    <label>τ = 0 (noise)</label>
+    <input type="range" id="tau-slider" min="0" max="44" value="0" step="1"/>
+    <label>τ = T (data)</label>
+  </div>
+</div>
+
+<hr class="section"/>
+
+<h2><span class="num">§8</span> Connection to Score-Based Generation</h2>
+
+<p>
+This experiment is an analytical toy model for the theory behind modern diffusion models (DDPM, SMLD, EDM). The key formula connecting forward and reverse processes is <strong>Anderson's reverse-time SDE</strong>:
+</p>
+
+<div class="math-block">
+$$dX = \bigl[-X + 2\,\nabla_x \log p_t(X)\bigr]\,dt + \sqrt{2}\,d\bar{W}_t$$
+</div>
+
+<p>
+where \(d\bar{W}_t\) is a reverse-time Wiener process. The score \(\nabla_x \log p_t\) is the only unknown in the real case. Here, for our Gaussian mixture, it is:</p>
+
+<div class="math-block">
+$$\nabla_x \log p_t(x) = \frac{\sum_{k} w_k \, \mathcal{N}(x; \mu_k(t), \Sigma_k(t)) \cdot \Sigma_k(t)^{-1}(\mu_k(t) - x)}{\sum_{k} w_k \, \mathcal{N}(x;\mu_k(t), \Sigma_k(t))}$$
+</div>
+
+<p>
+This is an analytically computable, weighted average of component-wise linear scores — a mixture-weighted combination of "pulls" toward each component mean.
+</p>
+
+<div class="insight-box">
+<strong>Summary of the experiment:</strong> We start from a bimodal, correlated Gaussian mixture \(p_0\). We apply OU forward diffusion, which destroys structure exponentially fast. We then play the reverse process and watch structure re-emerge — all in closed form, with no neural network, no approximation. This is the ideal sandbox for understanding what score functions look like, how the geometry of \(p_t\) evolves, and why diffusion models work.
+</div>
+
+<script>
+// ======================================================
+// Pure JS implementation of the OU mixture animation
+// ======================================================
+
+const K = 2;
+const w = [0.55, 0.45];
+const mu0 = [[1.2, 0.8], [2.2, 2.8]];
+const Sigma0 = [
+  [[0.25, 0.18], [0.18, 0.60]],
+  [[0.35, -0.15], [-0.15, 0.25]]
+];
+
+const T_final = 2.4;
+const N_FRAMES = 45;
+// times[0] = T_final (noise end), times[N-1] = 0 (data end)
+const times = Array.from({length: N_FRAMES}, (_, i) => T_final * (1 - i / (N_FRAMES - 1)));
+
+function inv2(S) {
+  const det = S[0][0]*S[1][1] - S[0][1]*S[1][0];
+  return [[S[1][1]/det, -S[0][1]/det], [-S[1][0]/det, S[0][0]/det]];
+}
+function det2(S) { return S[0][0]*S[1][1] - S[0][1]*S[1][0]; }
+function chol2(S) {
+  const L00 = Math.sqrt(S[0][0]);
+  const L10 = S[1][0] / L00;
+  const L11 = Math.sqrt(S[1][1] - L10*L10);
+  return [[L00, 0], [L10, L11]];
+}
+
+function ouParams(t) {
+  const a = Math.exp(-t), b = Math.exp(-2*t);
+  return w.map((_, k) => ({
+    mu: [a*mu0[k][0], a*mu0[k][1]],
+    Sigma: [
+      [b*Sigma0[k][0][0] + (1-b), b*Sigma0[k][0][1]],
+      [b*Sigma0[k][1][0], b*Sigma0[k][1][1] + (1-b)]
+    ]
+  }));
+}
+
+function gaussianPdf2d(x, y, mu, S) {
+  const iS = inv2(S);
+  const d = [x - mu[0], y - mu[1]];
+  const quad = d[0]*(iS[0][0]*d[0] + iS[0][1]*d[1]) + d[1]*(iS[1][0]*d[0] + iS[1][1]*d[1]);
+  return Math.exp(-0.5*quad) / (2*Math.PI*Math.sqrt(det2(S)));
+}
+
+function gaussianPdf1d(x, mu, sigma2) {
+  return Math.exp(-0.5*(x-mu)*(x-mu)/sigma2) / Math.sqrt(2*Math.PI*sigma2);
+}
+
+// Chi2 ppf for p=0.80, df=2 ≈ 3.2189
+const R2 = 3.2189;
+
+function ellipsePoints(mu, S, n=200) {
+  const L = chol2(S);
+  const xs = [], ys = [];
+  const r = Math.sqrt(R2);
+  for (let i = 0; i <= n; i++) {
+    const theta = 2*Math.PI * i / n;
+    const cx = r * Math.cos(theta), cy = r * Math.sin(theta);
+    xs.push(L[0][0]*cx + L[0][1]*cy + mu[0]);
+    ys.push(L[1][0]*cx + L[1][1]*cy + mu[1]);
+  }
+  return {xs, ys};
+}
+
+// Grid
+const NX = 80, NY = 80;
+const R = 6.5;
+const xgrid = Array.from({length: NX}, (_, i) => -R + 2*R*i/(NX-1));
+const ygrid = Array.from({length: NY}, (_, i) => -R + 2*R*i/(NY-1));
+
+function computeFrame(t) {
+  const comps = ouParams(t);
+  
+  // 2D density
+  const z = Array.from({length: NY}, (_, j) =>
+    Array.from({length: NX}, (_, i) => {
+      let p = 0;
+      for (let k = 0; k < K; k++)
+        p += w[k] * gaussianPdf2d(xgrid[i], ygrid[j], comps[k].mu, comps[k].Sigma);
+      return p;
+    })
+  );
+
+  // 1D marginals
+  const px = xgrid.map(x => {
+    let p = 0;
+    for (let k = 0; k < K; k++)
+      p += w[k] * gaussianPdf1d(x, comps[k].mu[0], comps[k].Sigma[0][0]);
+    return p;
+  });
+  const py = ygrid.map(y => {
+    let p = 0;
+    for (let k = 0; k < K; k++)
+      p += w[k] * gaussianPdf1d(y, comps[k].mu[1], comps[k].Sigma[1][1]);
+    return p;
+  });
+
+  // Ellipses
+  const ellipses = comps.map(c => ellipsePoints(c.mu, c.Sigma));
+
+  return {z, px, py, ellipses, comps};
+}
+
+// Embed marginals into padding strips
+const pad = 1.8;
+const xmin2 = -R - pad, ymin2 = -R - pad;
+
+function embedXMarg(px) {
+  const maxP = Math.max(...px) + 1e-12;
+  return px.map(p => ymin2 + 0.9*pad * (p/maxP));
+}
+function embedYMarg(py) {
+  const maxP = Math.max(...py) + 1e-12;
+  return py.map(p => xmin2 + 0.9*pad * (p/maxP));
+}
+
+// Pre-compute frames
+const allFrames = times.map(t => computeFrame(t));
+
+// Build initial Plotly traces
+let frameIdx = 0;
+const f0 = allFrames[0];
+
+const contourTrace = {
+  type: 'contour',
+  x: xgrid, y: ygrid, z: f0.z,
+  colorscale: 'Viridis',
+  showscale: false,
+  contours: {showlines: false},
+  opacity: 0.92,
+  hoverinfo: 'skip',
+  name: 'density'
+};
+
+const ellipseColors = ['#d62728', '#111111'];
+const ellipseTraces = [0, 1].map(k => ({
+  type: 'scatter',
+  x: f0.ellipses[k].xs, y: f0.ellipses[k].ys,
+  mode: 'lines',
+  line: {width: 2.5, color: ellipseColors[k]},
+  hoverinfo: 'skip',
+  name: `comp ${k}`
+}));
+
+const xMargTrace = {
+  type: 'scatter',
+  x: xgrid, y: embedXMarg(f0.px),
+  mode: 'lines', line: {width: 2, color: '#333', dash: 'solid'},
+  hoverinfo: 'skip', name: 'p(x₁)'
+};
+const yMargTrace = {
+  type: 'scatter',
+  x: embedYMarg(f0.py), y: ygrid,
+  mode: 'lines', line: {width: 2, color: '#333', dash: 'solid'},
+  hoverinfo: 'skip', name: 'p(x₂)'
+};
+const boxTrace = {
+  type: 'scatter',
+  x: [-R, R, R, -R, -R], y: [-R, -R, R, R, -R],
+  mode: 'lines', line: {width: 1, color: 'rgba(0,0,0,0.2)'},
+  hoverinfo: 'skip', showlegend: false
+};
+
+const layout = {
+  margin: {l: 40, r: 20, t: 20, b: 40},
+  xaxis: {range: [xmin2, R + 0.3], zeroline: false, title: 'x₁', color: '#555', gridcolor: '#e0dbd2'},
+  yaxis: {range: [ymin2, R + 0.3], zeroline: false, title: 'x₂', color: '#555',
+          scaleanchor: 'x', gridcolor: '#e0dbd2'},
+  plot_bgcolor: '#faf8f4',
+  paper_bgcolor: '#ffffff',
+  showlegend: false,
+  font: {family: 'EB Garamond, Georgia, serif'}
+};
+
+const container = document.getElementById('plot-container');
+Plotly.newPlot(container, [contourTrace, ...ellipseTraces, xMargTrace, yMargTrace, boxTrace], layout, {responsive: true, displayModeBar: false});
+
+const statusEl = document.getElementById('animation-status');
+const tauDisplay = document.getElementById('tau-display');
+const slider = document.getElementById('tau-slider');
+
+function updateFrame(idx) {
+  frameIdx = idx;
+  const f = allFrames[idx];
+  const t = times[idx];
+  const tau = T_final - t; // reverse time
+
+  Plotly.restyle(container, {
+    z: [f.z]
+  }, [0]);
+
+  Plotly.restyle(container, {
+    x: [f.ellipses[0].xs], y: [f.ellipses[0].ys]
+  }, [1]);
+
+  Plotly.restyle(container, {
+    x: [f.ellipses[1].xs], y: [f.ellipses[1].ys]
+  }, [2]);
+
+  Plotly.restyle(container, {
+    y: [embedXMarg(f.px)]
+  }, [3]);
+
+  Plotly.restyle(container, {
+    x: [embedYMarg(f.py)]
+  }, [4]);
+
+  tauDisplay.textContent = `τ = ${tau.toFixed(3)}`;
+  statusEl.textContent = `τ = ${tau.toFixed(3)} | t = ${t.toFixed(3)}`;
+  slider.value = idx;
+}
+
+// Play/pause logic
+let playInterval = null;
+let playing = false;
+
+const playBtn = document.getElementById('btn-play');
+
+function startPlay() {
+  playing = true;
+  playBtn.textContent = '⏸ Pause';
+  playInterval = setInterval(() => {
+    const next = (frameIdx + 1) % N_FRAMES;
+    updateFrame(next);
+    if (next === N_FRAMES - 1) stopPlay();
+  }, 80);
+}
+
+function stopPlay() {
+  playing = false;
+  clearInterval(playInterval);
+  playBtn.textContent = '▶ Play';
+}
+
+playBtn.addEventListener('click', () => {
+  if (playing) stopPlay();
+  else {
+    if (frameIdx === N_FRAMES - 1) updateFrame(0);
+    startPlay();
+  }
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  stopPlay();
+  updateFrame(0);
+});
+
+slider.addEventListener('input', () => {
+  stopPlay();
+  updateFrame(parseInt(slider.value));
+});
+
+// Initialize status
+statusEl.textContent = `τ = 0.000 | t = ${T_final.toFixed(3)}`;
+
+// Wait for MathJax
+window.MathJax = window.MathJax || {};
+</script>
+</body>
+</html>
