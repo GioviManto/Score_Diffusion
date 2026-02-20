@@ -1,2 +1,9 @@
 .DS_Store
 **/.DS_Store
+
+# Local/dev artifacts
+.DS_Store
+**/.DS_Store
+**/node_modules/
+**/.vite/
+**/.Rhistory
