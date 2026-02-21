@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Joint Score Under Internal Dynamics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #f7f4ef;
+    --ink: #1a1410;
+    --accent: #b5341a;
+    --accent2: #1a3a5c;
+    --accent3: #1a7a3a;
+    --muted: #6b5e50;
+    --rule: #c9bfaf;
+    --card: #ffffff;
+    --code-bg: #f0ece4;
+    --math-color: #1a3a5c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.75;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+  }
+
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 48px;
+  }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 2.6em;
+    font-weight: 600;
+    line-height: 1.18;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 1.05em;
+  }
+
+  h2 {
+    font-size: 1.35em;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 52px 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  h2 .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  p { margin-bottom: 1em; }
+
+  .math-block {
+    background: var(--card);
+    border-left: 3px solid var(--accent2);
+    padding: 20px 28px;
+    margin: 24px 0;
+    border-radius: 0 6px 6px 0;
+    overflow-x: auto;
+  }
+
+  .math-block .MathJax { color: var(--math-color); }
+
+  .insight-box {
+    background: linear-gradient(135deg, #fff8f5 0%, #fff 100%);
+    border: 1px solid #e8c8be;
+    border-left: 4px solid var(--accent);
+    padding: 20px 24px;
+    margin: 28px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .insight-box strong { color: var(--accent); }
+
+  .info-box {
+    background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+    border: 1px solid #bdd0e8;
+    border-left: 4px solid var(--accent2);
+    padding: 20px 24px;
+    margin: 28px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .info-box strong { color: var(--accent2); }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 24px 0;
+  }
+
+  .col-card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .col-card h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .timeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 28px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+  }
+
+  .tl-node {
+    text-align: center;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 6px;
+    min-width: 110px;
+  }
+
+  .tl-node.active-node {
+    border-color: var(--accent);
+    background: #fff5f3;
+  }
+
+  .tl-node .tl-top {
+    font-size: 0.9em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .tl-node .tl-main {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .tl-arrow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 6px;
+    color: var(--muted);
+    font-size: 0.75em;
+    gap: 2px;
+  }
+
+  .tl-arrow .arr { font-size: 1.4em; color: var(--accent2); }
+
+  .anim-section {
+    margin-top: 52px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .anim-header {
+    background: var(--ink);
+    color: #f7f4ef;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .anim-header h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .anim-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    color: #a0c0e0;
+  }
+
+  .plot-container {
+    width: 100%;
+    height: 500px;
+  }
+
+  .plot-container-tall {
+    width: 100%;
+    height: 600px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 24px;
+    background: #f5f2ec;
+    border-top: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    font-weight: 700;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .btn-play {
+    background: var(--accent2);
+    color: white;
+  }
+  .btn-play:hover { background: #1a4d7a; }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--muted);
+    border: 1.5px solid var(--rule);
+  }
+  .btn-reset:hover { border-color: var(--muted); color: var(--ink); }
+
+  .status-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .slider-wrap {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px 16px;
+    background: #f5f2ec;
+  }
+
+  .slider-wrap label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .slider-wrap input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent2);
+    height: 4px;
+  }
+
+  .legend-dots {
+    display: flex;
+    gap: 20px;
+    font-size: 0.82em;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .legend-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9em;
+  }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--rule);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+
+  hr.section { border: none; border-top: 1px solid var(--rule); margin: 48px 0; }
+
+  .param-panel {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+
+  .param-grid {
+    display: grid;
+    grid-template-columns: auto repeat(3, 1fr);
+    gap: 8px 16px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+  }
+
+  .param-grid .pg-label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+
+  .param-grid .pg-header {
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9em;
+    padding-bottom: 4px;
+  }
+
+  .param-grid input[type="number"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1em;
+    padding: 6px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--ink);
+    width: 100%;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+
+  .param-grid input[type="number"]::-webkit-inner-spin-button,
+  .param-grid input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+  }
+
+  .param-grid input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(26, 58, 92, 0.12);
+  }
+
+  .param-process {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    flex-wrap: wrap;
+  }
+
+  .param-process label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+
+  .param-process input[type="number"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1em;
+    padding: 6px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--ink);
+    width: 80px;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+
+  .param-process input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(26, 58, 92, 0.12);
+  }
+
+  #btn-apply {
+    background: var(--accent);
+    color: white;
+    margin-left: auto;
+  }
+
+  #btn-apply:hover {
+    background: #d04020;
+  }
+
+  .param-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72em;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  @media (max-width: 640px) {
+    .two-col { grid-template-columns: 1fr; }
+    body { padding: 30px 20px 60px; }
+    h1 { font-size: 1.9em; }
+    .param-grid { grid-template-columns: auto repeat(3, 1fr); gap: 6px 8px; }
+    .param-process { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">Score-Based Generative Modeling · Analytical Laboratory</div>
+  <h1>Score of a Joint Distribution<br/>Under Internal Dynamics</h1>
+  <p class="subtitle">A one-dimensional system with drift and noise: every quantity derived in closed form.</p>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ §1 -->
+<h2><span class="num">§1</span> Why This Model?</h2>
+
+<p>
+Many real-world systems evolve over an <em>internal time</em> — a natural temporal axis intrinsic to the data. Video frames, neural spike trains, and gene expression trajectories all carry this structure. When we observe such a system, each sample is not a single point but a <em>sequence</em>.
+</p>
+
+<p>
+To build a generative model of such data, we need the <em>score</em> of a <strong>joint distribution</strong> that couples successive time points. In practice, a neural network learns this score. But to develop intuition — to see what the score looks like, how prior structure and temporal dynamics interact — we need a case where everything is known analytically.
+</p>
+
+<div class="insight-box">
+<strong>The key idea:</strong> We define the simplest possible dynamic system — a constant drift plus Gaussian noise — over a trimodal prior. The joint distribution \(p(x_0, x_1)\) is a mixture of bivariate Gaussians, and its score decomposes cleanly into a <em>prior term</em> and a <em>transition term</em>.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §2 -->
+<h2><span class="num">§2</span> The Setup: Trimodal Prior</h2>
+
+<p>We choose a 1D Gaussian mixture with \(K = 3\) components as the starting data distribution:</p>
+
+<div class="math-block">
+$$p_0(x) = \sum_{k=1}^{3} w_k \, \mathcal{N}(x;\, \mu_k,\, \sigma_k^2)$$
+</div>
+
+<p>
+Three modes with distinct means and spreads. This trimodal structure provides rich score geometry — the score of \(p_0\) oscillates between attractive basins centered at each mode. Concrete parameter values are configurable in the <a href="#param-config">parameter panel</a> below.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ §3 -->
+<h2><span class="num">§3</span> The Dynamic Process</h2>
+
+<p>The system evolves via a simple additive process:</p>
+
+<div class="math-block">
+$$x_1 = x_0 + c + \eta, \qquad \eta \sim \mathcal{N}(0, \sigma_\eta^2)$$
+</div>
+
+<p>
+Here \(c\) is a constant <strong>drift</strong> and \(\eta\) is independent Gaussian noise. The transition kernel is:
+</p>
+
+<div class="math-block">
+$$p(x_1 \mid x_0) = \mathcal{N}(x_1;\; x_0 + c,\; \sigma_\eta^2)$$
+</div>
+
+<p>
+Applied repeatedly, this process shifts the distribution rightward by \(c\) per step while gradually diffusing it. After \(t\) steps, the marginal is:
+</p>
+
+<div class="math-block">
+$$p_t(x) = \sum_{k=1}^{3} w_k \, \mathcal{N}\!\left(x;\; \mu_k + tc,\; \sigma_k^2 + t\,\sigma_\eta^2\right)$$
+</div>
+
+<div class="info-box">
+<strong>Two competing effects.</strong> The drift \(tc\) shifts all modes uniformly, preserving relative spacing. The accumulated noise \(t\,\sigma_\eta^2\) broadens each component, eventually causing the modes to merge into a single wide hump.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §4 -->
+<h2><span class="num">§4</span> The Joint Distribution</h2>
+
+<p>
+The joint density of two consecutive time points factorizes as prior times transition:
+</p>
+
+<div class="math-block">
+$$p(x_0, x_1) = p_0(x_0) \cdot p(x_1 \mid x_0)$$
+</div>
+
+<p>
+Substituting the mixture prior and the Gaussian kernel, each term in the sum is a product of two 1D Gaussians — which is itself a 2D Gaussian. The result is a <strong>mixture of bivariate Gaussians</strong>:
+</p>
+
+<div class="math-block">
+$$p(x_0, x_1) = \sum_{k=1}^{3} w_k \, \mathcal{N}_2\!\left(\begin{pmatrix}x_0\\x_1\end{pmatrix};\; \boldsymbol{\mu}_k,\; \Sigma_k\right)$$
+</div>
+
+<p>with component parameters:</p>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>Joint mean</h4>
+    <div class="math-block" style="border-left-color: var(--accent); margin: 0;">
+      $$\boldsymbol{\mu}_k = \begin{pmatrix}\mu_k \\ \mu_k + c\end{pmatrix}$$
+    </div>
+    <p style="margin-top:12px; font-size:0.9em;">All three means lie on the line \(x_1 = x_0 + c\). The drift sets the diagonal offset.</p>
+  </div>
+  <div class="col-card">
+    <h4>Joint covariance</h4>
+    <div class="math-block" style="border-left-color: var(--accent); margin: 0;">
+      $$\Sigma_k = \begin{pmatrix}\sigma_k^2 & \sigma_k^2 \\ \sigma_k^2 & \sigma_k^2 + \sigma_\eta^2\end{pmatrix}$$
+    </div>
+    <p style="margin-top:12px; font-size:0.9em;">The off-diagonal entry \(\sigma_k^2\) encodes perfect correlation through the deterministic part of the process.</p>
+  </div>
+</div>
+
+<p>
+The determinant of each covariance is \(\det(\Sigma_k) = \sigma_k^2 \, \sigma_\eta^2\), giving a well-defined inverse:
+</p>
+
+<div class="math-block">
+$$\Sigma_k^{-1} = \frac{1}{\sigma_k^2 \, \sigma_\eta^2}\begin{pmatrix}\sigma_k^2 + \sigma_\eta^2 & -\sigma_k^2 \\ -\sigma_k^2 & \sigma_k^2\end{pmatrix}$$
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §5 -->
+<h2><span class="num">§5</span> The Score of the Joint</h2>
+
+<p>The score — the gradient of the log-density — is a 2D vector field over the \((x_0, x_1)\) plane:</p>
+
+<div class="math-block">
+$$\nabla \log p(x_0, x_1) 
+= \begin{pmatrix} \partial_{x_0} \log p \\ \partial_{x_1} \log p \end{pmatrix}
+= \Big [ \frac{\partial}{\partial x_0} \log p(x_0)+\frac{x_1 - x_0 - c}{\sigma^2} \quad \quad \frac{x_0 + c- x_1}{\sigma^2} \Big ]^T$$
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §6 -->
+<h2><span class="num">§6</span> Decomposition: Prior Score + Transition Score</h2>
+
+<p>
+Because the joint factorizes as \(p(x_0,x_1) = p_0(x_0) \cdot p(x_1|x_0)\), the log-joint splits additively:
+</p>
+
+<div class="math-block">
+$$\log p(x_0,x_1) = \underbrace{\log p_0(x_0)}_{\text{prior}} \;-\; \underbrace{\frac{(x_1 - x_0 - c)^2}{2\sigma_\eta^2}}_{\text{transition}} \;+\; \text{const}$$
+</div>
+
+<p>Differentiating with respect to each variable yields a clean decomposition of the score:</p>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>\(x_0\)-component</h4>
+    <div class="math-block" style="border-left-color: var(--accent); margin: 0;">
+      $$s_{x_0} = \underbrace{\nabla_{x_0}\!\log p_0(x_0)}_{\text{prior score}} + \underbrace{\frac{x_1 - x_0 - c}{\sigma_\eta^2}}_{\text{transition pull}}$$
+    </div>
+    <p style="margin-top:12px; font-size:0.9em;">Two competing forces: the prior pulls \(x_0\) toward mode centers; the transition pulls it toward \(x_1 - c\).</p>
+  </div>
+  <div class="col-card">
+    <h4>\(x_1\)-component</h4>
+    <div class="math-block" style="border-left-color: var(--accent); margin: 0;">
+      $$s_{x_1} = -\frac{x_1 - x_0 - c}{\sigma_\eta^2}$$
+    </div>
+    <p style="margin-top:12px; font-size:0.9em;">Purely from the transition kernel. Always points toward \(x_0 + c\) — the expected position given \(x_0\).</p>
+  </div>
+</div>
+
+<p>The prior score of the mixture is itself a weighted average:</p>
+
+<div class="math-block">
+$$\nabla_{x_0}\!\log p_0(x_0) = \frac{\displaystyle\sum_k w_k\,\varphi_k(x_0)\,\frac{\mu_k - x_0}{\sigma_k^2}}{\displaystyle\sum_k w_k\,\varphi_k(x_0)}$$
+</div>
+
+<p>where \(\varphi_k(x_0) = \mathcal{N}(x_0;\,\mu_k,\,\sigma_k^2)\).</p>
+
+<div class="insight-box">
+<strong>Bayesian reading.</strong> The \(x_0\) score balances two sources of information: the prior (what values of \(x_0\) are likely <em>a priori</em>) and the likelihood (consistency between \(x_0\) and the observed \(x_1\)). The \(x_1\) score is purely a "correction" — it says <em>"given \(x_0\), move \(x_1\) toward \(x_0 + c\)."</em>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §7 -->
+<h2 id="param-config"><span class="num">§7</span> Parameter Configuration</h2>
+
+<p>Adjust the prior mixture components and process parameters below. Click <strong>Apply</strong> to recompute both animations.</p>
+
+<div class="param-panel">
+  <div class="param-grid">
+    <div class="pg-label"></div>
+    <div class="pg-header" style="color:#d62728;">Comp 1</div>
+    <div class="pg-header" style="color:#1a3a5c;">Comp 2</div>
+    <div class="pg-header" style="color:#2ca02c;">Comp 3</div>
+
+    <div class="pg-label">weight w<sub>k</sub></div>
+    <input type="number" id="p-w1" value="0.30" step="0.05" min="0.01" max="1">
+    <input type="number" id="p-w2" value="0.40" step="0.05" min="0.01" max="1">
+    <input type="number" id="p-w3" value="0.30" step="0.05" min="0.01" max="1">
+
+    <div class="pg-label">mean &mu;<sub>k</sub></div>
+    <input type="number" id="p-mu1" value="-2.5" step="0.1">
+    <input type="number" id="p-mu2" value="0.5" step="0.1">
+    <input type="number" id="p-mu3" value="3.0" step="0.1">
+
+    <div class="pg-label">std &sigma;<sub>k</sub></div>
+    <input type="number" id="p-sig1" value="0.55" step="0.05" min="0.05">
+    <input type="number" id="p-sig2" value="0.45" step="0.05" min="0.05">
+    <input type="number" id="p-sig3" value="0.60" step="0.05" min="0.05">
+  </div>
+
+  <div class="param-process">
+    <label>drift c</label>
+    <input type="number" id="p-c" value="1.2" step="0.1">
+    <label>noise &sigma;<sub>&eta;</sub></label>
+    <input type="number" id="p-sigeta" value="0.6" step="0.05" min="0.05">
+    <button id="btn-apply">&#10003; Apply</button>
+  </div>
+  <div class="param-note">Weights are auto-normalized to sum to 1.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §8 -->
+<h2><span class="num">§8</span> Animation 1: Distribution Evolution</h2>
+
+<p>
+As the process \(x_{n+1} = x_n + c + \eta\) is applied repeatedly, the distribution drifts and diffuses. Use the slider to observe how the trimodal structure gradually dissolves.
+</p>
+
+<div class="anim-section">
+  <div class="anim-header">
+    <h3>Marginal Distribution \(p_t(x)\) Under Repeated Application</h3>
+    <span class="anim-status" id="status1">t = 0</span>
+  </div>
+  <div class="plot-container" id="plot1"></div>
+  <div class="controls">
+    <button class="btn-play" id="btn-play1">&#9654; Play</button>
+    <button class="btn-reset" id="btn-reset1">&#8634; Reset</button>
+    <div class="legend-dots">
+      <div class="legend-dot"><div class="dot" style="background:#d62728;"></div> Comp 1</div>
+      <div class="legend-dot"><div class="dot" style="background:#1a3a5c;"></div> Comp 2</div>
+      <div class="legend-dot"><div class="dot" style="background:#2ca02c;"></div> Comp 3</div>
+      <div class="legend-dot"><div class="dot" style="background:#111; height:2px;"></div> Total</div>
+    </div>
+    <div class="status-display" id="t-display1">t = 0.00</div>
+  </div>
+  <div class="slider-wrap">
+    <label>t = 0</label>
+    <input type="range" id="slider1" min="0" max="40" value="0" step="1"/>
+    <label>t = 8</label>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ §9 -->
+<h2><span class="num">§9</span> Animation 2: Score Vector Field</h2>
+
+<p>
+The arrows show \(\nabla \log p(x_0, x_1)\) — the 2D score of the joint distribution. The contour map underneath shows the joint density. The dashed line marks \(x_1 = x_0 + c\), the ridge of the transition kernel. Use the slider to change the drift \(c\) and watch the score field reshape.
+</p>
+
+<div class="anim-section">
+  <div class="anim-header">
+    <h3>Score Field \(\nabla \log p(x_0, x_1)\)</h3>
+    <span class="anim-status" id="status2">c = 1.20</span>
+  </div>
+  <div class="plot-container-tall" id="plot2"></div>
+  <div class="controls">
+    <div class="legend-dots">
+      <div class="legend-dot"><div class="dot" style="background:var(--accent2);"></div> Score arrows</div>
+      <div class="legend-dot"><div class="dot" style="background:#888; border: 1px dashed #888; height:1px;"></div> \(x_1 = x_0 + c\)</div>
+    </div>
+    <div class="status-display" id="c-display">c = 1.20</div>
+  </div>
+  <div class="slider-wrap">
+    <label>c = 0.0</label>
+    <input type="range" id="slider2" min="0" max="30" value="12" step="1"/>
+    <label>c = 3.0</label>
+  </div>
+</div>
+
+<hr class="section"/>
+
+<!-- ══════════════════════════════════════════════════════ §10 -->
+<h2><span class="num">§10</span> Summary</h2>
+
+<div class="insight-box">
+<strong>What this toy model shows.</strong> For a system with internal dynamics, the score of the joint distribution decomposes into a <em>prior term</em> (encoding the data distribution) and a <em>transition term</em> (encoding the temporal law). The \(x_1\)-component of the score is entirely determined by the transition kernel — it always corrects \(x_1\) toward \(x_0 + c\). The \(x_0\)-component balances the prior's pull toward mode centers against consistency with the observed future. This clean separation is what a score-matching network must learn to reproduce.
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  Mutable parameters
+// ════════════════════════════════════════════════════════
+const K = 3;
+let W = [0.30, 0.40, 0.30];
+let MU = [-2.5, 0.5, 3.0];
+let SIG = [0.55, 0.45, 0.60];
+let SIG2 = SIG.map(s => s * s);
+let C_DRIFT = 1.2;
+let SIG_ETA = 0.6;
+let SIG_ETA2 = SIG_ETA * SIG_ETA;
+const COMP_COLORS = ['#d62728', '#1a3a5c', '#2ca02c'];
+
+// ════════════════════════════════════════════════════════
+//  Read parameters from UI inputs
+// ════════════════════════════════════════════════════════
+function readParams() {
+  let w1 = Math.max(0.01, +document.getElementById('p-w1').value);
+  let w2 = Math.max(0.01, +document.getElementById('p-w2').value);
+  let w3 = Math.max(0.01, +document.getElementById('p-w3').value);
+  const wSum = w1 + w2 + w3;
+  W = [w1 / wSum, w2 / wSum, w3 / wSum];
+
+  MU = [
+    +document.getElementById('p-mu1').value,
+    +document.getElementById('p-mu2').value,
+    +document.getElementById('p-mu3').value
+  ];
+  SIG = [
+    Math.max(0.05, +document.getElementById('p-sig1').value),
+    Math.max(0.05, +document.getElementById('p-sig2').value),
+    Math.max(0.05, +document.getElementById('p-sig3').value)
+  ];
+  SIG2 = SIG.map(s => s * s);
+
+  C_DRIFT = +document.getElementById('p-c').value;
+  SIG_ETA = Math.max(0.05, +document.getElementById('p-sigeta').value);
+  SIG_ETA2 = SIG_ETA * SIG_ETA;
+
+  // Write back normalized weights
+  document.getElementById('p-w1').value = W[0].toFixed(2);
+  document.getElementById('p-w2').value = W[1].toFixed(2);
+  document.getElementById('p-w3').value = W[2].toFixed(2);
+}
+
+// ════════════════════════════════════════════════════════
+//  Math helpers
+// ════════════════════════════════════════════════════════
+const SQRT2PI = Math.sqrt(2 * Math.PI);
+
+function gauss1d(x, mu, s2) {
+  const d = x - mu;
+  return Math.exp(-0.5 * d * d / s2) / (SQRT2PI * Math.sqrt(s2));
+}
+
+function gauss2d(x0, x1, m0, m1, s00, s01, s11) {
+  const det = s00 * s11 - s01 * s01;
+  const inv00 = s11 / det, inv01 = -s01 / det, inv11 = s00 / det;
+  const d0 = x0 - m0, d1 = x1 - m1;
+  const quad = d0 * (inv00 * d0 + inv01 * d1) + d1 * (inv01 * d0 + inv11 * d1);
+  return Math.exp(-0.5 * quad) / (2 * Math.PI * Math.sqrt(det));
+}
+
+function priorScore(x) {
+  let num = 0, den = 0;
+  for (let k = 0; k < K; k++) {
+    const phi = gauss1d(x, MU[k], SIG2[k]);
+    num += W[k] * phi * (MU[k] - x) / SIG2[k];
+    den += W[k] * phi;
+  }
+  return num / (den + 1e-30);
+}
+
+function jointDensity(x0, x1, c) {
+  let p = 0;
+  for (let k = 0; k < K; k++) {
+    p += W[k] * gauss2d(x0, x1, MU[k], MU[k] + c, SIG2[k], SIG2[k], SIG2[k] + SIG_ETA2);
+  }
+  return p;
+}
+
+function jointScoreVec(x0, x1, c) {
+  const r = x1 - x0 - c;
+  return [priorScore(x0) + r / SIG_ETA2, -r / SIG_ETA2];
+}
+
+// ════════════════════════════════════════════════════════
+//  ANIMATION 1: Distribution evolution
+// ════════════════════════════════════════════════════════
+const T_MAX = 8;
+const N_FRAMES_1 = 41;
+const TIMES_1 = Array.from({length: N_FRAMES_1}, (_, i) => T_MAX * i / (N_FRAMES_1 - 1));
+
+const X_LO = -5, X_HI = 16;
+const NX = 400;
+const xArr = Array.from({length: NX}, (_, i) => X_LO + (X_HI - X_LO) * i / (NX - 1));
+
+function computeDistFrame(t) {
+  const comps = [];
+  for (let k = 0; k < K; k++) {
+    const mu_t = MU[k] + t * C_DRIFT;
+    const s2_t = SIG2[k] + t * SIG_ETA2;
+    comps.push(xArr.map(x => W[k] * gauss1d(x, mu_t, s2_t)));
+  }
+  const total = xArr.map((_, i) => comps[0][i] + comps[1][i] + comps[2][i]);
+  return { comps, total };
+}
+
+let allFrames1 = TIMES_1.map(t => computeDistFrame(t));
+
+const f0 = allFrames1[0];
+const traces1 = [];
+for (let k = 0; k < K; k++) {
+  traces1.push({
+    x: xArr, y: f0.comps[k],
+    type: 'scatter', mode: 'lines',
+    fill: 'tozeroy',
+    fillcolor: COMP_COLORS[k] + '22',
+    line: { width: 1.8, color: COMP_COLORS[k] },
+    hoverinfo: 'skip',
+    name: `Comp ${k + 1}`
+  });
+}
+traces1.push({
+  x: xArr, y: f0.total,
+  type: 'scatter', mode: 'lines',
+  line: { width: 3, color: '#111111' },
+  hoverinfo: 'skip',
+  name: 'Total'
+});
+
+const layout1 = {
+  margin: { l: 50, r: 20, t: 10, b: 45 },
+  xaxis: { title: 'x', range: [X_LO, X_HI], gridcolor: '#e0dbd2', zeroline: false, color: '#555' },
+  yaxis: { title: 'p_t(x)', range: [0, 0.55], gridcolor: '#e0dbd2', zeroline: false, color: '#555' },
+  plot_bgcolor: '#faf8f4',
+  paper_bgcolor: '#ffffff',
+  showlegend: false,
+  font: { family: 'EB Garamond, Georgia, serif' }
+};
+
+const container1 = document.getElementById('plot1');
+Plotly.newPlot(container1, traces1, layout1, { responsive: true, displayModeBar: false });
+
+let frame1Idx = 0;
+
+function updateFrame1(idx) {
+  frame1Idx = idx;
+  const f = allFrames1[idx];
+  const t = TIMES_1[idx];
+
+  for (let k = 0; k < K; k++) {
+    Plotly.restyle(container1, { y: [f.comps[k]] }, [k]);
+  }
+  Plotly.restyle(container1, { y: [f.total] }, [K]);
+
+  const yMax = Math.max(...f.total) * 1.25;
+  Plotly.relayout(container1, { 'yaxis.range': [0, Math.max(yMax, 0.12)] });
+
+  document.getElementById('t-display1').textContent = `t = ${t.toFixed(2)}`;
+  document.getElementById('status1').textContent = `t = ${t.toFixed(2)}`;
+  document.getElementById('slider1').value = idx;
+}
+
+let play1 = null, playing1 = false;
+const playBtn1 = document.getElementById('btn-play1');
+
+function startPlay1() {
+  playing1 = true;
+  playBtn1.innerHTML = '&#9646;&#9646; Pause';
+  play1 = setInterval(() => {
+    const next = frame1Idx + 1;
+    if (next >= N_FRAMES_1) { stopPlay1(); return; }
+    updateFrame1(next);
+  }, 90);
+}
+function stopPlay1() {
+  playing1 = false;
+  clearInterval(play1);
+  playBtn1.innerHTML = '&#9654; Play';
+}
+
+playBtn1.addEventListener('click', () => {
+  if (playing1) stopPlay1();
+  else { if (frame1Idx >= N_FRAMES_1 - 1) updateFrame1(0); startPlay1(); }
+});
+document.getElementById('btn-reset1').addEventListener('click', () => { stopPlay1(); updateFrame1(0); });
+document.getElementById('slider1').addEventListener('input', function() { stopPlay1(); updateFrame1(+this.value); });
+
+// ════════════════════════════════════════════════════════
+//  ANIMATION 2: Score vector field (denser grid)
+// ════════════════════════════════════════════════════════
+
+const GRID_N = 80;
+const ARROW_N = 28;
+
+function computeVectorField(c) {
+  const muMin = Math.min(...MU), muMax = Math.max(...MU);
+  const spread = Math.max(...SIG) * 3;
+  const x0Lo = muMin - spread - 1, x0Hi = muMax + spread + 1;
+  const x1Lo = x0Lo + Math.min(c, 0) - 1, x1Hi = x0Hi + Math.max(c, 0) + 1;
+
+  const x0g = Array.from({length: GRID_N}, (_, i) => x0Lo + (x0Hi - x0Lo) * i / (GRID_N - 1));
+  const x1g = Array.from({length: GRID_N}, (_, i) => x1Lo + (x1Hi - x1Lo) * i / (GRID_N - 1));
+  const z = [];
+  for (let j = 0; j < GRID_N; j++) {
+    const row = [];
+    for (let i = 0; i < GRID_N; i++) {
+      row.push(jointDensity(x0g[i], x1g[j], c));
+    }
+    z.push(row);
+  }
+
+  const margin = 0.3;
+  const ax0 = Array.from({length: ARROW_N}, (_, i) => x0Lo + margin + (x0Hi - x0Lo - 2 * margin) * i / (ARROW_N - 1));
+  const ax1 = Array.from({length: ARROW_N}, (_, i) => x1Lo + margin + (x1Hi - x1Lo - 2 * margin) * i / (ARROW_N - 1));
+
+  const arrowX = [], arrowY = [];
+  const cellSize = Math.min((x0Hi - x0Lo) / ARROW_N, (x1Hi - x1Lo) / ARROW_N);
+  const scale = cellSize * 0.42;
+
+  for (let i = 0; i < ARROW_N; i++) {
+    for (let j = 0; j < ARROW_N; j++) {
+      const x0 = ax0[i], x1 = ax1[j];
+      const [s0, s1] = jointScoreVec(x0, x1, c);
+      const mag = Math.sqrt(s0 * s0 + s1 * s1);
+      if (mag < 1e-8) continue;
+
+      const len = scale * Math.tanh(mag * 0.25);
+      const dx = len * s0 / mag;
+      const dy = len * s1 / mag;
+
+      arrowX.push(x0, x0 + dx, null);
+      arrowY.push(x1, x1 + dy, null);
+
+      const hl = len * 0.18;
+      const angle = Math.atan2(dy, dx);
+      arrowX.push(x0 + dx, x0 + dx - hl * Math.cos(angle - 0.45), null);
+      arrowY.push(x1 + dy, x1 + dy - hl * Math.sin(angle - 0.45), null);
+      arrowX.push(x0 + dx, x0 + dx - hl * Math.cos(angle + 0.45), null);
+      arrowY.push(x1 + dy, x1 + dy - hl * Math.sin(angle + 0.45), null);
+    }
+  }
+
+  const refX = [x0Lo, x0Hi];
+  const refY = [x0Lo + c, x0Hi + c];
+
+  return { x0g, x1g, z, arrowX, arrowY, refX, refY, x0Lo, x0Hi, x1Lo, x1Hi };
+}
+
+let currentC = C_DRIFT;
+let lastVF = computeVectorField(currentC);
+
+const contourTrace2 = {
+  type: 'contour',
+  x: lastVF.x0g, y: lastVF.x1g, z: lastVF.z,
+  colorscale: [
+    [0, '#faf8f4'], [0.15, '#f5e6d0'], [0.35, '#e8c49a'],
+    [0.55, '#d4956a'], [0.75, '#b85e3a'], [1, '#8b2500']
+  ],
+  showscale: false,
+  contours: { showlines: true, coloring: 'heatmap' },
+  line: { width: 0.5, color: 'rgba(0,0,0,0.15)' },
+  opacity: 0.85,
+  hoverinfo: 'skip',
+  name: 'density'
+};
+
+const arrowTrace2 = {
+  type: 'scatter',
+  x: lastVF.arrowX, y: lastVF.arrowY,
+  mode: 'lines',
+  line: { width: 0.9, color: 'rgba(26, 58, 92, 0.72)' },
+  hoverinfo: 'skip',
+  name: 'score'
+};
+
+const refLineTrace2 = {
+  type: 'scatter',
+  x: lastVF.refX, y: lastVF.refY,
+  mode: 'lines',
+  line: { width: 1.5, color: '#888', dash: 'dash' },
+  hoverinfo: 'skip',
+  name: 'x₁ = x₀ + c'
+};
+
+const layout2 = {
+  margin: { l: 55, r: 20, t: 10, b: 50 },
+  xaxis: {
+    title: 'x₀', range: [lastVF.x0Lo, lastVF.x0Hi],
+    gridcolor: '#e0dbd2', zeroline: false, color: '#555'
+  },
+  yaxis: {
+    title: 'x₁', range: [lastVF.x1Lo, lastVF.x1Hi],
+    gridcolor: '#e0dbd2', zeroline: false, color: '#555',
+    scaleanchor: 'x'
+  },
+  plot_bgcolor: '#faf8f4',
+  paper_bgcolor: '#ffffff',
+  showlegend: false,
+  font: { family: 'EB Garamond, Georgia, serif' }
+};
+
+const container2 = document.getElementById('plot2');
+Plotly.newPlot(container2, [contourTrace2, arrowTrace2, refLineTrace2], layout2,
+  { responsive: true, displayModeBar: false });
+
+function updateVectorField(c) {
+  const vf = computeVectorField(c);
+  lastVF = vf;
+  Plotly.restyle(container2, { x: [vf.x0g], y: [vf.x1g], z: [vf.z] }, [0]);
+  Plotly.restyle(container2, { x: [vf.arrowX], y: [vf.arrowY] }, [1]);
+  Plotly.restyle(container2, { x: [vf.refX], y: [vf.refY] }, [2]);
+  Plotly.relayout(container2, {
+    'xaxis.range': [vf.x0Lo, vf.x0Hi],
+    'yaxis.range': [vf.x1Lo, vf.x1Hi]
+  });
+  document.getElementById('c-display').textContent = `c = ${c.toFixed(2)}`;
+  document.getElementById('status2').textContent = `c = ${c.toFixed(2)}`;
+}
+
+document.getElementById('slider2').addEventListener('input', function() {
+  currentC = +this.value / 10;
+  updateVectorField(currentC);
+});
+
+// ════════════════════════════════════════════════════════
+//  Apply button: recompute everything
+// ════════════════════════════════════════════════════════
+document.getElementById('btn-apply').addEventListener('click', function() {
+  readParams();
+
+  // Recompute Animation 1 frames
+  allFrames1 = TIMES_1.map(t => computeDistFrame(t));
+  stopPlay1();
+  updateFrame1(frame1Idx);
+
+  // Sync the c slider to the new drift value
+  const cSlider = document.getElementById('slider2');
+  currentC = C_DRIFT;
+  cSlider.value = Math.round(currentC * 10);
+
+  // Recompute Animation 2
+  updateVectorField(currentC);
+});
+
+window.MathJax = window.MathJax || {};
+</script>
+</body>
+</html>
