@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Toy Model: Bouncing Particle in a Cube — Marginal & Conditional Scores</title>
+
+  <!-- Math + Plots -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+    :root{
+      --bg:#f7f4ef;
+      --card:#ffffff;
+      --ink:#191410;
+      --muted:#6b5e50;
+      --rule:#c9bfaf;
+      --accent:#1a3a5c;
+      --accent2:#b5341a;
+      --code:#f0ece4;
+      --good:#0e6b2c;
+    }
+    *{box-sizing:border-box;}
+    body{
+      font-family:'EB Garamond', Georgia, serif;
+      background:var(--bg);
+      color:var(--ink);
+      margin:0;
+      padding:48px 28px 88px;
+      line-height:1.75;
+    }
+    .wrap{max-width:1100px;margin:0 auto;}
+    header{
+      border-bottom:2px solid var(--ink);
+      padding-bottom:18px;
+      margin-bottom:28px;
+    }
+    .kicker{
+      font-family:'JetBrains Mono', monospace;
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:var(--accent2);
+      margin-bottom:10px;
+    }
+    h1{font-size:2.25rem; margin:0 0 10px; line-height:1.15; font-weight:600;}
+    .subtitle{color:var(--muted); font-style:italic; margin:0;}
+    h2{
+      font-size:1.25rem;
+      margin:44px 0 12px;
+      padding-bottom:6px;
+      border-bottom:1px solid var(--rule);
+      display:flex;
+      gap:10px;
+      align-items:baseline;
+    }
+    h2 .num{font-family:'JetBrains Mono', monospace; color:var(--accent2); font-size:.82rem;}
+    p{margin:0 0 12px;}
+    .math{
+      background:var(--card);
+      border:1px solid var(--rule);
+      border-left:4px solid var(--accent);
+      border-radius:0 10px 10px 0;
+      padding:16px 18px;
+      margin:16px 0 18px;
+      overflow:auto;
+    }
+    .note{
+      background:linear-gradient(135deg,#f0f5ff 0%, #fff 100%);
+      border:1px solid #bdd0e8;
+      border-left:4px solid var(--accent);
+      border-radius:0 10px 10px 0;
+      padding:14px 16px;
+      margin:16px 0 18px;
+    }
+    .warn{
+      background:linear-gradient(135deg,#fff8f5 0%, #fff 100%);
+      border:1px solid #e8c8be;
+      border-left:4px solid var(--accent2);
+      border-radius:0 10px 10px 0;
+      padding:14px 16px;
+      margin:16px 0 18px;
+    }
+    .note strong{color:var(--accent);}
+    .warn strong{color:var(--accent2);}
+
+    .lab{
+      margin-top:22px;
+      background:var(--card);
+      border:1px solid var(--rule);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .lab-top{
+      background:var(--ink);
+      color:var(--bg);
+      padding:14px 18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+    .lab-top .title{
+      font-family:'JetBrains Mono', monospace;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-size:.86rem;
+    }
+    .lab-top .status{
+      font-family:'JetBrains Mono', monospace;
+      font-size:.8rem;
+      color:#a0c0e0;
+      white-space:nowrap;
+    }
+
+    .controls{
+      padding:14px 18px;
+      background:#f5f2ec;
+      border-top:1px solid var(--rule);
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:10px;
+      align-items:end;
+    }
+    .ctrl{
+      grid-column: span 3;
+      background:#fff;
+      border:1px solid var(--rule);
+      border-radius:10px;
+      padding:10px 10px 8px;
+    }
+    .ctrl.big{grid-column: span 6;}
+    .ctrl label{
+      display:block;
+      font-family:'JetBrains Mono', monospace;
+      font-size:.72rem;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:8px;
+    }
+    .ctrl .val{
+      float:right;
+      color:var(--ink);
+      font-weight:700;
+    }
+    input[type="range"]{width:100%; accent-color:var(--accent);}
+    select, input[type="number"]{
+      width:100%;
+      font-family:'JetBrains Mono', monospace;
+      font-size:.84rem;
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid var(--rule);
+      background:#fff;
+    }
+    .btnbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    button{
+      font-family:'JetBrains Mono', monospace;
+      font-size:.8rem;
+      font-weight:700;
+      padding:9px 14px;
+      border-radius:10px;
+      border:1px solid var(--rule);
+      cursor:pointer;
+      background:#fff;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      transition: transform .05s ease, background .15s ease;
+    }
+    button:active{transform:translateY(1px);}
+    button.primary{background:var(--accent); color:#fff; border-color:transparent;}
+    button.primary:hover{filter:brightness(1.05);}
+    button.danger{background:var(--accent2); color:#fff; border-color:transparent;}
+    button.danger:hover{filter:brightness(1.05);}
+
+    .plots{
+      padding:16px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+    #plot3d{height:520px; width:100%;}
+    .two{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+    .plotcard{
+      border:1px solid var(--rule);
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .plotcard .hd{
+      padding:10px 12px;
+      border-bottom:1px solid var(--rule);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .plotcard .hd .t{
+      font-family:'JetBrains Mono', monospace;
+      font-size:.78rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+    .plotcard .hd .small{
+      font-family:'JetBrains Mono', monospace;
+      font-size:.72rem;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    #plotMarg, #plotCond{height:420px; width:100%;}
+
+    .foot{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:.95rem;
+    }
+    .mono{font-family:'JetBrains Mono', monospace;}
+    .kbd{font-family:'JetBrains Mono', monospace; background:var(--code); border:1px solid var(--rule); border-radius:6px; padding:1px 6px;}
+    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 980px){
+      .two{grid-template-columns:1fr;}
+      .ctrl{grid-column: span 6;}
+      .ctrl.big{grid-column: span 12;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">Toy Model 4 · Dynamic object · Scores as vector fields</div>
+      <h1>Bouncing particle in a cube (drift + Brownian noise) — marginal vs conditional score</h1>
+      <p class="subtitle">You’ll see the motion as an animation, and (below) two vector fields: the marginal score on a slice, and the conditional score given the recent past.</p>
+    </header>
+
+    <h2><span class="num">1</span> Setup: a noisy billiard in a cube</h2>
+    <p>
+      We model an “electron” moving inside a perfectly reflecting cube \([0,L]^3\). Each discrete internal-time step \(u \mapsto u+1\)
+      combines: (i) a <em>deterministic</em> drift (momentum-like) and (ii) an <em>isotropic Gaussian perturbation</em>.
+      When the particle hits a wall, it reflects <em>specularly</em> (the normal component of velocity flips sign, magnitude preserved).
+    </p>
+    <div class="math">
+      \[
+      \textbf{Unconstrained proposal:}\qquad y_{u+1} = x_u + v_u\,\Delta u + \sigma\sqrt{\Delta u}\,\xi_u,\qquad \xi_u\sim\mathcal N(0, I_3).
+      \]
+      \[
+      \textbf{Reflection:}\qquad x_{u+1} = \mathrm{Fold}(y_{u+1})\in[0,L]^3,\qquad v_{u+1}=\mathrm{ReflectVel}(v_u, y_{u+1}).
+      \]
+    </div>
+    <p>
+      The <span class="mono">Fold</span> map is a coordinate-wise “mirror folding” with period \(2L\): it takes any real \(y\) and maps it into \([0,L]\)
+      by reflecting every other length-\(L\) interval. This produces the same geometry you’d get from perfect elastic bounces.
+    </p>
+    <div class="note">
+      <strong>Why this is nice for scores:</strong> the one-step conditional density \(p(x_{u+1}\mid x_u, v_u)\) is the density of a <em>folded Gaussian</em>.
+      That gives a clean expression for the <em>conditional score</em> \(\nabla_{x_{u+1}}\log p(x_{u+1}\mid x_u, v_u)\).
+    </div>
+
+    <h2><span class="num">2</span> What we plot: two score fields</h2>
+    <p>
+      We care about the score as a vector field: \(s(x,u) = \nabla_x \log p_u(x)\).
+      Here there are two different (but related) objects:
+    </p>
+    <div class="grid">
+      <div class="note">
+        <strong>Marginal score (left plot below):</strong>
+        \(s_{\text{marg}}(x,u)=\nabla_x\log p_u(x)\), where \(p_u\) is the distribution of positions after \(u\) bounces.
+        We estimate \(p_u\) from many simulated particles (Monte Carlo) using a Gaussian KDE; then the KDE score has a closed form.
+      </div>
+      <div class="warn">
+        <strong>Conditional score (right plot below):</strong>
+        \(s_{\text{cond}}(x,u)=\nabla_{x_{u+1}}\log p(x_{u+1}=x\mid \text{past})\).
+        If the state is \((x_u,v_u)\), the dynamics is Markov and conditioning on the entire past reduces to conditioning on \((x_u,v_u)\).
+        If you only observe positions, you can <em>approximate momentum</em> from \((x_{u}-x_{u-1})/\Delta u\) (toggle below).
+      </div>
+    </div>
+
+    <div class="math">
+      <p style="margin:0 0 10px;"><span class="mono">Folded-Gaussian transition density (1D building block)</span></p>
+      \[
+      \text{Let } m = x_u + v_u\Delta u,\quad s^2=\sigma^2\Delta u.\quad \text{For } x\in[0,L],
+      \]
+      \[
+      p_{\mathrm{1D}}(x\mid m) = \sum_{k\in\mathbb Z}\Big[\varphi(x+2kL;\,m,s^2)+\varphi(-x+2kL;\,m,s^2)\Big],
+      \]
+      where \(\varphi(\cdot; m, s^2)\) is the Gaussian density. For the cube with independent coordinates,
+      \(p(x\mid x_u,v_u)=\prod_{i=1}^3 p_{\mathrm{1D}}(x_i\mid m_i)\) and the score components add in log-space.
+    </div>
+
+    <h2><span class="num">3</span> Sources (what this page is building on)</h2>
+    <p>
+      The key mathematical ideas behind the conditional kernel are: (i) specular reflection (flip normal component of velocity) and
+      (ii) constructing reflected kernels by <em>folding</em> or “method of images”. The folded normal distribution is the simplest
+      one-wall case (“fold a Gaussian at 0”). A short, clean reference for the interval heat kernels (Dirichlet/Neumann) and their
+      geometric folding interpretation is included below.
+    </p>
+    <ul>
+      <li>Heat kernels on intervals; reflected (Neumann) case and folding construction: <a href="https://alexander-teplyaev.uconn.edu/wp-content/uploads/sites/1703/2020/02/HK-circles-interval.pdf" target="_blank" rel="noopener">Teplyaev (notes)</a>.</li>
+      <li>Reflected Brownian motion overview + intuition for reflection at a barrier: <a href="https://math.nyu.edu/~varadhan/Spring11/topics16.pdf" target="_blank" rel="noopener">Varadhan (NYU notes)</a>.</li>
+      <li>Folded normal distribution (density as sum of two Gaussians, the 1-wall image idea): <a href="https://en.wikipedia.org/wiki/Folded_normal_distribution" target="_blank" rel="noopener">Wikipedia</a>.</li>
+      <li>Specular reflection physics intuition (perfect mirror reflection preserves magnitude): <a href="https://pbr-book.org/4ed/Reflection_Models/Specular_Reflection_and_Transmission" target="_blank" rel="noopener">PBRT v4 (Specular reflection)</a>.</li>
+    </ul>
+    <p style="color:var(--muted); font-size:0.95em;">
+      Implementation note: the <em>exact</em> continuous-time reflected diffusion with drift has subtleties (flux boundary conditions).
+      Here we implement the <em>discrete-time billiard</em> described above (Gaussian step + instantaneous mirror fold), for which the
+      image-sum formula is exact because it is just a change-of-variables through the fold map.
+    </p>
+
+    <div class="lab" id="lab">
+      <div class="lab-top">
+        <div class="title">Interactive lab · motion + marginal/conditional score fields</div>
+        <div class="status" id="status">ready</div>
+      </div>
+
+      <div class="plots">
+        <div id="plot3d"></div>
+        <div class="two">
+          <div class="plotcard">
+            <div class="hd">
+              <div class="t">Marginal score (slice)</div>
+              <div class="small" id="margInfo">KDE bandwidth h = —</div>
+            </div>
+            <div id="plotMarg"></div>
+          </div>
+          <div class="plotcard">
+            <div class="hd">
+              <div class="t">Conditional score (slice)</div>
+              <div class="small" id="condInfo">conditioning = —</div>
+            </div>
+            <div id="plotCond"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="row">
+          <div class="ctrl">
+            <label>Particles N <span class="val" id="valN"></span></label>
+            <input id="N" type="range" min="50" max="800" step="10" value="250" />
+          </div>
+          <div class="ctrl">
+            <label>Steps T <span class="val" id="valT"></span></label>
+            <input id="T" type="range" min="60" max="420" step="10" value="220" />
+          </div>
+          <div class="ctrl">
+            <label>Box size L <span class="val" id="valL"></span></label>
+            <input id="L" type="range" min="0.6" max="2.0" step="0.05" value="1.0" />
+          </div>
+          <div class="ctrl">
+            <label>Time step Δu <span class="val" id="valDt"></span></label>
+            <input id="dt" type="range" min="0.002" max="0.06" step="0.001" value="0.02" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="ctrl">
+            <label>Noise σ <span class="val" id="valSig"></span></label>
+            <input id="sigma" type="range" min="0.0" max="0.7" step="0.01" value="0.18" />
+          </div>
+          <div class="ctrl">
+            <label>Speed |v| <span class="val" id="valV"></span></label>
+            <input id="speed" type="range" min="0.0" max="4.0" step="0.05" value="1.6" />
+          </div>
+          <div class="ctrl">
+            <label>Direction azimuth (deg) <span class="val" id="valAz"></span></label>
+            <input id="az" type="range" min="0" max="360" step="1" value="35" />
+          </div>
+          <div class="ctrl">
+            <label>Direction elevation (deg) <span class="val" id="valEl"></span></label>
+            <input id="el" type="range" min="-80" max="80" step="1" value="20" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="ctrl">
+            <label>Slice plane</label>
+            <select id="plane">
+              <option value="xy" selected>XY (fix z)</option>
+              <option value="xz">XZ (fix y)</option>
+              <option value="yz">YZ (fix x)</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label>Slice value <span class="val" id="valSlice"></span></label>
+            <input id="slice" type="range" min="0.0" max="1.0" step="0.01" value="0.5" />
+          </div>
+          <div class="ctrl">
+            <label>Slice band (±) <span class="val" id="valBand"></span></label>
+            <input id="band" type="range" min="0.01" max="0.35" step="0.01" value="0.12" />
+          </div>
+          <div class="ctrl">
+            <label>Arrow scale <span class="val" id="valArr"></span></label>
+            <input id="arrScale" type="range" min="0.02" max="0.35" step="0.01" value="0.12" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="ctrl">
+            <label>KDE bandwidth h <span class="val" id="valH"></span></label>
+            <input id="bandwidth" type="range" min="0.03" max="0.35" step="0.01" value="0.12" />
+          </div>
+          <div class="ctrl">
+            <label>Cond. image sum K <span class="val" id="valK"></span></label>
+            <input id="K" type="range" min="1" max="10" step="1" value="5" />
+          </div>
+          <div class="ctrl big">
+            <label>Conditional score uses</label>
+            <select id="condMode">
+              <option value="true_v" selected>True (xᵤ, vᵤ) state (Markov)</option>
+              <option value="infer_v">Estimated vᵤ from (xᵤ − xᵤ₋₁)/Δu (positions only)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="ctrl big">
+            <label>Playback: internal time u <span class="val" id="valU"></span></label>
+            <input id="u" type="range" min="0" max="220" step="1" value="0" />
+          </div>
+          <div class="ctrl big">
+            <label>Actions</label>
+            <div class="btnbar">
+              <button class="primary" id="play">Play</button>
+              <button id="pause">Pause</button>
+              <button class="danger" id="resim">Resimulate</button>
+              <button id="snap">Snapshot PNG</button>
+              <span class="mono" id="fps" style="color:var(--muted); margin-left:auto;">fps —</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2><span class="num">3</span> What to look for (intuition)</h2>
+    <ul style="margin-top:8px;">
+      <li><strong>Near walls</strong>, density piles up anisotropically because reflection maps out-of-box proposals back inside; the score points away from low-probability regions (often “into” the box).</li>
+      <li><strong>Increasing σ</strong> makes the marginal density flatter; scores shrink in magnitude (roughly like \(1/h\) for KDE and like \(1/\sigma^2\Delta u\) for the one-step Gaussian core).</li>
+      <li><strong>Conditional score</strong> should roughly point from your current mean drift \(m=x_u+v\Delta u\) toward the likely post-bounce locations (multi-image contributions matter when \(\sigma\sqrt{\Delta u}\) is not tiny).</li>
+      <li>If you switch <span class="kbd">Conditional score uses</span> to <em>infer v</em>, you’ll see how “conditioning on positions only” can mis-estimate momentum right after a bounce.</li>
+    </ul>
+
+    <h2><span class="num">4</span> Sources / mathematical references</h2>
+    <p class="foot">
+      The connection between reflecting boundaries and “folding” constructions for heat kernels is standard; see Teplyaev’s one-page note for Neumann (reflected) heat kernels on \([0,L]\) and their geometric folding from the circle.
+      The folded-normal density (absolute value of a Gaussian) is the simplest 1D reflection example.
+      For background on reflected Brownian motion and boundary behavior (local time / reflection), see Varadhan’s notes.
+      For perfect specular reflection as “flip the normal component” (momentum-preserving ideal reflection), see the PBRT treatment.
+    </p>
+  </div>
+
+<script>
+  // -----------------------------
+  // Utilities
+  // -----------------------------
+  function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+
+  // Box-Muller for standard normal
+  function randn(){
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+  function randn3(){ return [randn(), randn(), randn()]; }
+
+  // Mirror-fold y into [0, L] using period 2L; also flip velocity if we end in the reflected half.
+  function foldAndReflectVel(pos, vel, L){
+    const period = 2*L;
+    for(let d=0; d<3; d++){
+      const y = pos[d];
+      // JS % can be negative; make it a proper modulo in [0, period)
+      let m = ((y % period) + period) % period;
+      if (m > L){
+        pos[d] = period - m;
+        vel[d] = -vel[d];
+      } else {
+        pos[d] = m;
+      }
+    }
+  }
+
+  function normalPdf(z, var_){
+    const denom = Math.sqrt(2*Math.PI*var_);
+    return Math.exp(-0.5*z*z/var_) / denom;
+  }
+
+  // 1D folded Gaussian density on [0,L] given unconstrained mean m and variance var
+  // p(x) = sum_k [N(x+2kL; m,var) + N(-x+2kL; m,var)]
+  // dp/dx = sum_k [-(x+2kL-m)/var * N(x+2kL; m,var) + (-x+2kL-m)/var * N(-x+2kL; m,var)]
+  function folded1D_density_and_score(x, m, var_, L, K){
+    let p = 0.0;
+    let dpdx = 0.0;
+    for(let k=-K; k<=K; k++){
+      const z1 = (x + 2*k*L) - m;
+      const z2 = (-x + 2*k*L) - m;
+      const n1 = normalPdf(z1, var_);
+      const n2 = normalPdf(z2, var_);
+      p += n1 + n2;
+      dpdx += (-(z1)/var_) * n1 + ((z2)/var_) * n2;
+    }
+    const s = (p > 1e-14) ? (dpdx / p) : 0.0;
+    return {p, s};
+  }
+
+  // KDE score in 2D with isotropic bandwidth h.
+  // density(x) = (1/N) sum exp(-||x-xi||^2/(2h^2)) / (2pi h^2)
+  // score(x) = (sum w_i (x_i - x) / h^2) / sum w_i
+  function kde2_score(gridX, gridY, ptsX, ptsY, h){
+    const h2 = h*h;
+    const invH2 = 1.0/h2;
+    const nx = gridX.length;
+    const ny = gridY.length;
+    const Sx = Array.from({length: ny}, () => Array(nx).fill(0));
+    const Sy = Array.from({length: ny}, () => Array(nx).fill(0));
+    const LogP = Array.from({length: ny}, () => Array(nx).fill(-Infinity));
+    const N = ptsX.length;
+    if (N === 0){
+      return {Sx, Sy, LogP, effN: 0};
+    }
+    for(let j=0; j<ny; j++){
+      for(let i=0; i<nx; i++){
+        const x = gridX[i];
+        const y = gridY[j];
+        let wsum = 0.0;
+        let numx = 0.0;
+        let numy = 0.0;
+        for(let n=0; n<N; n++){
+          const dx = x - ptsX[n];
+          const dy = y - ptsY[n];
+          const w = Math.exp(-(dx*dx + dy*dy)/(2*h2));
+          wsum += w;
+          numx += w * (ptsX[n] - x);
+          numy += w * (ptsY[n] - y);
+        }
+        if (wsum > 1e-12){
+          Sx[j][i] = numx * invH2 / wsum;
+          Sy[j][i] = numy * invH2 / wsum;
+          // density is proportional to wsum; log-density differs by a constant anyway.
+          LogP[j][i] = Math.log(wsum);
+        } else {
+          Sx[j][i] = 0; Sy[j][i] = 0; LogP[j][i] = -Infinity;
+        }
+      }
+    }
+    return {Sx, Sy, LogP, effN: N};
+  }
+
+  function linspace(a,b,n){
+    const arr = [];
+    if(n===1){ return [0.5*(a+b)]; }
+    const step = (b-a)/(n-1);
+    for(let i=0;i<n;i++) arr.push(a + i*step);
+    return arr;
+  }
+
+  // Build a Plotly quiver as a single scatter trace with line segments
+  function buildQuiverTrace(gridX, gridY, U, V, scale, color, name){
+    const xs = [];
+    const ys = [];
+    const nx = gridX.length;
+    const ny = gridY.length;
+    for(let j=0;j<ny;j++){
+      for(let i=0;i<nx;i++){
+        const x0 = gridX[i];
+        const y0 = gridY[j];
+        const x1 = x0 + scale * U[j][i];
+        const y1 = y0 + scale * V[j][i];
+        xs.push(x0, x1, null);
+        ys.push(y0, y1, null);
+      }
+    }
+    return {
+      type:'scatter',
+      mode:'lines',
+      x: xs,
+      y: ys,
+      line:{color: color, width:1.6},
+      name,
+      hoverinfo:'skip',
+      showlegend:false
+    };
+  }
+
+  function buildHeatmapTrace(gridX, gridY, Z, name){
+    return {
+      type:'heatmap',
+      x: gridX,
+      y: gridY,
+      z: Z,
+      colorscale: 'Greys',
+      reversescale: false,
+      showscale: false,
+      opacity: 0.95,
+      name,
+      hovertemplate: 'x=%{x:.2f}<br>y=%{y:.2f}<br>log dens=%{z:.2f}<extra></extra>'
+    };
+  }
+
+  // -----------------------------
+  // State
+  // -----------------------------
+  const els = {
+    status: document.getElementById('status'),
+    fps: document.getElementById('fps'),
+    margInfo: document.getElementById('margInfo'),
+    condInfo: document.getElementById('condInfo'),
+    N: document.getElementById('N'),
+    T: document.getElementById('T'),
+    L: document.getElementById('L'),
+    dt: document.getElementById('dt'),
+    sigma: document.getElementById('sigma'),
+    speed: document.getElementById('speed'),
+    az: document.getElementById('az'),
+    el: document.getElementById('el'),
+    plane: document.getElementById('plane'),
+    slice: document.getElementById('slice'),
+    band: document.getElementById('band'),
+    arrScale: document.getElementById('arrScale'),
+    bandwidth: document.getElementById('bandwidth'),
+    K: document.getElementById('K'),
+    condMode: document.getElementById('condMode'),
+    u: document.getElementById('u'),
+    play: document.getElementById('play'),
+    pause: document.getElementById('pause'),
+    resim: document.getElementById('resim'),
+    snap: document.getElementById('snap'),
+    // value labels
+    valN: document.getElementById('valN'),
+    valT: document.getElementById('valT'),
+    valL: document.getElementById('valL'),
+    valDt: document.getElementById('valDt'),
+    valSig: document.getElementById('valSig'),
+    valV: document.getElementById('valV'),
+    valAz: document.getElementById('valAz'),
+    valEl: document.getElementById('valEl'),
+    valSlice: document.getElementById('valSlice'),
+    valBand: document.getElementById('valBand'),
+    valArr: document.getElementById('valArr'),
+    valH: document.getElementById('valH'),
+    valK: document.getElementById('valK'),
+    valU: document.getElementById('valU'),
+  };
+
+  const state = {
+    playing: false,
+    lastFrameTime: performance.now(),
+    fpsEMA: null,
+    frames: null,       // frames[u] = {x:[], y:[], z:[], v: [ [vx,vy,vz] ... ] }
+    single: null,       // single[u] = {pos:[x,y,z], vel:[vx,vy,vz]}
+    cubeEdges: null,
+  };
+
+  function readParams(){
+    const N = parseInt(els.N.value, 10);
+    const T = parseInt(els.T.value, 10);
+    const L = parseFloat(els.L.value);
+    const dt = parseFloat(els.dt.value);
+    const sigma = parseFloat(els.sigma.value);
+    const speed = parseFloat(els.speed.value);
+    const az = parseFloat(els.az.value) * Math.PI / 180.0;
+    const el = parseFloat(els.el.value) * Math.PI / 180.0;
+    const plane = els.plane.value;
+    const slice01 = parseFloat(els.slice.value);
+    const band01 = parseFloat(els.band.value);
+    const arrScale = parseFloat(els.arrScale.value);
+    const h = parseFloat(els.bandwidth.value);
+    const K = parseInt(els.K.value, 10);
+    const condMode = els.condMode.value;
+    const u = parseInt(els.u.value, 10);
+    return {N,T,L,dt,sigma,speed,az,el,plane,slice01,band01,arrScale,h,K,condMode,u};
+  }
+
+  function syncLabels(p){
+    els.valN.textContent = p.N;
+    els.valT.textContent = p.T;
+    els.valL.textContent = p.L.toFixed(2);
+    els.valDt.textContent = p.dt.toFixed(3);
+    els.valSig.textContent = p.sigma.toFixed(2);
+    els.valV.textContent = p.speed.toFixed(2);
+    els.valAz.textContent = Math.round(p.az*180/Math.PI);
+    els.valEl.textContent = Math.round(p.el*180/Math.PI);
+    els.valSlice.textContent = p.slice01.toFixed(2);
+    els.valBand.textContent = p.band01.toFixed(2);
+    els.valArr.textContent = p.arrScale.toFixed(2);
+    els.valH.textContent = p.h.toFixed(2);
+    els.valK.textContent = p.K;
+    els.valU.textContent = p.u;
+  }
+
+  function setStatus(msg){ els.status.textContent = msg; }
+
+  // -----------------------------
+  // Simulation
+  // -----------------------------
+  function directionFromAngles(az, el){
+    // az: angle in xy plane, el: elevation from xy plane
+    const cx = Math.cos(el) * Math.cos(az);
+    const cy = Math.cos(el) * Math.sin(az);
+    const cz = Math.sin(el);
+    return [cx, cy, cz];
+  }
+
+  function simulate(params){
+    const {N,T,L,dt,sigma,speed,az,el} = params;
+    const dir = directionFromAngles(az, el);
+    const baseV = [speed*dir[0], speed*dir[1], speed*dir[2]];
+    const sqrtDt = Math.sqrt(dt);
+
+    // initial positions uniform in cube
+    let pos = Array.from({length:N}, () => [Math.random()*L, Math.random()*L, Math.random()*L]);
+    // all particles share same initial velocity direction/speed; you can randomize per particle if desired
+    let vel = Array.from({length:N}, () => [baseV[0], baseV[1], baseV[2]]);
+
+    const frames = [];
+    const single = [];
+    for(let u=0; u<=T; u++){
+      frames.push({
+        x: pos.map(p => p[0]),
+        y: pos.map(p => p[1]),
+        z: pos.map(p => p[2]),
+        v: vel.map(vv => [vv[0], vv[1], vv[2]])
+      });
+      single.push({pos: [pos[0][0], pos[0][1], pos[0][2]], vel: [vel[0][0], vel[0][1], vel[0][2]]});
+      if(u === T) break;
+      // step
+      for(let i=0;i<N;i++){
+        const eps = randn3();
+        pos[i][0] += vel[i][0]*dt + sigma*sqrtDt*eps[0];
+        pos[i][1] += vel[i][1]*dt + sigma*sqrtDt*eps[1];
+        pos[i][2] += vel[i][2]*dt + sigma*sqrtDt*eps[2];
+        foldAndReflectVel(pos[i], vel[i], L);
+      }
+    }
+    return {frames, single};
+  }
+
+  function buildCubeEdges(L){
+    const pts = [
+      [0,0,0],[L,0,0],[L,L,0],[0,L,0],
+      [0,0,L],[L,0,L],[L,L,L],[0,L,L]
+    ];
+    const edges = [
+      [0,1],[1,2],[2,3],[3,0],
+      [4,5],[5,6],[6,7],[7,4],
+      [0,4],[1,5],[2,6],[3,7]
+    ];
+    const xs=[], ys=[], zs=[];
+    for(const [a,b] of edges){
+      xs.push(pts[a][0], pts[b][0], null);
+      ys.push(pts[a][1], pts[b][1], null);
+      zs.push(pts[a][2], pts[b][2], null);
+    }
+    return {xs, ys, zs};
+  }
+
+  // -----------------------------
+  // Plotting
+  // -----------------------------
+  function initPlots(params){
+    setStatus('simulating…');
+    const sim = simulate(params);
+    state.frames = sim.frames;
+    state.single = sim.single;
+    state.cubeEdges = buildCubeEdges(params.L);
+
+    els.u.max = params.T;
+    els.u.value = '0';
+    params.u = 0;
+    syncLabels(params);
+
+    // 3D plot
+    const f0 = state.frames[0];
+    const edge = state.cubeEdges;
+    const traceEdges = {
+      type:'scatter3d',
+      mode:'lines',
+      x: edge.xs,
+      y: edge.ys,
+      z: edge.zs,
+      line:{color:'rgba(26,58,92,0.45)', width:4},
+      hoverinfo:'skip',
+      showlegend:false
+    };
+    const tracePts = {
+      type:'scatter3d',
+      mode:'markers',
+      x: f0.x,
+      y: f0.y,
+      z: f0.z,
+      marker:{
+        size: 3.2,
+        color: 'rgba(181,52,26,0.55)',
+      },
+      hoverinfo:'skip',
+      showlegend:false
+    };
+    const traceHi = {
+      type:'scatter3d',
+      mode:'markers',
+      x: [state.single[0].pos[0]],
+      y: [state.single[0].pos[1]],
+      z: [state.single[0].pos[2]],
+      marker:{size: 7, color:'rgba(14,107,44,0.95)'},
+      hovertemplate: 'tracked particle<br>x=%{x:.3f}<br>y=%{y:.3f}<br>z=%{z:.3f}<extra></extra>',
+      showlegend:false
+    };
+    const layout3d = {
+      margin:{l:0,r:0,t:0,b:0},
+      paper_bgcolor:'rgba(0,0,0,0)',
+      scene:{
+        xaxis:{range:[0, params.L], title:'x', backgroundcolor:'rgba(0,0,0,0)', gridcolor:'rgba(200,190,175,0.35)', zeroline:false},
+        yaxis:{range:[0, params.L], title:'y', backgroundcolor:'rgba(0,0,0,0)', gridcolor:'rgba(200,190,175,0.35)', zeroline:false},
+        zaxis:{range:[0, params.L], title:'z', backgroundcolor:'rgba(0,0,0,0)', gridcolor:'rgba(200,190,175,0.35)', zeroline:false},
+        camera:{eye:{x:1.55, y:1.25, z:0.85}},
+        aspectmode:'cube'
+      }
+    };
+    Plotly.newPlot('plot3d', [traceEdges, tracePts, traceHi], layout3d, {displayModeBar:false, responsive:true});
+
+    // Initialize score plots
+    Plotly.newPlot('plotMarg', [], base2DLayout('Marginal score'), {displayModeBar:false, responsive:true});
+    Plotly.newPlot('plotCond', [], base2DLayout('Conditional score'), {displayModeBar:false, responsive:true});
+    updateFrame(params);
+
+    setStatus('ready');
+  }
+
+  function base2DLayout(title){
+    return {
+      margin:{l:44,r:10,t:10,b:38},
+      paper_bgcolor:'rgba(0,0,0,0)',
+      plot_bgcolor:'#ffffff',
+      xaxis:{title:'', zeroline:false, gridcolor:'rgba(201,191,175,0.35)'},
+      yaxis:{title:'', zeroline:false, gridcolor:'rgba(201,191,175,0.35)', scaleanchor:'x', scaleratio:1},
+      showlegend:false,
+    };
+  }
+
+  function sliceToValue(L, slice01){
+    return clamp(slice01, 0, 1) * L;
+  }
+
+  function extractSlicePoints(frame, plane, sliceVal, band){
+    // returns pts in 2D (a,b) from 3D points within band around fixed coordinate
+    const ptsA = [], ptsB = [];
+    const N = frame.x.length;
+    for(let i=0;i<N;i++){
+      const x = frame.x[i], y = frame.y[i], z = frame.z[i];
+      if (plane === 'xy'){
+        if (Math.abs(z - sliceVal) <= band){ ptsA.push(x); ptsB.push(y); }
+      } else if (plane === 'xz'){
+        if (Math.abs(y - sliceVal) <= band){ ptsA.push(x); ptsB.push(z); }
+      } else {
+        if (Math.abs(x - sliceVal) <= band){ ptsA.push(y); ptsB.push(z); }
+      }
+    }
+    return {ptsA, ptsB};
+  }
+
+  function conditionalScoreField2D(gridA, gridB, cond, params){
+    const {L, dt, sigma, K, plane} = params;
+    const var_ = (sigma*sigma) * dt;
+
+    // Determine which coordinates correspond to axes a,b and which is fixed.
+    // In all cases, conditional factorizes across dimensions, so 2D density = p(a) p(b).
+    const idxA = (plane === 'yz') ? 1 : 0; // y if yz, else x
+    const idxB = (plane === 'xy') ? 1 : 2; // y if xy, else z
+    // plane xz => A=x idx0, B=z idx2
+    if (plane === 'xz'){ /* idxA=0 ok, idxB=2 ok */ }
+    if (plane === 'xy'){ /* idxA=0 ok, idxB=1 ok */ }
+
+    // Build conditioning mean m = x_u + v_u dt in each coordinate.
+    const mA = cond.pos[idxA] + cond.vel[idxA]*dt;
+    const mB = cond.pos[idxB] + cond.vel[idxB]*dt;
+
+    const nx = gridA.length;
+    const ny = gridB.length;
+    const SA = Array.from({length: ny}, () => Array(nx).fill(0));
+    const SB = Array.from({length: ny}, () => Array(nx).fill(0));
+    const LogP = Array.from({length: ny}, () => Array(nx).fill(-Infinity));
+
+    for(let j=0;j<ny;j++){
+      for(let i=0;i<nx;i++){
+        const a = gridA[i];
+        const b = gridB[j];
+        const da = folded1D_density_and_score(a, mA, var_, L, K);
+        const db = folded1D_density_and_score(b, mB, var_, L, K);
+        SA[j][i] = da.s;
+        SB[j][i] = db.s;
+        // product density => log add
+        const p2 = da.p * db.p;
+        LogP[j][i] = (p2 > 0) ? Math.log(p2) : -Infinity;
+      }
+    }
+    return {SA, SB, LogP, mA, mB, var_};
+  }
+
+  function inferVelocityFromTwoPositions(pos_u, pos_um1, dt, speedCap){
+    // naive finite difference in the observed cube coordinates
+    const v = [
+      (pos_u[0] - pos_um1[0]) / dt,
+      (pos_u[1] - pos_um1[1]) / dt,
+      (pos_u[2] - pos_um1[2]) / dt,
+    ];
+    const norm = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+    if (norm > speedCap && norm > 1e-9){
+      const s = speedCap / norm;
+      return [v[0]*s, v[1]*s, v[2]*s];
+    }
+    return v;
+  }
+
+  function updateFrame(params){
+    const u = clamp(params.u, 0, params.T);
+    const frame = state.frames[u];
+    const edge = state.cubeEdges;
+    const tracked = state.single[u];
+    const trackedPrev = (u>0) ? state.single[u-1] : tracked;
+
+    // Update 3D scatter
+    Plotly.restyle('plot3d', {x:[edge.xs, frame.x, [tracked.pos[0]]], y:[edge.ys, frame.y, [tracked.pos[1]]], z:[edge.zs, frame.z, [tracked.pos[2]]]}, [0,1,2]);
+
+    // Slice settings
+    const sliceVal = sliceToValue(params.L, params.slice01);
+    const band = params.band01 * params.L;
+    const {ptsA, ptsB} = extractSlicePoints(frame, params.plane, sliceVal, band);
+
+    // Build grids
+    const gridN = 17;
+    const gridA = linspace(0, params.L, gridN);
+    const gridB = linspace(0, params.L, gridN);
+
+    // Marginal KDE score on slice
+    const kde = kde2_score(gridA, gridB, ptsA, ptsB, params.h);
+    els.margInfo.textContent = `KDE: n_slice=${kde.effN} · h=${params.h.toFixed(2)}`;
+
+    // Conditional score on slice
+    const cond = {pos:[...tracked.pos], vel:[...tracked.vel]};
+    if(params.condMode === 'infer_v'){
+      const speedCap = Math.max(0.5, 2.5*params.speed);
+      cond.vel = inferVelocityFromTwoPositions(tracked.pos, trackedPrev.pos, params.dt, speedCap);
+    }
+    const condField = conditionalScoreField2D(gridA, gridB, cond, params);
+    const velLabel = (params.condMode === 'infer_v') ? 'v̂ from last step' : 'true v';
+    els.condInfo.textContent = `${velLabel} · var=${condField.var_.toFixed(4)} · K=${params.K}`;
+
+    // Plot marginal field
+    const heatMarg = buildHeatmapTrace(gridA, gridB, kde.LogP, 'log density');
+    const quivMarg = buildQuiverTrace(gridA, gridB, kde.Sx, kde.Sy, params.arrScale, 'rgba(26,58,92,0.9)', 'score');
+    const ptTrace = buildTrackedPointOnSlice(params.plane, tracked.pos, sliceVal, band);
+    Plotly.react('plotMarg', [heatMarg, quivMarg, ptTrace], layout2DForPlane(params), {displayModeBar:false, responsive:true});
+
+    // Plot conditional field
+    const heatCond = buildHeatmapTrace(gridA, gridB, condField.LogP, 'log density');
+    const quivCond = buildQuiverTrace(gridA, gridB, condField.SA, condField.SB, params.arrScale, 'rgba(181,52,26,0.92)', 'score');
+    const condMarker = buildConditioningMarker(params.plane, tracked.pos, trackedPrev.pos, sliceVal, band);
+    Plotly.react('plotCond', [heatCond, quivCond, condMarker], layout2DForPlane(params), {displayModeBar:false, responsive:true});
+
+    setStatus(`u=${u}/${params.T} · slice ${params.plane} @ ${sliceVal.toFixed(2)} (±${band.toFixed(2)})`);
+  }
+
+  function layout2DForPlane(params){
+    const plane = params.plane;
+    const label = (plane === 'xy') ? ['x','y'] : (plane === 'xz') ? ['x','z'] : ['y','z'];
+    return {
+      margin:{l:44,r:10,t:6,b:40},
+      paper_bgcolor:'rgba(0,0,0,0)',
+      plot_bgcolor:'#ffffff',
+      xaxis:{range:[0,params.L], title:label[0], zeroline:false, gridcolor:'rgba(201,191,175,0.35)'},
+      yaxis:{range:[0,params.L], title:label[1], zeroline:false, gridcolor:'rgba(201,191,175,0.35)', scaleanchor:'x', scaleratio:1},
+      showlegend:false,
+    };
+  }
+
+  function buildTrackedPointOnSlice(plane, pos, sliceVal, band){
+    // Show the tracked particle on the slice if it's within band.
+    let a,b,fixed;
+    if(plane==='xy'){ fixed=pos[2]; a=pos[0]; b=pos[1]; }
+    else if(plane==='xz'){ fixed=pos[1]; a=pos[0]; b=pos[2]; }
+    else { fixed=pos[0]; a=pos[1]; b=pos[2]; }
+    const on = Math.abs(fixed - sliceVal) <= band;
+    return {
+      type:'scatter',
+      mode:'markers',
+      x: on ? [a] : [],
+      y: on ? [b] : [],
+      marker:{size:10, color:'rgba(14,107,44,0.95)', line:{color:'#0b3f1b', width:1}},
+      hovertemplate:'tracked particle (on slice)<br>a=%{x:.3f}<br>b=%{y:.3f}<extra></extra>',
+      showlegend:false
+    };
+  }
+
+  function buildConditioningMarker(plane, pos, posPrev, sliceVal, band){
+    // Show arrow from previous to current (projected), only if both near slice.
+    let a0,b0,f0,a1,b1,f1;
+    if(plane==='xy'){
+      f0=posPrev[2]; a0=posPrev[0]; b0=posPrev[1];
+      f1=pos[2]; a1=pos[0]; b1=pos[1];
+    } else if(plane==='xz'){
+      f0=posPrev[1]; a0=posPrev[0]; b0=posPrev[2];
+      f1=pos[1]; a1=pos[0]; b1=pos[2];
+    } else {
+      f0=posPrev[0]; a0=posPrev[1]; b0=posPrev[2];
+      f1=pos[0]; a1=pos[1]; b1=pos[2];
+    }
+    const on0 = Math.abs(f0 - sliceVal) <= band;
+    const on1 = Math.abs(f1 - sliceVal) <= band;
+    return {
+      type:'scatter',
+      mode:'lines+markers',
+      x: (on0 && on1) ? [a0, a1] : [],
+      y: (on0 && on1) ? [b0, b1] : [],
+      line:{color:'rgba(14,107,44,0.85)', width:3},
+      marker:{size:9, color:['rgba(14,107,44,0.45)','rgba(14,107,44,0.95)']},
+      hovertemplate:'conditioning path (u-1 → u)<extra></extra>',
+      showlegend:false
+    };
+  }
+
+  // -----------------------------
+  // Animation loop
+  // -----------------------------
+  function tick(){
+    if(!state.playing) return;
+    const now = performance.now();
+    const dtms = now - state.lastFrameTime;
+    state.lastFrameTime = now;
+    const fps = 1000 / Math.max(1, dtms);
+    state.fpsEMA = (state.fpsEMA==null) ? fps : (0.9*state.fpsEMA + 0.1*fps);
+    els.fps.textContent = `fps ${state.fpsEMA.toFixed(1)}`;
+
+    const params = readParams();
+    const nextU = (params.u + 1) % (params.T + 1);
+    els.u.value = String(nextU);
+    params.u = nextU;
+    syncLabels(params);
+    updateFrame(params);
+    requestAnimationFrame(tick);
+  }
+
+  // -----------------------------
+  // Wiring
+  // -----------------------------
+  let recomputeTimer = null;
+  function scheduleResimulate(){
+    if(recomputeTimer) clearTimeout(recomputeTimer);
+    recomputeTimer = setTimeout(() => {
+      const params = readParams();
+      syncLabels(params);
+      setStatus('rebuilding…');
+      initPlots(params);
+    }, 180);
+  }
+
+  function scheduleRepaint(){
+    if(recomputeTimer) clearTimeout(recomputeTimer);
+    recomputeTimer = setTimeout(() => {
+      const params = readParams();
+      syncLabels(params);
+      updateFrame(params);
+    }, 60);
+  }
+
+  // Resimulate on key physical parameters
+  ['N','T','L','dt','sigma','speed','az','el'].forEach(id => {
+    els[id].addEventListener('input', scheduleResimulate);
+  });
+  // Repaint on visualization-only parameters
+  ['plane','slice','band','arrScale','bandwidth','K','condMode','u'].forEach(id => {
+    els[id].addEventListener('input', scheduleRepaint);
+    els[id].addEventListener('change', scheduleRepaint);
+  });
+
+  els.play.addEventListener('click', () => {
+    if(state.playing) return;
+    state.playing = true;
+    state.lastFrameTime = performance.now();
+    requestAnimationFrame(tick);
+  });
+  els.pause.addEventListener('click', () => {
+    state.playing = false;
+    els.fps.textContent = 'fps —';
+  });
+  els.resim.addEventListener('click', () => {
+    state.playing = false;
+    els.fps.textContent = 'fps —';
+    scheduleResimulate();
+  });
+
+  els.snap.addEventListener('click', async () => {
+    // Make a combined snapshot by downloading the 3 plots separately.
+    // (Simpler than canvas compositing; you get three PNG downloads.)
+    try{
+      const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      await Plotly.downloadImage('plot3d', {format:'png', filename:`bouncing-cube-3d-${ts}`, width:1200, height:700});
+      await Plotly.downloadImage('plotMarg', {format:'png', filename:`bouncing-cube-marg-${ts}`, width:900, height:650});
+      await Plotly.downloadImage('plotCond', {format:'png', filename:`bouncing-cube-cond-${ts}`, width:900, height:650});
+    } catch(e){
+      console.warn(e);
+      alert('Snapshot failed (browser blocked downloads?). Try allowing multiple downloads.');
+    }
+  });
+
+  // Init
+  (function(){
+    const params = readParams();
+    syncLabels(params);
+    initPlots(params);
+  })();
+</script>
+
+</body>
+</html>
