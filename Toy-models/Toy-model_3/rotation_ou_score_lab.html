@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rotation on a Circle + OU Diffusion: Interactive Score Field Lab</title>
+
+<!-- MathJax for formulas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<!-- Plotly for interactive plots -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root{
+    --bg:#f7f4ef;
+    --ink:#1a1410;
+    --accent:#b5341a;
+    --accent2:#1a3a5c;
+    --muted:#6b5e50;
+    --rule:#c9bfaf;
+    --card:#ffffff;
+    --code-bg:#f0ece4;
+    --math-color:#1a3a5c;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'EB Garamond', Georgia, serif;
+    background:var(--bg);
+    color:var(--ink);
+    font-size:18px;
+    line-height:1.75;
+    max-width:1050px;
+    margin:0 auto;
+    padding:56px 36px 96px;
+  }
+
+  header{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:22px;
+    margin-bottom:44px;
+  }
+  .label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:2.55em;
+    font-weight:600;
+    line-height:1.18;
+    margin-bottom:12px;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-style:italic;
+    font-size:1.05em;
+  }
+
+  h2{
+    font-size:1.35em;
+    font-weight:600;
+    color:var(--ink);
+    margin:50px 0 14px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--rule);
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  h2 .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72em;
+    color:var(--accent);
+    font-weight:700;
+  }
+
+  p{margin-bottom:1em;}
+
+  .math-block{
+    background:var(--card);
+    border-left:3px solid var(--accent2);
+    padding:18px 26px;
+    margin:22px 0;
+    border-radius:0 6px 6px 0;
+    overflow-x:auto;
+  }
+  .math-block .MathJax{color:var(--math-color);}
+
+  .insight-box{
+    background:linear-gradient(135deg, #fff8f5 0%, #fff 100%);
+    border:1px solid #e8c8be;
+    border-left:4px solid var(--accent);
+    padding:18px 22px;
+    margin:24px 0;
+    border-radius:0 8px 8px 0;
+  }
+  .insight-box strong{color:var(--accent);}
+
+  .info-box{
+    background:linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+    border:1px solid #bdd0e8;
+    border-left:4px solid var(--accent2);
+    padding:18px 22px;
+    margin:24px 0;
+    border-radius:0 8px 8px 0;
+  }
+  .info-box strong{color:var(--accent2);}
+
+  code{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.82em;
+    background:var(--code-bg);
+    padding:2px 6px;
+    border-radius:3px;
+  }
+
+  /* Lab section */
+  #lab{
+    margin-top:44px;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  #lab-header{
+    background:var(--ink);
+    color:#f7f4ef;
+    padding:16px 22px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  #lab-header h3{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.86em;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+  #status{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78em;
+    color:#a0c0e0;
+    line-height:1.55;
+    white-space:pre-line;
+  }
+
+  #lab-body{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border-top:1px solid var(--rule);
+  }
+
+  .plot-card{
+    padding:14px 14px 6px;
+    border-right:1px solid var(--rule);
+  }
+  .plot-card:last-child{border-right:none;}
+  .plot-title{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78em;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:2px 6px 10px;
+  }
+  .plot{
+    width:100%;
+    height:520px;
+  }
+
+  #controls{
+    border-top:1px solid var(--rule);
+    background:#f5f2ec;
+    padding:14px 20px 18px;
+  }
+  .controls-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 18px;
+    margin-top:8px;
+  }
+  .control{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .control label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.73em;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .control label .val{
+    color:var(--ink);
+    font-weight:700;
+    letter-spacing:0.02em;
+  }
+  input[type="range"]{
+    width:100%;
+    accent-color:var(--accent2);
+  }
+  input[type="number"]{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--rule);
+    border-radius:6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.85em;
+    background:#fff;
+  }
+
+  .buttons-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  button{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.8em;
+    font-weight:700;
+    padding:8px 16px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    transition:all 0.15s;
+  }
+  #btn-resample{
+    background:var(--accent2);
+    color:white;
+  }
+  #btn-resample:hover{background:#1a4d7a;}
+  #btn-reset{
+    background:transparent;
+    border:1.5px solid var(--rule);
+    color:var(--muted);
+  }
+  #btn-reset:hover{border-color:var(--muted); color:var(--ink);}
+
+  .toggles{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78em;
+    color:var(--muted);
+  }
+  .toggle input{transform:scale(1.05); accent-color:var(--accent);}
+
+  .footnote{
+    color:var(--muted);
+    font-size:0.92em;
+    margin-top:12px;
+  }
+
+  hr.section{ border:none; border-top:1px solid var(--rule); margin:46px 0; }
+
+  @media (max-width: 920px){
+    #lab-body{ grid-template-columns:1fr; }
+    .plot-card{ border-right:none; border-bottom:1px solid var(--rule); }
+    .plot-card:last-child{ border-bottom:none; }
+    .plot{ height:480px; }
+    .controls-grid{ grid-template-columns:1fr; }
+    body{ padding:34px 18px 70px; }
+    h1{ font-size:1.95em; }
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <div class="label">Score Fields · Two Clocks · A Rotation Toy Model</div>
+  <h1>Rotation on a Circle + OU Diffusion<br/>Interactive Score Field Laboratory</h1>
+  <p class="subtitle">Internal time <em>u</em> moves the system; diffusion time <em>t</em> corrupts it. Slide parameters and watch the score reshape.</p>
+</header>
+
+<h2><span class="num">§1</span> The Two-Time Setup</h2>
+
+<p>
+We distinguish two notions of time:
+</p>
+
+<ul style="margin: 0 0 14px 22px;">
+  <li><strong>Internal time</strong> \(u\in\{0,1,2,\dots\}\): the <em>physical / semantic</em> evolution (a Markov chain).</li>
+  <li><strong>Diffusion time</strong> \(t\ge 0\): independent <em>Ornstein–Uhlenbeck (OU)</em> corruption of a fixed frame.</li>
+</ul>
+
+<p>
+At each internal index \(u\), we have a clean state \(a(u)\in\mathbb{R}^2\). Then we corrupt it with OU diffusion to obtain an observation \(x\).
+</p>
+
+<div class="math-block">
+$$
+x \;=\; e^{-t}\,a(u) \;+\; \sqrt{1-e^{-2t}}\,\varepsilon,
+\qquad \varepsilon\sim\mathcal N(0,I_2).
+$$
+</div>
+
+<div class="insight-box">
+<strong>What we want to visualize:</strong> the <em>per-frame score field</em>
+\(
+s(x,u,t)=\nabla_x\log p_t(x\mid u)
+\),
+and how it changes as you move in \(u\) and \(t\).
+</div>
+
+<hr class="section"/>
+
+<h2><span class="num">§2</span> Clean Dynamics: Discrete Rotation + Noise</h2>
+
+<p>
+We start by sampling polar coordinates:
+</p>
+
+<div class="math-block">
+$$
+r_0 \sim \mathcal N(\bar r,\sigma_r^2),
+\qquad
+\theta_0 \sim \mathrm{Unif}[0,2\pi),
+\qquad
+a(0)=
+\begin{pmatrix}
+r_0\cos\theta_0\\
+r_0\sin\theta_0
+\end{pmatrix}.
+$$
+</div>
+
+<p>
+Then the internal-time evolution is a rotation by a fixed step \(\Delta\theta\) plus isotropic Gaussian noise:
+</p>
+
+<div class="math-block">
+$$
+a(u+1)=R_{\Delta\theta}\,a(u)+\xi_u,
+\qquad
+\xi_u\sim\mathcal N(0,\sigma_{\text{int}}^2\,I_2),
+$$
+$$
+R_{\Delta\theta}=
+\begin{pmatrix}
+\cos\Delta\theta & -\sin\Delta\theta\\
+\sin\Delta\theta & \cos\Delta\theta
+\end{pmatrix}.
+$$
+</div>
+
+<div class="info-box">
+<strong>Rotation intuition:</strong> if \(\sigma_{\text{int}}=0\) then every particle follows a perfect circle and the angle increases by \(\Delta\theta\) each step. As \(\sigma_{\text{int}}\) grows, trajectories wander away from the circle.
+</div>
+
+<hr class="section"/>
+
+<h2><span class="num">§3</span> OU Corruption and the Score Field</h2>
+
+<p>
+Conditioned on a clean \(a(u)\), the OU transition kernel is Gaussian:
+</p>
+
+<div class="math-block">
+$$
+p_t(x\mid a(u))=\mathcal N\!\Bigl(x;\; e^{-t}a(u),\;\sigma_t^2 I_2\Bigr),
+\qquad
+\sigma_t^2 = 1-e^{-2t}.
+$$
+</div>
+
+<p>
+The marginal at internal index \(u\) is:
+</p>
+
+<div class="math-block">
+$$
+p_t(x\mid u)=\int_{\mathbb{R}^2} p_0(a\mid u)\; \mathcal N\!\Bigl(x;\;e^{-t}a,\;\sigma_t^2 I_2\Bigr)\,da.
+$$
+</div>
+
+<p>
+The score is the gradient of the log density:
+</p>
+
+<div class="math-block">
+$$
+s(x,u,t)=\nabla_x\log p_t(x\mid u).
+$$
+</div>
+
+<p>
+In this HTML we approximate the integral with Monte Carlo samples \(\{a_i(u)\}_{i=1}^N\) from the internal-time Markov chain.
+Because every component shares the same covariance \(\sigma_t^2I_2\), we get an efficient “mixture score” formula:
+</p>
+
+<div class="math-block">
+$$
+p_t(x\mid u)\approx \frac{1}{N}\sum_{i=1}^N \phi(x;\mu_i,\sigma_t^2I_2),
+\qquad \mu_i = e^{-t}a_i(u),
+$$
+$$
+s(x,u,t)\approx \frac{1}{\sigma_t^2}\Bigl(\underbrace{\frac{\sum_i w_i(x)\,\mu_i}{\sum_j w_j(x)}}_{\text{soft assignment mean } \bar\mu(x)}-x\Bigr),
+\qquad
+w_i(x)=\exp\!\Bigl(-\frac{\lVert x-\mu_i\rVert^2}{2\sigma_t^2}\Bigr).
+$$
+</div>
+
+<div class="insight-box">
+<strong>Limit check:</strong> as \(t\to\infty\), \(\mu_i=e^{-t}a_i(u)\to 0\) and \(\sigma_t^2\to 1\), so \(p_t(x\mid u)\) tends to a standard Gaussian and the score tends to \(s(x)\approx -x\).
+</div>
+
+<div id="lab">
+  <div id="lab-header">
+    <div>
+      <h3>Interactive Lab</h3>
+      <div style="font-family:'JetBrains Mono', monospace; font-size:0.78em; color:#f7f4ef; opacity:0.85; margin-top:6px;">
+        Left: internal-time motion \(a(u)\) · Right: score field \(s(x,u,t)\)
+      </div>
+    </div>
+    <div id="status">loading…</div>
+  </div>
+
+  <div id="lab-body">
+    <div class="plot-card">
+      <div class="plot-title">Internal-time rotation (clean state)</div>
+      <div id="rot-plot" class="plot"></div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">Score field ∇ log pₜ(x | u)  (arrows scaled for display)</div>
+      <div id="score-plot" class="plot"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div style="font-family:'JetBrains Mono', monospace; font-size:0.82em; color:var(--muted); letter-spacing:0.04em;">
+      Parameters
+    </div>
+
+    <div class="controls-grid">
+      <div class="control">
+        <label for="u-slider">internal step u <span class="val" id="u-val"></span></label>
+        <input type="range" id="u-slider" min="0" max="30" step="1" value="0"/>
+      </div>
+
+      <div class="control">
+        <label for="t-slider">diffusion time t <span class="val" id="t-val"></span></label>
+        <input type="range" id="t-slider" min="0.01" max="3.0" step="0.01" value="0.60"/>
+      </div>
+
+      <div class="control">
+        <label for="dtheta-slider">rotation step Δθ (deg) <span class="val" id="dtheta-val"></span></label>
+        <input type="range" id="dtheta-slider" min="-180" max="180" step="1" value="18"/>
+      </div>
+
+      <div class="control">
+        <label for="sigmaint-slider">internal noise σ_int <span class="val" id="sigmaint-val"></span></label>
+        <input type="range" id="sigmaint-slider" min="0.0" max="0.45" step="0.005" value="0.06"/>
+      </div>
+
+      <div class="control">
+        <label for="rmean-slider">radius mean r̄ <span class="val" id="rmean-val"></span></label>
+        <input type="range" id="rmean-slider" min="0.2" max="3.0" step="0.05" value="1.00"/>
+      </div>
+
+      <div class="control">
+        <label for="rstd-slider">radius std σ_r <span class="val" id="rstd-val"></span></label>
+        <input type="range" id="rstd-slider" min="0.00" max="1.20" step="0.01" value="0.22"/>
+      </div>
+
+      <div class="control">
+        <label for="n-slider"># particles N <span class="val" id="n-val"></span></label>
+        <input type="range" id="n-slider" min="100" max="1600" step="50" value="600"/>
+      </div>
+
+      <div class="control">
+        <label for="arrowscale-slider">arrow scale <span class="val" id="arrowscale-val"></span></label>
+        <input type="range" id="arrowscale-slider" min="0.25" max="2.5" step="0.05" value="1.00"/>
+      </div>
+
+      <div class="control">
+        <label for="seed-input">random seed <span class="val" style="font-weight:700;">(re-simulate)</span></label>
+        <input type="number" id="seed-input" min="0" max="999999999" value="1"/>
+      </div>
+
+      <div class="control">
+        <label style="opacity:0;">spacer</label>
+        <div class="buttons-row">
+          <button id="btn-resample" title="Pick a new random seed and re-simulate particles">🎲 Resample</button>
+          <button id="btn-reset" title="Reset to default parameters">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggles">
+      <div class="toggle">
+        <input type="checkbox" id="toggle-density" checked />
+        <label for="toggle-density" style="text-transform:none; letter-spacing:0;">show density background</label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="toggle-centers" checked />
+        <label for="toggle-centers" style="text-transform:none; letter-spacing:0;">show mixture centers \(e^{-t}a_i(u)\)</label>
+      </div>
+    </div>
+
+    <div class="footnote">
+      Tip: increase \(t\) to watch the score drift toward \(-x\). Increase \(\sigma_{\text{int}}\) to smear the clean distribution away from the circle.
+      Increase \(N\) to reduce Monte Carlo noise in the score estimate.
+    </div>
+  </div>
+</div>
+
+<hr class="section"/>
+
+<h2><span class="num">§4</span> What You Should See</h2>
+
+<div class="two-col" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px;">
+  <div class="col-card" style="background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:18px;">
+    <h4 style="font-family:'JetBrains Mono', monospace; font-size:0.8em; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:10px;">small diffusion time (t ≈ 0)</h4>
+    <p>
+      The Gaussian kernels are very sharp. The score field points toward the nearest “cluster” of mixture centers.
+      The field can look spiky because \(p_t\) is close to the clean distribution.
+    </p>
+  </div>
+  <div class="col-card" style="background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:18px;">
+    <h4 style="font-family:'JetBrains Mono', monospace; font-size:0.8em; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:10px;">large diffusion time (t large)</h4>
+    <p>
+      The OU corruption dominates. The density becomes nearly Gaussian and the score becomes nearly linear:
+      \(s(x,u,t)\approx -x\).
+    </p>
+  </div>
+</div>
+
+<div class="info-box">
+<strong>Interpretation:</strong> you can think of the score as the “best local direction” that points back toward high-density regions of \(p_t(\cdot\mid u)\). The reverse-time diffusion SDE uses this field to denoise.
+</div>
+
+<script>
+// ======================================================
+// Rotation + OU corruption interactive laboratory (pure JS)
+// ======================================================
+
+// ---------- helpers ----------
+function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+function deg2rad(d){ return d * Math.PI / 180; }
+
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+function randn(rng){
+  // Box-Muller
+  let u = 0, v = 0;
+  while (u === 0) u = rng();
+  while (v === 0) v = rng();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+// ---------- state ----------
+const DEFAULTS = {
+  Umax: 30,
+  u: 0,
+  t: 0.60,
+  dthetaDeg: 18,
+  sigmaInt: 0.06,
+  rMean: 1.00,
+  rStd: 0.22,
+  N: 600,
+  arrowScale: 1.00,
+  seed: 1,
+  showDensity: true,
+  showCenters: true
+};
+
+let state = {...DEFAULTS};
+
+// Simulation storage: arrays posX[u][i], posY[u][i]
+let sim = null;
+
+// ---------- simulation ----------
+function simulateParticles(){
+  const rng = mulberry32(state.seed);
+  const N = state.N;
+  const Umax = state.Umax;
+
+  const posX = Array.from({length: Umax+1}, () => new Array(N));
+  const posY = Array.from({length: Umax+1}, () => new Array(N));
+
+  // initial sample (r0, theta0)
+  for (let i = 0; i < N; i++){
+    const theta0 = 2*Math.PI * rng();
+    const r0 = state.rMean + state.rStd * randn(rng);
+    posX[0][i] = r0 * Math.cos(theta0);
+    posY[0][i] = r0 * Math.sin(theta0);
+  }
+
+  const dtheta = deg2rad(state.dthetaDeg);
+  const c = Math.cos(dtheta), s = Math.sin(dtheta);
+
+  for (let u = 0; u < Umax; u++){
+    for (let i = 0; i < N; i++){
+      const x = posX[u][i], y = posY[u][i];
+      const xrot = c*x - s*y;
+      const yrot = s*x + c*y;
+      const nx = state.sigmaInt * randn(rng);
+      const ny = state.sigmaInt * randn(rng);
+      posX[u+1][i] = xrot + nx;
+      posY[u+1][i] = yrot + ny;
+    }
+  }
+
+  return {posX, posY};
+}
+
+// ---------- score computation ----------
+function computeScoreAndDensity(posX_u, posY_u, t){
+  const N = posX_u.length;
+  const alpha = Math.exp(-t);
+  const sig2 = 1 - Math.exp(-2*t);
+  const sig2Safe = Math.max(sig2, 1e-4);
+
+  // mixture centers mu_i = e^{-t} a_i(u)
+  const muX = new Array(N);
+  const muY = new Array(N);
+  for (let i=0; i<N; i++){
+    muX[i] = alpha * posX_u[i];
+    muY[i] = alpha * posY_u[i];
+  }
+
+  // plotting range: fixed but slightly adaptive based on centers
+  let maxAbs = 0.0;
+  for (let i=0; i<N; i++){
+    maxAbs = Math.max(maxAbs, Math.abs(muX[i]), Math.abs(muY[i]));
+  }
+  const R = clamp(1.2*maxAbs + 1.6, 2.5, 6.5);
+
+  // density grid (contour)
+  const NX = 70, NY = 70;
+  const xgrid = Array.from({length: NX}, (_, i) => -R + 2*R*i/(NX-1));
+  const ygrid = Array.from({length: NY}, (_, j) => -R + 2*R*j/(NY-1));
+  const z = Array.from({length: NY}, () => new Array(NX));
+
+  // vector field grid (quiver)
+  const NV = 21;
+  const xv = Array.from({length: NV}, (_, i) => -R + 2*R*i/(NV-1));
+  const yv = Array.from({length: NV}, (_, j) => -R + 2*R*j/(NV-1));
+
+  // For scaling arrows nicely
+  const norms = [];
+
+  // Precompute constant for log-density (optional, for readability)
+  const logNormConst = -Math.log(N) - Math.log(2*Math.PI*sig2Safe);
+
+  // density: logsumexp over i
+  for (let j=0; j<NY; j++){
+    const y = ygrid[j];
+    for (let i=0; i<NX; i++){
+      const x = xgrid[i];
+      let maxLog = -Infinity;
+      // first pass: max exponent
+      for (let k=0; k<N; k++){
+        const dx = x - muX[k], dy = y - muY[k];
+        const logw = -(dx*dx + dy*dy) / (2*sig2Safe);
+        if (logw > maxLog) maxLog = logw;
+      }
+      // second pass: sum exp
+      let sumExp = 0.0;
+      for (let k=0; k<N; k++){
+        const dx = x - muX[k], dy = y - muY[k];
+        const logw = -(dx*dx + dy*dy) / (2*sig2Safe);
+        sumExp += Math.exp(logw - maxLog);
+      }
+      const logp = (maxLog + Math.log(sumExp)) + logNormConst;
+      z[j][i] = logp;
+    }
+  }
+
+  // score vectors on coarse grid
+  const segX = [];
+  const segY = [];
+
+  // compute raw scores at each quiver point, store norms for scaling
+  const raw = [];
+  for (let j=0; j<NV; j++){
+    const y = yv[j];
+    for (let i=0; i<NV; i++){
+      const x = xv[i];
+      let maxLog = -Infinity;
+      for (let k=0; k<N; k++){
+        const dx = x - muX[k], dy = y - muY[k];
+        const logw = -(dx*dx + dy*dy) / (2*sig2Safe);
+        if (logw > maxLog) maxLog = logw;
+      }
+      let sumW = 0.0, sumMX = 0.0, sumMY = 0.0;
+      for (let k=0; k<N; k++){
+        const dx = x - muX[k], dy = y - muY[k];
+        const logw = -(dx*dx + dy*dy) / (2*sig2Safe);
+        const w = Math.exp(logw - maxLog);
+        sumW += w;
+        sumMX += w * muX[k];
+        sumMY += w * muY[k];
+      }
+      const mx = sumMX / (sumW + 1e-12);
+      const my = sumMY / (sumW + 1e-12);
+      const sx = (mx - x) / sig2Safe;
+      const sy = (my - y) / sig2Safe;
+      raw.push({x, y, sx, sy});
+      norms.push(Math.sqrt(sx*sx + sy*sy));
+    }
+  }
+
+  // robust arrow scaling: use 90th percentile norm
+  norms.sort((a,b) => a-b);
+  const q = norms[Math.floor(0.90 * (norms.length-1))] + 1e-9;
+  const gridSpacing = 2*R/(NV-1);
+  const scale = state.arrowScale * 0.65 * gridSpacing / q;
+
+  for (const v of raw){
+    const x0 = v.x, y0 = v.y;
+    const x1 = x0 + scale * v.sx;
+    const y1 = y0 + scale * v.sy;
+    segX.push(x0, x1, null);
+    segY.push(y0, y1, null);
+  }
+
+  return {R, xgrid, ygrid, z, muX, muY, segX, segY, sig2: sig2Safe};
+}
+
+// ---------- Plotly rendering ----------
+const rotDiv = document.getElementById('rot-plot');
+const scoreDiv = document.getElementById('score-plot');
+const statusDiv = document.getElementById('status');
+
+function circlePoints(radius, n=240){
+  const xs = [], ys = [];
+  for (let i=0; i<=n; i++){
+    const th = 2*Math.PI * i/n;
+    xs.push(radius * Math.cos(th));
+    ys.push(radius * Math.sin(th));
+  }
+  return {xs, ys};
+}
+
+function updateStatus(){
+  const dtheta = deg2rad(state.dthetaDeg);
+  const net = state.u * dtheta;
+  const sig2 = 1 - Math.exp(-2*state.t);
+  const sig = Math.sqrt(Math.max(sig2, 0));
+  // highlight particle info
+  const xAct = sim.posX[state.u][0];
+  const yAct = sim.posY[state.u][0];
+  const thAct = Math.atan2(yAct, xAct);
+
+  const x0 = sim.posX[0][0], y0 = sim.posY[0][0];
+  const c = Math.cos(net), s = Math.sin(net);
+  const xDet = c*x0 - s*y0;
+  const yDet = s*x0 + c*y0;
+  const thDet = Math.atan2(yDet, xDet);
+
+  function radToDeg(x){ return x * 180 / Math.PI; }
+  function wrapDeg(d){
+    let v = d % 360;
+    if (v < -180) v += 360;
+    if (v > 180) v -= 360;
+    return v;
+  }
+
+  const lines = [];
+  lines.push(`u = ${state.u}   |   Δθ = ${state.dthetaDeg.toFixed(0)}°   |   u·Δθ ≈ ${wrapDeg(radToDeg(net)).toFixed(1)}°`);
+  lines.push(`t = ${state.t.toFixed(2)}   |   σ_t^2 = ${(sig2).toFixed(3)}   |   σ_t = ${sig.toFixed(3)}`);
+  lines.push(`highlight particle: θ_det ≈ ${wrapDeg(radToDeg(thDet)).toFixed(1)}°   |   θ_act ≈ ${wrapDeg(radToDeg(thAct)).toFixed(1)}°`);
+  if (state.t > 2.2){
+    lines.push(`(large t) score tends toward -x`);
+  }
+  statusDiv.textContent = lines.join("\n");
+}
+
+function renderRotationPlot(){
+  const u = state.u;
+  const N = state.N;
+
+  const xs = sim.posX[u];
+  const ys = sim.posY[u];
+
+  // highlight path of particle 0
+  const pathX = [];
+  const pathY = [];
+  for (let k=0; k<=u; k++){
+    pathX.push(sim.posX[k][0]);
+    pathY.push(sim.posY[k][0]);
+  }
+
+  // deterministic position (noiseless) for particle 0
+  const dtheta = deg2rad(state.dthetaDeg);
+  const net = u*dtheta;
+  const x0 = sim.posX[0][0], y0 = sim.posY[0][0];
+  const c = Math.cos(net), s = Math.sin(net);
+  const xDet = c*x0 - s*y0;
+  const yDet = s*x0 + c*y0;
+
+  // axis range
+  let maxAbs = 0;
+  for (let i=0; i<N; i++){
+    maxAbs = Math.max(maxAbs, Math.abs(xs[i]), Math.abs(ys[i]));
+  }
+  const Rview = clamp(1.15*maxAbs + 0.8, 2.0, 8.0);
+
+  const circ = circlePoints(state.rMean, 360);
+
+  const data = [
+    {
+      type:'scatter',
+      x:circ.xs, y:circ.ys,
+      mode:'lines',
+      line:{width:1.2, color:'rgba(0,0,0,0.25)', dash:'dot'},
+      hoverinfo:'skip',
+      name:'circle'
+    },
+    {
+      type:'scatter',
+      x:xs, y:ys,
+      mode:'markers',
+      marker:{size:4, color:'rgba(26,58,92,0.45)'},
+      hoverinfo:'skip',
+      name:'particles'
+    },
+    {
+      type:'scatter',
+      x:pathX, y:pathY,
+      mode:'lines+markers',
+      line:{width:2.4, color:'#b5341a'},
+      marker:{size:6, color:'#b5341a'},
+      hoverinfo:'skip',
+      name:'highlight path'
+    },
+    {
+      type:'scatter',
+      x:[xDet], y:[yDet],
+      mode:'markers',
+      marker:{size:11, symbol:'x', color:'#111'},
+      hoverinfo:'skip',
+      name:'deterministic'
+    },
+    {
+      type:'scatter',
+      x:[0], y:[0],
+      mode:'markers',
+      marker:{size:6, color:'rgba(0,0,0,0.5)'},
+      hoverinfo:'skip',
+      showlegend:false
+    }
+  ];
+
+  const layout = {
+    margin:{l:40, r:20, t:10, b:40},
+    xaxis:{range:[-Rview,Rview], zeroline:false, gridcolor:'#e0dbd2', title:'x', color:'#555'},
+    yaxis:{range:[-Rview,Rview], zeroline:false, gridcolor:'#e0dbd2', title:'y', color:'#555', scaleanchor:'x'},
+    plot_bgcolor:'#faf8f4',
+    paper_bgcolor:'#ffffff',
+    showlegend:false,
+    font:{family:'EB Garamond, Georgia, serif'},
+    annotations:[
+      {
+        x:0.01, y:0.99, xref:'paper', yref:'paper',
+        text:`<span style="font-family:JetBrains Mono, monospace; font-size:12px; color:#6b5e50;">frame u=${u} (clean)</span>`,
+        showarrow:false, align:'left'
+      }
+    ]
+  };
+
+  Plotly.react(rotDiv, data, layout, {responsive:true, displayModeBar:false});
+}
+
+function renderScorePlot(){
+  const u = state.u;
+  const posX_u = sim.posX[u];
+  const posY_u = sim.posY[u];
+
+  const out = computeScoreAndDensity(posX_u, posY_u, state.t);
+
+  const contour = {
+    type:'contour',
+    x: out.xgrid,
+    y: out.ygrid,
+    z: out.z,
+    colorscale:'Viridis',
+    contours:{showlines:false},
+    opacity: state.showDensity ? 0.92 : 0.0,
+    showscale:false,
+    hoverinfo:'skip',
+    name:'log density'
+  };
+
+  const vectors = {
+    type:'scatter',
+    x: out.segX,
+    y: out.segY,
+    mode:'lines',
+    line:{width:1.2, color:'rgba(0,0,0,0.55)'},
+    hoverinfo:'skip',
+    name:'score'
+  };
+
+  const centers = {
+    type:'scatter',
+    x: out.muX,
+    y: out.muY,
+    mode:'markers',
+    marker:{size:3, color:'rgba(255,255,255,0.75)', line:{width:0.0}},
+    opacity: state.showCenters ? 0.9 : 0.0,
+    hoverinfo:'skip',
+    name:'centers'
+  };
+
+  const data = [contour, vectors, centers];
+
+  const layout = {
+    margin:{l:40, r:20, t:10, b:40},
+    xaxis:{range:[-out.R,out.R], zeroline:false, gridcolor:'#e0dbd2', title:'x', color:'#555'},
+    yaxis:{range:[-out.R,out.R], zeroline:false, gridcolor:'#e0dbd2', title:'y', color:'#555', scaleanchor:'x'},
+    plot_bgcolor:'#faf8f4',
+    paper_bgcolor:'#ffffff',
+    showlegend:false,
+    font:{family:'EB Garamond, Georgia, serif'},
+    annotations:[
+      {
+        x:0.01, y:0.99, xref:'paper', yref:'paper',
+        text:`<span style="font-family:JetBrains Mono, monospace; font-size:12px; color:#6b5e50;">score at (u=${u}, t=${state.t.toFixed(2)})</span>`,
+        showarrow:false, align:'left'
+      }
+    ]
+  };
+
+  Plotly.react(scoreDiv, data, layout, {responsive:true, displayModeBar:false});
+}
+
+// ---------- UI wiring ----------
+function syncUI(){
+  // sliders -> state and displayed values
+  const uSlider = document.getElementById('u-slider');
+  const tSlider = document.getElementById('t-slider');
+  const dthetaSlider = document.getElementById('dtheta-slider');
+  const sigmaIntSlider = document.getElementById('sigmaint-slider');
+  const rMeanSlider = document.getElementById('rmean-slider');
+  const rStdSlider = document.getElementById('rstd-slider');
+  const nSlider = document.getElementById('n-slider');
+  const arrowSlider = document.getElementById('arrowscale-slider');
+  const seedInput = document.getElementById('seed-input');
+  const toggleDensity = document.getElementById('toggle-density');
+  const toggleCenters = document.getElementById('toggle-centers');
+
+  // set max u from defaults
+  uSlider.max = state.Umax.toString();
+
+  // display values
+  document.getElementById('u-val').textContent = `${state.u}`;
+  document.getElementById('t-val').textContent = `${state.t.toFixed(2)}`;
+  document.getElementById('dtheta-val').textContent = `${state.dthetaDeg.toFixed(0)}°`;
+  document.getElementById('sigmaint-val').textContent = `${state.sigmaInt.toFixed(3)}`;
+  document.getElementById('rmean-val').textContent = `${state.rMean.toFixed(2)}`;
+  document.getElementById('rstd-val').textContent = `${state.rStd.toFixed(2)}`;
+  document.getElementById('n-val').textContent = `${state.N}`;
+  document.getElementById('arrowscale-val').textContent = `${state.arrowScale.toFixed(2)}`;
+
+  // reflect state -> widgets
+  uSlider.value = state.u;
+  tSlider.value = state.t;
+  dthetaSlider.value = state.dthetaDeg;
+  sigmaIntSlider.value = state.sigmaInt;
+  rMeanSlider.value = state.rMean;
+  rStdSlider.value = state.rStd;
+  nSlider.value = state.N;
+  arrowSlider.value = state.arrowScale;
+  seedInput.value = state.seed;
+  toggleDensity.checked = state.showDensity;
+  toggleCenters.checked = state.showCenters;
+}
+
+function needsResim(oldS, newS){
+  return (
+    oldS.N !== newS.N ||
+    oldS.dthetaDeg !== newS.dthetaDeg ||
+    oldS.sigmaInt !== newS.sigmaInt ||
+    oldS.rMean !== newS.rMean ||
+    oldS.rStd !== newS.rStd ||
+    oldS.seed !== newS.seed
+  );
+}
+
+function readStateFromUI(){
+  const s = {...state};
+  s.u = parseInt(document.getElementById('u-slider').value);
+  s.t = parseFloat(document.getElementById('t-slider').value);
+  s.dthetaDeg = parseFloat(document.getElementById('dtheta-slider').value);
+  s.sigmaInt = parseFloat(document.getElementById('sigmaint-slider').value);
+  s.rMean = parseFloat(document.getElementById('rmean-slider').value);
+  s.rStd = parseFloat(document.getElementById('rstd-slider').value);
+  s.N = parseInt(document.getElementById('n-slider').value);
+  s.arrowScale = parseFloat(document.getElementById('arrowscale-slider').value);
+  s.seed = parseInt(document.getElementById('seed-input').value || "0");
+  s.showDensity = document.getElementById('toggle-density').checked;
+  s.showCenters = document.getElementById('toggle-centers').checked;
+  s.u = clamp(s.u, 0, s.Umax);
+  return s;
+}
+
+let pending = false;
+function scheduleUpdate(resim=false){
+  if (pending) return;
+  pending = true;
+  window.requestAnimationFrame(() => {
+    pending = false;
+    if (resim){
+      sim = simulateParticles();
+    }
+    updateStatus();
+    renderRotationPlot();
+    renderScorePlot();
+  });
+}
+
+function attachHandlers(){
+  const watchIds = [
+    'u-slider','t-slider','dtheta-slider','sigmaint-slider',
+    'rmean-slider','rstd-slider','n-slider','arrowscale-slider',
+    'seed-input','toggle-density','toggle-centers'
+  ];
+
+  for (const id of watchIds){
+    const el = document.getElementById(id);
+    const evt = (el.type === 'number') ? 'change' : 'input';
+    el.addEventListener(evt, () => {
+      const newState = readStateFromUI();
+      const resim = needsResim(state, newState);
+      state = newState;
+      syncUI();
+      scheduleUpdate(resim);
+    });
+  }
+
+  document.getElementById('btn-resample').addEventListener('click', () => {
+    // new seed from crypto if available, else Math.random
+    let newSeed = Math.floor(Math.random() * 1e9);
+    if (window.crypto && window.crypto.getRandomValues){
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      newSeed = buf[0];
+    }
+    state.seed = newSeed;
+    syncUI();
+    sim = simulateParticles();
+    scheduleUpdate(false);
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    state = {...DEFAULTS};
+    syncUI();
+    sim = simulateParticles();
+    scheduleUpdate(false);
+  });
+}
+
+// ---------- init ----------
+function init(){
+  syncUI();
+  sim = simulateParticles();
+  updateStatus();
+  renderRotationPlot();
+  renderScorePlot();
+  attachHandlers();
+}
+init();
+
+</script>
+</body>
+</html>
