@@ -213,6 +213,28 @@
     width:100%;
     accent-color:var(--accent2);
   }
+  .range-row{
+    display:grid;
+    grid-template-columns:72px 1fr 72px;
+    align-items:center;
+    gap:8px;
+  }
+  .range-bound{
+    width:100%;
+    padding:5px 6px;
+    border:1px solid var(--rule);
+    border-radius:5px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72em;
+    color:var(--muted);
+    background:#fff;
+    text-align:center;
+  }
+  .range-bound:focus{
+    outline:none;
+    border-color:var(--accent2);
+    box-shadow:0 0 0 2px rgba(26,58,92,0.12);
+  }
   input[type="number"]{
     width:100%;
     padding:8px 10px;
@@ -253,6 +275,30 @@
     color:var(--muted);
   }
   #btn-reset:hover{border-color:var(--muted); color:var(--ink);}
+  #btn-play{
+    background:#2d6a4f;
+    color:#fff;
+  }
+  #btn-play:hover{background:#1f5b41;}
+  #btn-play.playing{
+    background:#9f1d35;
+  }
+  #btn-play.playing:hover{
+    background:#83172c;
+  }
+  .play-row{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:10px;
+  }
+  .play-hint{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.74em;
+    color:var(--muted);
+    letter-spacing:0.02em;
+  }
 
   .toggles{
     display:flex;
@@ -378,12 +424,12 @@ $$
 <h2><span class="num">§3</span> OU Corruption and the Score Field</h2>
 
 <p>
-Conditioned on a clean \(a(u)\), the OU transition kernel is Gaussian:
+At internal index \(u\), conditioned on a clean \(a^{(u)}\), the OU transition kernel is Gaussian:
 </p>
 
 <div class="math-block">
 $$
-p_t(x\mid a(u))=\mathcal N\!\Bigl(x;\; e^{-t}a(u),\;\sigma_t^2 I_2\Bigr),
+p_t^{(u)}\!\bigl(x \mid a^{(u)}\bigr)=\mathcal N\!\Bigl(x;\; e^{-t}a^{(u)},\;\sigma_t^2 I_2\Bigr),
 \qquad
 \sigma_t^2 = 1-e^{-2t}.
 $$
@@ -395,7 +441,18 @@ The marginal at internal index \(u\) is:
 
 <div class="math-block">
 $$
-p_t(x\mid u)=\int_{\mathbb{R}^2} p_0(a\mid u)\; \mathcal N\!\Bigl(x;\;e^{-t}a,\;\sigma_t^2 I_2\Bigr)\,da.
+p_t^{(u)}(x)=\int_{\mathbb{R}^2} p_0\!\bigl(a=a^{(u)}\bigr)\; \mathcal N\!\Bigl(x;\;e^{-t}a,\;\sigma_t^2 I_2\Bigr)\,da.
+$$
+</div>
+
+<div class="math-block">
+$$
+p_0\!\bigl(x=a^{(u)}\bigr)\propto
+\underbrace{\mathcal N\!\bigl(\lVert x\rVert;\,\bar r,\sigma_r^2\bigr)}_{\text{radial shell}}
+\cdot
+\underbrace{\mathrm{Unif}\!\bigl(\arg(x);\,0,2\pi\bigr)}_{\text{uniform angle}}
+\;\;\Longleftrightarrow\;\;
+p_0\!\bigl(r,\theta\bigr)\propto \mathcal N(r;\bar r,\sigma_r^2),\;\theta\sim\mathrm{Unif}[0,2\pi),
 $$
 </div>
 
@@ -405,29 +462,29 @@ The score is the gradient of the log density:
 
 <div class="math-block">
 $$
-s(x,u,t)=\nabla_x\log p_t(x\mid u).
+s_t^{(u)}(x)=\nabla_x\log p_t^{(u)}(x).
 $$
 </div>
 
 <p>
-In this HTML we approximate the integral with Monte Carlo samples \(\{a_i(u)\}_{i=1}^N\) from the internal-time Markov chain.
+In this HTML we approximate the integral with Monte Carlo samples \(\{a_i^{(u)}\}_{i=1}^N\) from the internal-time Markov chain.
 Because every component shares the same covariance \(\sigma_t^2I_2\), we get an efficient “mixture score” formula:
 </p>
 
 <div class="math-block">
 $$
-p_t(x\mid u)\approx \frac{1}{N}\sum_{i=1}^N \phi(x;\mu_i,\sigma_t^2I_2),
-\qquad \mu_i = e^{-t}a_i(u),
+p_t^{(u)}(x)\approx \frac{1}{N}\sum_{i=1}^N \phi(x;\mu_i^{(u)},\sigma_t^2I_2),
+\qquad \mu_i^{(u)} = e^{-t}a_i^{(u)},
 $$
 $$
-s(x,u,t)\approx \frac{1}{\sigma_t^2}\Bigl(\underbrace{\frac{\sum_i w_i(x)\,\mu_i}{\sum_j w_j(x)}}_{\text{soft assignment mean } \bar\mu(x)}-x\Bigr),
+s_t^{(u)}(x)\approx \frac{1}{\sigma_t^2}\Bigl(\underbrace{\frac{\sum_i w_i^{(u)}(x)\,\mu_i^{(u)}}{\sum_j w_j^{(u)}(x)}}_{\text{soft assignment mean } \bar\mu_t^{(u)}(x)}-x\Bigr),
 \qquad
-w_i(x)=\exp\!\Bigl(-\frac{\lVert x-\mu_i\rVert^2}{2\sigma_t^2}\Bigr).
+w_i^{(u)}(x)=\exp\!\Bigl(-\frac{\lVert x-\mu_i^{(u)}\rVert^2}{2\sigma_t^2}\Bigr).
 $$
 </div>
 
 <div class="insight-box">
-<strong>Limit check:</strong> as \(t\to\infty\), \(\mu_i=e^{-t}a_i(u)\to 0\) and \(\sigma_t^2\to 1\), so \(p_t(x\mid u)\) tends to a standard Gaussian and the score tends to \(s(x)\approx -x\).
+<strong>Limit check:</strong> as \(t\to\infty\), \(\mu_i^{(u)}=e^{-t}a_i^{(u)}\to 0\) and \(\sigma_t^2\to 1\), so \(p_t^{(u)}(x)\) tends to a standard Gaussian and the score tends to \(s_t^{(u)}(x)\approx -x\).
 </div>
 
 <div id="lab">
@@ -447,7 +504,7 @@ $$
       <div id="rot-plot" class="plot"></div>
     </div>
     <div class="plot-card">
-      <div class="plot-title">Score field ∇ log pₜ(x | u)  (arrows scaled for display)</div>
+      <div class="plot-title">Score field \(\nabla\log p_t^{(u)}(x)\)  (arrows scaled for display)</div>
       <div id="score-plot" class="plot"></div>
     </div>
   </div>
@@ -527,6 +584,10 @@ $$
       Tip: increase \(t\) to watch the score drift toward \(-x\). Increase \(\sigma_{\text{int}}\) to smear the clean distribution away from the circle.
       Increase \(N\) to reduce Monte Carlo noise in the score estimate.
     </div>
+    <div class="play-row">
+      <button id="btn-play" title="Play a 10-second coupled u/t animation">▶ Play coupled time animation (10s)</button>
+      <span class="play-hint">animates internal-time index and diffusion time together</span>
+    </div>
   </div>
 </div>
 
@@ -602,6 +663,202 @@ let state = {...DEFAULTS};
 
 // Simulation storage: arrays posX[u][i], posY[u][i]
 let sim = null;
+
+const RANGE_EDIT_CONFIG = {
+  'u-slider': {hardMin: 0, hardMax: 500, integer: true, minGap: 1},
+  't-slider': {hardMin: 0.0001, hardMax: 20, integer: false, minGap: 0.01},
+  'dtheta-slider': {hardMin: -720, hardMax: 720, integer: false, minGap: 1},
+  'sigmaint-slider': {hardMin: 0, hardMax: 2, integer: false, minGap: 0.001},
+  'rmean-slider': {hardMin: 0, hardMax: 10, integer: false, minGap: 0.05},
+  'rstd-slider': {hardMin: 0, hardMax: 5, integer: false, minGap: 0.01},
+  'n-slider': {hardMin: 1, hardMax: 20000, integer: true, minGap: 1},
+  'arrowscale-slider': {hardMin: 0.01, hardMax: 10, integer: false, minGap: 0.01}
+};
+
+const PLAY_DURATION_MS = 10000;
+let playAnim = {running:false, rafId:null, startedAt:0, lastRenderAt:0};
+
+function formatBoundValue(v, cfg){
+  if (cfg.integer) return `${Math.round(v)}`;
+  const step = Number(cfg.minGap || 0.01);
+  const decimals = Math.max(0, (step.toString().split('.')[1] || '').length);
+  return Number(v).toFixed(Math.min(4, Math.max(2, decimals)));
+}
+
+function sanitizeBound(x, cfg, fallback){
+  if (!Number.isFinite(x)) return fallback;
+  const clipped = clamp(x, cfg.hardMin, cfg.hardMax);
+  return cfg.integer ? Math.round(clipped) : clipped;
+}
+
+function normalizeBoundsForSlider(slider){
+  const cfg = RANGE_EDIT_CONFIG[slider.id];
+  if (!cfg) return false;
+
+  const minGap = cfg.minGap || (cfg.integer ? 1 : 0.01);
+  let minV = sanitizeBound(parseFloat(slider.min), cfg, cfg.hardMin);
+  let maxV = sanitizeBound(parseFloat(slider.max), cfg, cfg.hardMax);
+
+  if (maxV <= minV){
+    maxV = sanitizeBound(minV + minGap, cfg, cfg.hardMax);
+    if (maxV <= minV){
+      minV = sanitizeBound(maxV - minGap, cfg, cfg.hardMin);
+    }
+  }
+  slider.min = `${minV}`;
+  slider.max = `${maxV}`;
+  slider.value = `${clamp(parseFloat(slider.value), minV, maxV)}`;
+  return true;
+}
+
+function refreshRangeBoundInputs(){
+  for (const [id, cfg] of Object.entries(RANGE_EDIT_CONFIG)){
+    const slider = document.getElementById(id);
+    if (!slider) continue;
+    const minInput = document.getElementById(`${id}-min`);
+    const maxInput = document.getElementById(`${id}-max`);
+    if (!minInput || !maxInput) continue;
+    minInput.value = formatBoundValue(parseFloat(slider.min), cfg);
+    maxInput.value = formatBoundValue(parseFloat(slider.max), cfg);
+  }
+}
+
+function applyRangeBoundEdit(sliderId, side){
+  const slider = document.getElementById(sliderId);
+  const cfg = RANGE_EDIT_CONFIG[sliderId];
+  if (!slider || !cfg) return false;
+  const minInput = document.getElementById(`${sliderId}-min`);
+  const maxInput = document.getElementById(`${sliderId}-max`);
+  if (!minInput || !maxInput) return false;
+
+  const minGap = cfg.minGap || (cfg.integer ? 1 : 0.01);
+  let minV = sanitizeBound(parseFloat(minInput.value), cfg, parseFloat(slider.min));
+  let maxV = sanitizeBound(parseFloat(maxInput.value), cfg, parseFloat(slider.max));
+
+  if (side === 'min'){
+    minV = Math.min(minV, cfg.hardMax - minGap);
+    if (minV >= maxV) maxV = sanitizeBound(minV + minGap, cfg, cfg.hardMax);
+  } else {
+    maxV = Math.max(maxV, cfg.hardMin + minGap);
+    if (maxV <= minV) minV = sanitizeBound(maxV - minGap, cfg, cfg.hardMin);
+  }
+
+  slider.min = `${minV}`;
+  slider.max = `${maxV}`;
+  slider.value = `${clamp(parseFloat(slider.value), minV, maxV)}`;
+
+  refreshRangeBoundInputs();
+  return true;
+}
+
+function installEditableRangeBounds(){
+  for (const [id, cfg] of Object.entries(RANGE_EDIT_CONFIG)){
+    const slider = document.getElementById(id);
+    if (!slider) continue;
+    if (document.getElementById(`${id}-min`)) continue;
+
+    normalizeBoundsForSlider(slider);
+    const parent = slider.parentNode;
+
+    const row = document.createElement('div');
+    row.className = 'range-row';
+
+    const minInput = document.createElement('input');
+    minInput.type = 'number';
+    minInput.className = 'range-bound';
+    minInput.id = `${id}-min`;
+    minInput.step = cfg.integer ? '1' : `${cfg.minGap || 0.01}`;
+
+    const maxInput = document.createElement('input');
+    maxInput.type = 'number';
+    maxInput.className = 'range-bound';
+    maxInput.id = `${id}-max`;
+    maxInput.step = cfg.integer ? '1' : `${cfg.minGap || 0.01}`;
+
+    parent.replaceChild(row, slider);
+    row.appendChild(minInput);
+    row.appendChild(slider);
+    row.appendChild(maxInput);
+
+    const commitBound = (side) => {
+      stopPlayback();
+      const oldState = {...state};
+      const changed = applyRangeBoundEdit(id, side);
+      const newState = readStateFromUI();
+      const resim = changed && needsResim(oldState, newState);
+      state = newState;
+      syncUI();
+      scheduleUpdate(resim);
+    };
+
+    minInput.addEventListener('change', () => commitBound('min'));
+    maxInput.addEventListener('change', () => commitBound('max'));
+    minInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commitBound('min'); });
+    maxInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') commitBound('max'); });
+  }
+  refreshRangeBoundInputs();
+}
+
+function setPlayButtonState(running){
+  const btn = document.getElementById('btn-play');
+  if (!btn) return;
+  btn.classList.toggle('playing', running);
+  btn.textContent = running ? '■ Stop animation' : '▶ Play coupled time animation (10s)';
+}
+
+function stopPlayback(){
+  if (!playAnim.running) return;
+  playAnim.running = false;
+  if (playAnim.rafId !== null){
+    window.cancelAnimationFrame(playAnim.rafId);
+    playAnim.rafId = null;
+  }
+  setPlayButtonState(false);
+}
+
+function startPlayback(){
+  stopPlayback();
+
+  const uSlider = document.getElementById('u-slider');
+  const tSlider = document.getElementById('t-slider');
+  const uMin = parseInt(uSlider.min);
+  const uMax = parseInt(uSlider.max);
+  const tMin = parseFloat(tSlider.min);
+  const tMax = parseFloat(tSlider.max);
+
+  state.u = uMin;
+  state.t = tMin;
+  syncUI();
+  scheduleUpdate(false);
+
+  playAnim.running = true;
+  playAnim.startedAt = performance.now();
+  playAnim.lastRenderAt = 0;
+  setPlayButtonState(true);
+
+  const tick = (now) => {
+    if (!playAnim.running) return;
+    const elapsed = now - playAnim.startedAt;
+    const p = clamp(elapsed / PLAY_DURATION_MS, 0, 1);
+
+    state.u = clamp(Math.round(uMin + p * (uMax - uMin)), uMin, uMax);
+    state.t = clamp(tMin + p * (tMax - tMin), tMin, tMax);
+
+    // Plotly updates are expensive; throttle to ~10 FPS.
+    if (now - playAnim.lastRenderAt > 95 || p >= 1){
+      syncUI();
+      scheduleUpdate(false);
+      playAnim.lastRenderAt = now;
+    }
+
+    if (p >= 1){
+      stopPlayback();
+      return;
+    }
+    playAnim.rafId = window.requestAnimationFrame(tick);
+  };
+  playAnim.rafId = window.requestAnimationFrame(tick);
+}
 
 // ---------- simulation ----------
 function simulateParticles(){
@@ -816,13 +1073,9 @@ function renderRotationPlot(){
     pathY.push(sim.posY[k][0]);
   }
 
-  // deterministic position (noiseless) for particle 0
-  const dtheta = deg2rad(state.dthetaDeg);
-  const net = u*dtheta;
-  const x0 = sim.posX[0][0], y0 = sim.posY[0][0];
-  const c = Math.cos(net), s = Math.sin(net);
-  const xDet = c*x0 - s*y0;
-  const yDet = s*x0 + c*y0;
+  // current realized position of particle 0 (kept aligned with red path)
+  const xTrack = sim.posX[u][0];
+  const yTrack = sim.posY[u][0];
 
   // axis range
   let maxAbs = 0;
@@ -861,11 +1114,11 @@ function renderRotationPlot(){
     },
     {
       type:'scatter',
-      x:[xDet], y:[yDet],
+      x:[xTrack], y:[yTrack],
       mode:'markers',
       marker:{size:11, symbol:'x', color:'#111'},
       hoverinfo:'skip',
-      name:'deterministic'
+      name:'tracked particle'
     },
     {
       type:'scatter',
@@ -977,6 +1230,14 @@ function syncUI(){
 
   // set max u from defaults
   uSlider.max = state.Umax.toString();
+  normalizeBoundsForSlider(uSlider);
+  normalizeBoundsForSlider(tSlider);
+  normalizeBoundsForSlider(dthetaSlider);
+  normalizeBoundsForSlider(sigmaIntSlider);
+  normalizeBoundsForSlider(rMeanSlider);
+  normalizeBoundsForSlider(rStdSlider);
+  normalizeBoundsForSlider(nSlider);
+  normalizeBoundsForSlider(arrowSlider);
 
   // display values
   document.getElementById('u-val').textContent = `${state.u}`;
@@ -1000,10 +1261,12 @@ function syncUI(){
   seedInput.value = state.seed;
   toggleDensity.checked = state.showDensity;
   toggleCenters.checked = state.showCenters;
+  refreshRangeBoundInputs();
 }
 
 function needsResim(oldS, newS){
   return (
+    oldS.Umax !== newS.Umax ||
     oldS.N !== newS.N ||
     oldS.dthetaDeg !== newS.dthetaDeg ||
     oldS.sigmaInt !== newS.sigmaInt ||
@@ -1015,18 +1278,43 @@ function needsResim(oldS, newS){
 
 function readStateFromUI(){
   const s = {...state};
-  s.u = parseInt(document.getElementById('u-slider').value);
-  s.t = parseFloat(document.getElementById('t-slider').value);
-  s.dthetaDeg = parseFloat(document.getElementById('dtheta-slider').value);
-  s.sigmaInt = parseFloat(document.getElementById('sigmaint-slider').value);
-  s.rMean = parseFloat(document.getElementById('rmean-slider').value);
-  s.rStd = parseFloat(document.getElementById('rstd-slider').value);
-  s.N = parseInt(document.getElementById('n-slider').value);
-  s.arrowScale = parseFloat(document.getElementById('arrowscale-slider').value);
+  const uSlider = document.getElementById('u-slider');
+  const tSlider = document.getElementById('t-slider');
+  const dthetaSlider = document.getElementById('dtheta-slider');
+  const sigmaIntSlider = document.getElementById('sigmaint-slider');
+  const rMeanSlider = document.getElementById('rmean-slider');
+  const rStdSlider = document.getElementById('rstd-slider');
+  const nSlider = document.getElementById('n-slider');
+  const arrowSlider = document.getElementById('arrowscale-slider');
+
+  s.Umax = Math.max(1, parseInt(uSlider.max) || s.Umax);
+  s.u = parseInt(uSlider.value);
+  s.t = parseFloat(tSlider.value);
+  s.dthetaDeg = parseFloat(dthetaSlider.value);
+  s.sigmaInt = parseFloat(sigmaIntSlider.value);
+  s.rMean = parseFloat(rMeanSlider.value);
+  s.rStd = parseFloat(rStdSlider.value);
+  s.N = parseInt(nSlider.value);
+  s.arrowScale = parseFloat(arrowSlider.value);
   s.seed = parseInt(document.getElementById('seed-input').value || "0");
   s.showDensity = document.getElementById('toggle-density').checked;
   s.showCenters = document.getElementById('toggle-centers').checked;
-  s.u = clamp(s.u, 0, s.Umax);
+
+  if (!Number.isFinite(s.u)) s.u = 0;
+  if (!Number.isFinite(s.t)) s.t = DEFAULTS.t;
+  if (!Number.isFinite(s.dthetaDeg)) s.dthetaDeg = DEFAULTS.dthetaDeg;
+  if (!Number.isFinite(s.sigmaInt)) s.sigmaInt = DEFAULTS.sigmaInt;
+  if (!Number.isFinite(s.rMean)) s.rMean = DEFAULTS.rMean;
+  if (!Number.isFinite(s.rStd)) s.rStd = DEFAULTS.rStd;
+  if (!Number.isFinite(s.N)) s.N = DEFAULTS.N;
+  if (!Number.isFinite(s.arrowScale)) s.arrowScale = DEFAULTS.arrowScale;
+  if (!Number.isFinite(s.seed) || s.seed < 0) s.seed = 0;
+
+  s.N = Math.max(1, Math.round(s.N));
+  s.rStd = Math.max(0, s.rStd);
+  s.sigmaInt = Math.max(0, s.sigmaInt);
+  s.arrowScale = Math.max(0.01, s.arrowScale);
+  s.u = Math.round(clamp(s.u, 0, s.Umax));
   return s;
 }
 
@@ -1056,6 +1344,7 @@ function attachHandlers(){
     const el = document.getElementById(id);
     const evt = (el.type === 'number') ? 'change' : 'input';
     el.addEventListener(evt, () => {
+      stopPlayback();
       const newState = readStateFromUI();
       const resim = needsResim(state, newState);
       state = newState;
@@ -1065,6 +1354,7 @@ function attachHandlers(){
   }
 
   document.getElementById('btn-resample').addEventListener('click', () => {
+    stopPlayback();
     // new seed from crypto if available, else Math.random
     let newSeed = Math.floor(Math.random() * 1e9);
     if (window.crypto && window.crypto.getRandomValues){
@@ -1079,15 +1369,25 @@ function attachHandlers(){
   });
 
   document.getElementById('btn-reset').addEventListener('click', () => {
+    stopPlayback();
     state = {...DEFAULTS};
     syncUI();
     sim = simulateParticles();
     scheduleUpdate(false);
   });
+
+  document.getElementById('btn-play').addEventListener('click', () => {
+    if (playAnim.running){
+      stopPlayback();
+      return;
+    }
+    startPlayback();
+  });
 }
 
 // ---------- init ----------
 function init(){
+  installEditableRangeBounds();
   syncUI();
   sim = simulateParticles();
   updateStatus();
