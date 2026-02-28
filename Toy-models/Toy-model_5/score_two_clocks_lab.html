@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Score in Two Clocks — Analytical Laboratory</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root{
+  --bg:#f7f4ef; --ink:#1a1410; --accent:#b5341a; --accent2:#1a3a5c;
+  --muted:#6b5e50; --rule:#c9bfaf; --card:#ffffff; --code-bg:#f0ece4;
+  --green:#0e6b2c; --pink:#c0427a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'EB Garamond',Georgia,serif;
+  background:var(--bg); color:var(--ink);
+  font-size:18px; line-height:1.78;
+  max-width:1000px; margin:0 auto; padding:56px 36px 100px;
+}
+header{border-bottom:2px solid var(--ink); padding-bottom:22px; margin-bottom:48px;}
+.label{
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;
+}
+h1{font-size:2.55em; font-weight:600; line-height:1.16; margin-bottom:14px;}
+.subtitle{color:var(--muted); font-style:italic; font-size:1.05em;}
+h2{
+  font-size:1.32em; font-weight:600; color:var(--ink);
+  margin:52px 0 15px; padding-bottom:6px; border-bottom:1px solid var(--rule);
+  display:flex; align-items:center; gap:12px;
+}
+h2 .num{font-family:'JetBrains Mono',monospace; font-size:.72em; color:var(--accent); font-weight:700;}
+h3{font-size:1.1em; font-weight:600; color:var(--accent2); margin:28px 0 10px;}
+p{margin-bottom:1em;}
+ul,ol{margin:0 0 1em 24px;}
+li{margin-bottom:4px;}
+
+.math-block{
+  background:var(--card); border-left:3px solid var(--accent2);
+  padding:18px 26px; margin:22px 0; border-radius:0 6px 6px 0; overflow-x:auto;
+}
+.insight-box{
+  background:linear-gradient(135deg,#fff8f5 0%,#fff 100%);
+  border:1px solid #e8c8be; border-left:4px solid var(--accent);
+  padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;
+}
+.insight-box strong{color:var(--accent);}
+.info-box{
+  background:linear-gradient(135deg,#f0f5ff 0%,#fff 100%);
+  border:1px solid #bdd0e8; border-left:4px solid var(--accent2);
+  padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;
+}
+.info-box strong{color:var(--accent2);}
+.green-box{
+  background:linear-gradient(135deg,#f0fff4 0%,#fff 100%);
+  border:1px solid #9ecfb0; border-left:4px solid var(--green);
+  padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;
+}
+.green-box strong{color:var(--green);}
+
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:22px 0;}
+.col-card{
+  background:var(--card); border:1px solid var(--rule);
+  border-radius:8px; padding:18px;
+}
+.col-card h4{
+  font-family:'JetBrains Mono',monospace; font-size:.78em;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px;
+}
+code{
+  font-family:'JetBrains Mono',monospace; font-size:.82em;
+  background:var(--code-bg); padding:2px 6px; border-radius:3px;
+}
+table{width:100%; border-collapse:collapse; margin:18px 0; font-size:.9em;}
+th{
+  font-family:'JetBrains Mono',monospace; font-size:.76em; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted); border-bottom:2px solid var(--rule);
+  padding:8px 10px; text-align:left;
+}
+td{padding:9px 10px; border-bottom:1px solid var(--rule); vertical-align:top;}
+td:first-child{font-family:'JetBrains Mono',monospace; font-size:.82em; color:var(--accent2); white-space:nowrap;}
+hr.sec{border:none; border-top:1px solid var(--rule); margin:48px 0;}
+
+/* ── Lab shell ─────────────────────────── */
+.lab{
+  margin-top:44px; background:var(--card);
+  border:1px solid var(--rule); border-radius:12px; overflow:hidden;
+}
+.lab-header{
+  background:var(--ink); color:#f7f4ef;
+  padding:16px 22px; display:flex; align-items:flex-start;
+  justify-content:space-between; gap:12px; flex-wrap:wrap;
+}
+.lab-header h3{
+  font-family:'JetBrains Mono',monospace; font-size:.86em;
+  letter-spacing:.08em; text-transform:uppercase; color:#f7f4ef; margin:0;
+}
+.lab-status{
+  font-family:'JetBrains Mono',monospace; font-size:.78em; color:#a0c0e0; line-height:1.5;
+}
+.lab-plots{display:grid; grid-template-columns:1fr 1fr; gap:0; border-top:1px solid var(--rule);}
+.plot-card{padding:12px 12px 6px; border-right:1px solid var(--rule);}
+.plot-card:last-child{border-right:none;}
+.plot-title{
+  font-family:'JetBrains Mono',monospace; font-size:.76em;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:2px 4px 8px;
+}
+.plot-div{width:100%; height:420px;}
+
+/* Controls */
+.controls{
+  border-top:1px solid var(--rule); background:#f5f2ec;
+  padding:14px 20px 18px;
+}
+.controls-head{
+  font-family:'JetBrains Mono',monospace; font-size:.82em;
+  color:var(--muted); letter-spacing:.04em; margin-bottom:10px;
+}
+.ctrl-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px 18px;}
+.ctrl{display:flex; flex-direction:column; gap:5px;}
+.ctrl label{
+  font-family:'JetBrains Mono',monospace; font-size:.72em;
+  color:var(--muted); text-transform:uppercase; letter-spacing:.07em;
+  display:flex; justify-content:space-between;
+}
+.ctrl label .val{color:var(--ink); font-weight:700;}
+input[type=range]{width:100%; accent-color:var(--accent2);}
+.btn-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px;}
+button{
+  font-family:'JetBrains Mono',monospace; font-size:.78em; font-weight:700;
+  padding:8px 16px; border:none; border-radius:6px; cursor:pointer;
+  letter-spacing:.05em; text-transform:uppercase; transition:all .15s;
+}
+.btn-primary{background:var(--accent2); color:#fff;}
+.btn-primary:hover{background:#1a4d7a;}
+.btn-sec{background:transparent; border:1.5px solid var(--rule); color:var(--muted);}
+.btn-sec:hover{border-color:var(--muted); color:var(--ink);}
+.btn-accent{background:var(--accent); color:#fff;}
+.btn-accent:hover{background:#9c2c15;}
+
+/* Regime chips */
+.regimes{display:flex; gap:12px; flex-wrap:wrap; margin:18px 0;}
+.chip{
+  font-family:'JetBrains Mono',monospace; font-size:.75em;
+  padding:5px 12px; border-radius:20px; letter-spacing:.05em;
+  border:1.5px solid currentColor;
+}
+.chip-r{color:var(--accent); background:#fff8f5;}
+.chip-b{color:var(--accent2); background:#f0f5ff;}
+.chip-g{color:var(--green); background:#f0fff4;}
+.chip-p{color:var(--pink); background:#fff0f7;}
+
+@media(max-width:820px){
+  .two-col,.lab-plots,.ctrl-grid{grid-template-columns:1fr;}
+  .plot-card{border-right:none; border-bottom:1px solid var(--rule);}
+  body{padding:32px 18px 70px;}
+  h1{font-size:1.9em;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">Score-Based Diffusion · Analytical Laboratory · Two Clocks</div>
+  <h1>Score in Two Clocks:<br/>An Exact Analytical Laboratory</h1>
+  <p class="subtitle">Internal time <em>u</em> drives the system. Diffusion time <em>t</em> corrupts it.
+  Every formula is exact. Every quantity is plotted. No neural networks.</p>
+</header>
+
+<!-- ═══════════════════════ §1 TWO CLOCKS ═══════════════════════ -->
+<h2><span class="num">§1</span> The Two-Clock Architecture</h2>
+
+<p>
+Classical diffusion models live in a single time: the <strong>noise level</strong> \(t\). Here we
+distinguish two independent notions of time and study how the score function organises itself
+across the resulting plane \((u, t)\).
+</p>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>Internal time u</h4>
+    <p style="font-size:.92em;">
+      The <em>semantic</em> clock. The system (particle, frame, signal) evolves according to its
+      own Markov dynamics. Think of \(u\) as the frame index in a video: \(u=0,1,2,\ldots\)
+    </p>
+  </div>
+  <div class="col-card">
+    <h4>Diffusion time t</h4>
+    <p style="font-size:.92em;">
+      The <em>noise</em> clock. An independent Ornstein–Uhlenbeck (OU) process injects Gaussian
+      noise into any fixed snapshot, corrupting it toward \(\mathcal{N}(0,1)\) as \(t\to\infty\).
+    </p>
+  </div>
+</div>
+
+<p>
+The central object of study is the <strong>two-clock score field</strong>:
+</p>
+
+<div class="math-block">
+$$s(x,u,t) = \nabla_x \log p_{u,t}(x)$$
+</div>
+
+<p>
+where \(p_{u,t}(x)\) is the distribution of the system at internal step \(u\), noised to diffusion
+level \(t\). We want to understand how this field lives on the plane \((u,t)\) — its norm,
+geometry, spectrum, and thermodynamic content.
+</p>
+
+<div class="insight-box">
+<strong>Guiding picture.</strong> At each frame \(u\), there are two processes: a
+<span style="color:#111;font-weight:600;">forward noising path</span> (black, zig-zag) that carries
+any state toward \(\mathcal{N}(0,1)\) as \(t\) grows, and a
+<span style="color:var(--pink);font-weight:600;">generative (reverse) path</span> (pink, dashed)
+driven by the score \(s(x,u,t)\) that reconstructs the frame from noise. Both co-exist at every \(u\).
+</div>
+
+<!-- ═══════════════════════ §2 SIMPLEST MODEL ═══════════════════════ -->
+<h2><span class="num">§2</span> The Simplest Model: Univariate Gaussian with AR(1) Dynamics</h2>
+
+<h3>2.1 Initial distribution</h3>
+<p>We start from the absolutely minimal case: a single univariate Gaussian.</p>
+<div class="math-block">
+$$x_0 \sim \mathcal{N}(\mu_0,\; \sigma_0^2)$$
+</div>
+
+<h3>2.2 Internal dynamics (AR(1) process)</h3>
+<p>
+The simplest Markovian internal evolution is the first-order autoregression: each step applies a
+contraction \(\alpha\in(0,1)\) and adds i.i.d. noise.
+</p>
+<div class="math-block">
+$$x_{u+1} = \alpha\, x_u + \eta_u, \qquad \eta_u \overset{\text{iid}}{\sim} \mathcal{N}(0,\sigma_\eta^2)$$
+</div>
+
+<p>
+Because \(\alpha\lt 1\) the chain is stable. It converges to a stationary distribution as
+\(u\to\infty\), providing a natural <em>long-time regime</em> to compare against the short-time one.
+</p>
+
+<h3>2.3 Marginal distribution at step u — exact propagation</h3>
+<p>
+Since the map is linear and all noise is Gaussian, \(x_u\) is Gaussian for all \(u\).
+Solving the mean and variance recurrences explicitly:
+</p>
+
+<div class="math-block">
+$$\mu_u = \alpha^u\,\mu_0$$
+</div>
+
+<div class="math-block">
+$$\sigma_u^2 = \alpha^{2u}\,\sigma_0^2 + \sigma_\eta^2\sum_{k=0}^{u-1}\alpha^{2k}
+= \alpha^{2u}\,\sigma_0^2 + \sigma_\eta^2\,\frac{1-\alpha^{2u}}{1-\alpha^2}$$
+</div>
+
+<p>
+Defining the <strong>stationary variance</strong> \(\sigma_\infty^2 = \sigma_\eta^2/(1-\alpha^2)\),
+this compresses to a single elegant formula:
+</p>
+
+<div class="math-block">
+$$\boxed{\sigma_u^2 = \sigma_\infty^2 + \alpha^{2u}\!\left(\sigma_0^2 - \sigma_\infty^2\right)}$$
+</div>
+
+<div class="info-box">
+<strong>Geometric interpolation.</strong>
+\(\sigma_u^2\) starts at \(\sigma_0^2\) and decays exponentially toward
+\(\sigma_\infty^2\) at rate \(\alpha^2\) per step. If \(\sigma_0 > \sigma_\infty\) the system
+<em>focuses</em>; if \(\sigma_0 < \sigma_\infty\) it <em>spreads</em>.
+</div>
+
+<p>So at each internal step \(u\), the clean distribution is:</p>
+<div class="math-block">
+$$p_u(x) = \mathcal{N}(x;\;\mu_u,\;\sigma_u^2)$$
+</div>
+
+<!-- ═══════════════════════ §3 OU DIFFUSION ═══════════════════════ -->
+<h2><span class="num">§3</span> Forward Diffusion: The Ornstein–Uhlenbeck Kernel</h2>
+
+<h3>3.1 The OU SDE</h3>
+<div class="math-block">
+$$dX_t = -X_t\,dt + \sqrt{2}\,dW_t, \qquad X_0 = x$$
+</div>
+
+<p>
+This SDE has a closed-form solution. Applying Itô's formula or solving directly:
+</p>
+
+<div class="math-block">
+$$X_t \;=\; e^{-t}\,X_0 \;+\; \sqrt{1-e^{-2t}}\;\varepsilon, \qquad \varepsilon\sim\mathcal{N}(0,1)$$
+</div>
+
+<p>
+The transition kernel is exactly Gaussian: \(X_t\mid X_0=x_0 \sim \mathcal{N}(e^{-t}x_0,\;1-e^{-2t})\).
+The stationary distribution of this SDE is \(\mathcal{N}(0,1)\), which is reached as \(t\to\infty\).
+</p>
+
+<h3>3.2 Applying OU to the internal distribution at step u</h3>
+<p>
+Given the clean state \(x_u \sim \mathcal{N}(\mu_u,\sigma_u^2)\), we apply the OU kernel to obtain
+the noised observation \(x = e^{-t}x_u + \sqrt{1-e^{-2t}}\,\varepsilon\). Since both \(x_u\) and
+\(\varepsilon\) are Gaussian, the marginal is again Gaussian:
+</p>
+
+<div class="math-block">
+$$p_{u,t}(x) = \mathcal{N}\!\left(x;\;\mu_u(t),\;\sigma_u(t)^2\right)$$
+</div>
+
+<p>
+with exact parameters:
+</p>
+
+<div class="math-block">
+$$\mu_u(t) = e^{-t}\,\mu_u = e^{-t}\,\alpha^u\,\mu_0$$
+</div>
+
+<div class="math-block">
+$$\sigma_u(t)^2 = e^{-2t}\,\sigma_u^2 + \left(1-e^{-2t}\right)
+= e^{-2t}\!\left[\sigma_\infty^2 + \alpha^{2u}(\sigma_0^2 - \sigma_\infty^2)\right] + 1 - e^{-2t}$$
+</div>
+
+<div class="math-block">
+$$\boxed{\sigma_u(t)^2 = 1 + e^{-2t}\left(\sigma_u^2 - 1\right)}$$
+</div>
+
+<div class="insight-box">
+<strong>Three competing scales.</strong> The variance \(\sigma_u(t)^2\) interpolates between
+\(\sigma_u^2\) (at \(t=0\)) and \(1\) (at \(t\to\infty\)). Meanwhile the mean
+\(\mu_u(t)=e^{-t}\alpha^u\mu_0\) decays doubly exponentially — once from internal dynamics, once
+from diffusion.
+</div>
+
+<!-- ═══════════════════════ §4 SCORE ═══════════════════════ -->
+<h2><span class="num">§4</span> The Score Function: Exact Derivation</h2>
+
+<h3>4.1 From log-density to score</h3>
+<p>
+For \(p_{u,t}(x) = \mathcal{N}(x;\mu,\sigma^2)\), the log-density is:
+</p>
+<div class="math-block">
+$$\log p_{u,t}(x) = -\frac{(x-\mu_u(t))^2}{2\,\sigma_u(t)^2} - \frac{1}{2}\log\!\left(2\pi\,\sigma_u(t)^2\right)$$
+</div>
+<p>Taking the gradient with respect to \(x\):</p>
+<div class="math-block">
+$$\boxed{s(x,u,t) = \nabla_x\log p_{u,t}(x) = -\frac{x - \mu_u(t)}{\sigma_u(t)^2}}$$
+</div>
+
+<p>
+This is the <strong>exact, closed-form score</strong>. It is a linear function of \(x\): a
+restoring force pointing toward the mean \(\mu_u(t)\), with stiffness \(1/\sigma_u(t)^2\).
+</p>
+
+<h3>4.2 Score as gradient of free energy</h3>
+<p>
+Define the <strong>free energy landscape</strong> (negative log-density):
+</p>
+<div class="math-block">
+$$F(x,u,t) := -\log p_{u,t}(x) = \frac{(x-\mu_u(t))^2}{2\,\sigma_u(t)^2} + \frac{1}{2}\log\!\left(2\pi\,\sigma_u(t)^2\right)$$
+</div>
+<p>
+Then the score is exactly the downhill gradient of this landscape:
+</p>
+<div class="math-block">
+$$s(x,u,t) = -\nabla_x F(x,u,t)$$
+</div>
+
+<div class="info-box">
+<strong>Thermodynamic analogy.</strong>
+\(F(x,u,t)\) is a parabolic potential (harmonic oscillator!). The score-driven reverse diffusion is
+literally a gradient flow descending this bowl. As \(t\) decreases, the bowl narrows (more focused
+minimum) and the mean shifts toward the true data mean \(\mu_u\). Generation = climbing out of the
+flat standard-Gaussian bowl and sliding into the increasingly sharp data bowl.
+</div>
+
+<h3>4.3 Score norm</h3>
+<p>
+The norm of the score field, evaluated at displacement \(d = x - \mu_u(t)\) from the mean:
+</p>
+<div class="math-block">
+$$\|s(x,u,t)\| = \frac{|x - \mu_u(t)|}{\sigma_u(t)^2}$$
+</div>
+<p>
+At the mean: score is zero. The score grows linearly with distance and shrinks with variance.
+</p>
+
+<!-- ═══════════════════════ §5 JACOBIAN + SPECTRUM ═══════════════════════ -->
+<h2><span class="num">§5</span> Jacobian, Spectrum, and the 2D Extension</h2>
+
+<h3>5.1 Score Jacobian in 1D</h3>
+<p>
+The Jacobian of the score with respect to \(x\) is simply:
+</p>
+<div class="math-block">
+$$J_s(u,t) = \frac{\partial s}{\partial x}(x,u,t) = -\frac{1}{\sigma_u(t)^2}$$
+</div>
+<p>
+Crucially, this is <strong>constant in \(x\)</strong> (the Gaussian score is linear, its derivative is
+flat). The single eigenvalue is \(\lambda = -1/\sigma_u(t)^2\), always negative — a globally stable
+restoring field.
+</p>
+
+<h3>5.2 Multivariate extension: 2D Gaussian with anisotropic covariance</h3>
+<p>
+Let \(x\in\mathbb{R}^2\), initial distribution
+\(\mathcal{N}(\boldsymbol\mu_0, \Sigma_0)\) with
+\(\Sigma_0 = \begin{pmatrix}\sigma_{x}^2 & \rho\sigma_x\sigma_y\\\rho\sigma_x\sigma_y&\sigma_y^2\end{pmatrix}\).
+</p>
+
+<p>We use a <strong>rotating AR(1) dynamics</strong> for the internal time:</p>
+<div class="math-block">
+$$\boldsymbol a(u+1) = \alpha\,R_{\Delta\theta}\,\boldsymbol a(u) + \boldsymbol\xi_u,
+\qquad \boldsymbol\xi_u\sim\mathcal{N}(\mathbf 0,\,\sigma_\eta^2 I_2)$$
+$$R_{\Delta\theta} = \begin{pmatrix}\cos\Delta\theta & -\sin\Delta\theta\\\sin\Delta\theta & \cos\Delta\theta\end{pmatrix}$$
+</div>
+
+<p>
+Since \(R_{\Delta\theta}\) is orthogonal (\(RR^\top = I\)), the covariance propagates as:
+</p>
+<div class="math-block">
+$$\Sigma_{u+1} = \alpha^2\,R_{\Delta\theta}\,\Sigma_u\,R_{\Delta\theta}^\top + \sigma_\eta^2 I_2$$
+</div>
+
+<p>
+Let \(\Sigma_0 = V\,\text{diag}(\lambda_1,\lambda_2)\,V^\top\) be the eigendecomposition.
+After \(u\) steps, the eigenvectors rotate by \(u\Delta\theta\) and the eigenvalues evolve as:
+</p>
+<div class="math-block">
+$$\lambda_k(u) = \sigma_\infty^2 + \alpha^{2u}\!\left(\lambda_k - \sigma_\infty^2\right),
+\qquad \sigma_\infty^2 = \frac{\sigma_\eta^2}{1-\alpha^2}$$
+</div>
+<p>
+So \(\Sigma_u = (R_{u\Delta\theta} V)\,\text{diag}(\lambda_1(u),\lambda_2(u))\,(R_{u\Delta\theta} V)^\top\).
+</p>
+
+<p>After OU diffusion at time \(t\):</p>
+<div class="math-block">
+$$\Sigma_u(t) = e^{-2t}\,\Sigma_u + (1-e^{-2t})\,I_2$$
+</div>
+<p>Eigenvalues of \(\Sigma_u(t)\):</p>
+<div class="math-block">
+$$\lambda_k(u,t) = e^{-2t}\,\lambda_k(u) + 1 - e^{-2t}
+= 1 + e^{-2t}\left(\lambda_k(u) - 1\right)$$
+</div>
+
+<p>The <strong>score field</strong> and its <strong>Jacobian</strong> are:</p>
+<div class="math-block">
+$$s(\mathbf x,u,t) = -\Sigma_u(t)^{-1}\!\left(\mathbf x - \boldsymbol\mu_u(t)\right)$$
+$$J_s(u,t) = -\Sigma_u(t)^{-1}$$
+</div>
+
+<p>
+Jacobian eigenvalues:
+</p>
+<div class="math-block">
+$$\lambda_k^J(u,t) = -\frac{1}{\lambda_k(u,t)}$$
+</div>
+
+<div class="insight-box">
+<strong>Dimensional collapse.</strong>
+As \(t\to\infty\): \(\lambda_k(u,t)\to 1\) so all \(\lambda_k^J\to -1\). The two Jacobian
+eigenvalues merge — all directions become equally stiff. This is "dimensional collapse": the
+anisotropy of the data distribution becomes invisible at large noise levels. The score cannot
+distinguish directions tangent to the data from perpendicular ones.
+</div>
+
+<table>
+  <thead>
+    <tr><th>Regime</th><th>\(t\) small, \(u\) small</th><th>\(t\) large</th><th>\(u\) large</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Mean \(\mu_u(t)\)</td><td>\(\approx \mu_0\)</td><td>\(\approx 0\)</td><td>\(\approx 0\)</td></tr>
+    <tr><td>Variance \(\sigma_u(t)^2\)</td><td>\(\approx \sigma_0^2\)</td><td>\(\approx 1\)</td><td>\(\approx 1 + e^{-2t}(\sigma_\infty^2-1)\)</td></tr>
+    <tr><td>Score \(s(x,u,t)\)</td><td>Sharp, data-guided</td><td>\(\approx -x\)</td><td>Stationary, isotropic</td></tr>
+    <tr><td>Jacobian eigenvalues</td><td>\(-1/\lambda_k\) (anisotropic)</td><td>\(\approx -1\)</td><td>\(\approx -1/(e^{-2t}\sigma_\infty^2+1-e^{-2t})\)</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════ §6 ENTROPY + FREE ENERGY ═══════════════════════ -->
+<h2><span class="num">§6</span> Entropy, Fisher Information, and Free Energy</h2>
+
+<h3>6.1 Differential entropy</h3>
+<p>
+For \(p_{u,t} = \mathcal{N}(\mu_u(t),\sigma_u(t)^2)\), the differential entropy is:
+</p>
+<div class="math-block">
+$$H(u,t) = \frac{1}{2}\log\!\left(2\pi e\,\sigma_u(t)^2\right)$$
+</div>
+
+<p>
+Entropy depends <em>only on the variance</em>, not the mean. Since \(\sigma_u(t)^2\) increases with
+\(t\) (adding noise) and converges with \(u\) (toward stationary), the entropy landscape on the
+\((u,t)\) plane is a smooth monotone surface.
+</p>
+
+<h3>6.2 Fisher information</h3>
+<p>
+The Fisher information (expected squared score) is:
+</p>
+<div class="math-block">
+$$\mathcal{I}(u,t) = \mathbb{E}_{p_{u,t}}\!\left[\|s(x,u,t)\|^2\right] = \frac{1}{\sigma_u(t)^2}$$
+</div>
+
+<p>
+It is the reciprocal of the variance, and the reciprocal of \(-J_s(u,t)\). This is the Cramér–Rao
+bound in disguise: small variance (sharp distribution) \(\Leftrightarrow\) large Fisher information
+\(\Leftrightarrow\) stiff Jacobian.
+</p>
+
+<div class="green-box">
+<strong>Triad identity for Gaussians:</strong>
+$$\mathcal{I}(u,t) = -J_s(u,t) = \frac{1}{\sigma_u(t)^2} = \frac{1}{1+e^{-2t}(\sigma_u^2-1)}$$
+Fisher information, Jacobian magnitude, and inverse variance are all the same object.
+</div>
+
+<h3>6.3 Free energy surface</h3>
+<p>
+The expected free energy (KL divergence to standard normal, a.k.a. negative ELBO) is:
+</p>
+<div class="math-block">
+$$\langle F\rangle(u,t) = \mathbb{E}_{p_{u,t}}[-\log p_{u,t}(x)] = H(u,t) = \frac{1}{2}\log(2\pi e\,\sigma_u(t)^2)$$
+</div>
+<p>
+The score-driven flow is gradient descent on \(F(x,u,t)\). At fixed \((u,t)\), the flow is exactly
+that of an Ornstein–Uhlenbeck potential centered at \(\mu_u(t)\).
+</p>
+
+<!-- ═══════════════════════ §7 (u,t) PLANE ═══════════════════════ -->
+<h2><span class="num">§7</span> The \((u,t)\) Plane: Regimes</h2>
+
+<p>
+Fix a test point \(x\). The score norm \(|s(x,u,t)|\) defines a landscape on the plane
+\((u,t)\in[0,U]\times[0,T]\). Four qualitatively distinct regimes arise:
+</p>
+
+<div class="regimes">
+  <span class="chip chip-r">I — Sharp signal (small t, small u)</span>
+  <span class="chip chip-b">II — Best window (intermediate t, u)</span>
+  <span class="chip chip-g">III — Stationary (large u)</span>
+  <span class="chip chip-p">IV — Universal noise (large t)</span>
+</div>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>Phase I — Sharp signal</h4>
+    <p style="font-size:.9em;">
+      Small \(t\), small \(u\). Distribution is close to \(p_0\). Score reflects original
+      anisotropy and mean. Fisher information is high. Jacobian eigenvalues are spread apart.
+      <em>Best place to read data geometry.</em>
+    </p>
+  </div>
+  <div class="col-card">
+    <h4>Phase IV — Universal noise</h4>
+    <p style="font-size:.9em;">
+      Large \(t\). Regardless of \(u\), the distribution \(p_{u,t}\approx\mathcal{N}(0,1)\).
+      Score \(\approx -x\). Jacobian \(\approx -1\). <em>All internal-time information erased.</em>
+    </p>
+  </div>
+  <div class="col-card">
+    <h4>Phase II — Intermediate window</h4>
+    <p style="font-size:.9em;">
+      Intermediate \(t\). Score geometry is rich: eigenvalue gaps are opened, anisotropy is
+      visible, but the distribution is not too sharp. <em>Best window to study a propagator
+      \(P\) across \(u\)</em> (cf. Achilli §4).
+    </p>
+  </div>
+  <div class="col-card">
+    <h4>Phase III — Stationary regime</h4>
+    <p style="font-size:.9em;">
+      Large \(u\). Distribution converges to stationary
+      \(\mathcal{N}(0, \sigma_\infty^2)\). Score becomes independent of further increases in \(u\).
+      <em>Apparent stationarity — but could be trivial (memorisation).</em>
+    </p>
+  </div>
+</div>
+
+<div class="insight-box">
+<strong>Two-time autocorrelation.</strong>
+Fix a point \(x_0\) and consider the score value \(s(x_0,u,t)\) as a function of \(u\) for
+fixed \(t\). This is a time series driven by the AR(1) dynamics. Its autocorrelation decays as
+\(\alpha^{|u'-u|}\) (in mean) and \(\alpha^{2|u'-u|}\) (in variance). The score inherits the
+memory of the internal dynamics.
+</div>
+
+<!-- ═══════════════════════ §8 BEYOND GAUSSIAN ═══════════════════════ -->
+<h2><span class="num">§8</span> What Lies Beyond Gaussians</h2>
+
+<p>
+The Gaussian is the unique distribution for which the score is linear in \(x\). The first
+genuinely new phenomenon appears with a <strong>mixture</strong>:
+</p>
+<div class="math-block">
+$$p_u(x) = \sum_{k=1}^K w_k\,\mathcal{N}(x;\mu_{u,k},\sigma_{u,k}^2)$$
+</div>
+<p>The score becomes a nonlinear weighted average of component-wise linear scores:</p>
+<div class="math-block">
+$$s(x,u,t) = \sum_k r_k(x,u,t)\cdot s_k(x,u,t), \qquad r_k = \frac{w_k\,\phi_k(x)}{\sum_j w_j\,\phi_j(x)}$$
+</div>
+<p>
+The responsibilities \(r_k(x,u,t)\) introduce genuine nonlinearity and multi-scale structure.
+The score is no longer constant in its Jacobian. Eigenvalue gaps are no longer trivially determined
+by covariance matrices alone. This is the first level where the spectral structure becomes
+non-trivial — and the first level where Achilli's memorisation / collapse analysis becomes
+interesting.
+</p>
+
+<hr class="sec"/>
+
+<!-- ════════════════════════════════════════
+     LAB 1 — 1D UNIFIED VIEW
+     ════════════════════════════════════════ -->
+<h2><span class="num">Lab 1</span> Interactive 1D Laboratory</h2>
+<p>
+The left panel shows the distribution \(p_{u,t}(x)\) (filled) and the score
+\(s(x,u,t)\) (line). The right panel shows the score norm \(|s(x_0,u,t)|\) as a function of
+\(t\) for the current \(u\), with the forward/reverse paths overlaid.
+</p>
+
+<div class="lab" id="lab1">
+  <div class="lab-header">
+    <h3>1D Score Lab — Distribution &amp; Score Field</h3>
+    <div class="lab-status" id="lab1-status">Ready</div>
+  </div>
+  <div class="lab-plots">
+    <div class="plot-card">
+      <div class="plot-title">Distribution p(x | u, t) and score s(x, u, t)</div>
+      <div class="plot-div" id="p1-dist"></div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">Score norm ‖s(x₀, u, t)‖ vs. diffusion time t</div>
+      <div class="plot-div" id="p1-norm"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="controls-head">Parameters</div>
+    <div class="ctrl-grid">
+      <div class="ctrl">
+        <label for="l1-u">internal step u <span class="val" id="l1-u-val">0</span></label>
+        <input type="range" id="l1-u" min="0" max="20" step="1" value="0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l1-t">diffusion time t <span class="val" id="l1-t-val">0.50</span></label>
+        <input type="range" id="l1-t" min="0.01" max="3.0" step="0.01" value="0.50"/>
+      </div>
+      <div class="ctrl">
+        <label for="l1-alpha">AR coefficient α <span class="val" id="l1-alpha-val">0.85</span></label>
+        <input type="range" id="l1-alpha" min="0.1" max="0.99" step="0.01" value="0.85"/>
+      </div>
+      <div class="ctrl">
+        <label for="l1-mu0">initial mean μ₀ <span class="val" id="l1-mu0-val">2.00</span></label>
+        <input type="range" id="l1-mu0" min="-4" max="4" step="0.1" value="2.0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l1-sig0">initial σ₀ <span class="val" id="l1-sig0-val">0.80</span></label>
+        <input type="range" id="l1-sig0" min="0.1" max="2.5" step="0.05" value="0.80"/>
+      </div>
+      <div class="ctrl">
+        <label for="l1-sigN">process noise σ_η <span class="val" id="l1-sigN-val">0.30</span></label>
+        <input type="range" id="l1-sigN" min="0.05" max="1.5" step="0.05" value="0.30"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="l1-animate">▶ Animate u</button>
+      <button class="btn-accent" id="l1-animate-t">▶ Animate t (reverse)</button>
+      <button class="btn-sec" id="l1-reset">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<hr class="sec"/>
+
+<!-- ════════════════════════════════════════
+     LAB 2 — (u,t) PLANE HEATMAP
+     ════════════════════════════════════════ -->
+<h2><span class="num">Lab 2</span> The \((u,t)\) Plane</h2>
+<p>
+Fix a test point \(x_0\). The heatmap shows how the chosen quantity evolves across the entire
+\((u,t)\) plane. The white dot marks the currently selected \((u,t)\) from Lab 1.
+Drag the sliders or use Lab 1 controls to move it.
+</p>
+
+<div class="lab" id="lab2">
+  <div class="lab-header">
+    <h3>(u, t) Plane — Score Landscape</h3>
+    <div class="lab-status" id="lab2-status">Ready</div>
+  </div>
+  <div class="lab-plots">
+    <div class="plot-card">
+      <div class="plot-title">Heatmap of selected quantity on (u, t) plane</div>
+      <div class="plot-div" id="p2-heatmap"></div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">Score s(x₀, u, t) vs u for fixed t — time series</div>
+      <div class="plot-div" id="p2-series"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="controls-head">View options</div>
+    <div class="ctrl-grid">
+      <div class="ctrl">
+        <label for="l2-x0">test point x₀ <span class="val" id="l2-x0-val">1.00</span></label>
+        <input type="range" id="l2-x0" min="-4" max="4" step="0.1" value="1.0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l2-metric">quantity to display</label>
+        <select id="l2-metric" style="font-family:'JetBrains Mono',monospace;font-size:.85em;padding:6px;border:1px solid var(--rule);border-radius:6px;">
+          <option value="score_norm">Score norm |s(x₀,u,t)|</option>
+          <option value="entropy">Entropy H(u,t)</option>
+          <option value="fisher">Fisher info I(u,t)</option>
+          <option value="score_val">Score value s(x₀,u,t)</option>
+          <option value="variance">Variance σ(u,t)²</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label for="l2-t-fixed">fixed t for time series <span class="val" id="l2-t-fixed-val">0.50</span></label>
+        <input type="range" id="l2-t-fixed" min="0.05" max="3.0" step="0.05" value="0.50"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="l2-refresh">↻ Refresh</button>
+    </div>
+  </div>
+</div>
+
+<hr class="sec"/>
+
+<!-- ════════════════════════════════════════
+     LAB 3 — 2D SCORE VECTOR FIELD
+     ════════════════════════════════════════ -->
+<h2><span class="num">Lab 3</span> 2D Score Vector Field with Rotation Dynamics</h2>
+<p>
+The 2D version uses a rotating AR(1) process. The left panel shows the clean trajectory (mean
+\(\boldsymbol\mu_u\) as a circle) and the right shows the score vector field
+\(s(\mathbf x,u,t)\) plus density contours. The Jacobian eigenvalues are reported in the status bar.
+</p>
+
+<div class="lab" id="lab3">
+  <div class="lab-header">
+    <h3>2D Score Field — Rotating AR(1) + OU Diffusion</h3>
+    <div class="lab-status" id="lab3-status">Ready</div>
+  </div>
+  <div class="lab-plots">
+    <div class="plot-card">
+      <div class="plot-title">Internal trajectory a(u) and covariance ellipse</div>
+      <div class="plot-div" id="p3-traj"></div>
+    </div>
+    <div class="plot-card">
+      <div class="plot-title">Score field ∇log p_{u,t}(x) and density contours</div>
+      <div class="plot-div" id="p3-score"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="controls-head">Parameters</div>
+    <div class="ctrl-grid">
+      <div class="ctrl">
+        <label for="l3-u">internal step u <span class="val" id="l3-u-val">0</span></label>
+        <input type="range" id="l3-u" min="0" max="30" step="1" value="0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l3-t">diffusion time t <span class="val" id="l3-t-val">0.60</span></label>
+        <input type="range" id="l3-t" min="0.01" max="3.0" step="0.01" value="0.60"/>
+      </div>
+      <div class="ctrl">
+        <label for="l3-dtheta">rotation Δθ (°) <span class="val" id="l3-dtheta-val">18</span></label>
+        <input type="range" id="l3-dtheta" min="-90" max="90" step="1" value="18"/>
+      </div>
+      <div class="ctrl">
+        <label for="l3-alpha">contraction α <span class="val" id="l3-alpha-val">1.00</span></label>
+        <input type="range" id="l3-alpha" min="0.5" max="1.0" step="0.01" value="1.0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l3-r0">initial radius r₀ <span class="val" id="l3-r0-val">2.00</span></label>
+        <input type="range" id="l3-r0" min="0.1" max="3.5" step="0.1" value="2.0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l3-sigsig">initial anisotropy σ_x/σ_y <span class="val" id="l3-sigsig-val">2.0</span></label>
+        <input type="range" id="l3-sigsig" min="1.0" max="4.0" step="0.1" value="2.0"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="l3-animate">▶ Animate u</button>
+      <button class="btn-sec" id="l3-reset">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<hr class="sec"/>
+
+<!-- ════════════════════════════════════════
+     LAB 4 — FORWARD / REVERSE PATHS
+     ════════════════════════════════════════ -->
+<h2><span class="num">Lab 4</span> Forward Noising &amp; Generative Paths</h2>
+<p>
+For a selected internal time \(u\), the black zig-zag traces the forward noising process
+\(x_t\) as \(t\) increases from 0 to \(T\) (five sample paths). The pink dashed lines show
+the score-driven reverse paths emanating from \(\mathcal{N}(0,1)\) back toward the data.
+</p>
+
+<div class="lab" id="lab4">
+  <div class="lab-header">
+    <h3>Forward (black) and Reverse / Generative (pink) Paths at fixed u</h3>
+    <div class="lab-status" id="lab4-status">Ready</div>
+  </div>
+  <div class="lab-plots" style="grid-template-columns:1fr;">
+    <div class="plot-card" style="border-right:none;">
+      <div class="plot-title">x trajectories in diffusion time t (each colour = one internal step u)</div>
+      <div class="plot-div" style="height:460px;" id="p4-paths"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl">
+        <label for="l4-u">internal step u <span class="val" id="l4-u-val">0</span></label>
+        <input type="range" id="l4-u" min="0" max="20" step="1" value="0"/>
+      </div>
+      <div class="ctrl">
+        <label for="l4-npath">number of paths <span class="val" id="l4-npath-val">6</span></label>
+        <input type="range" id="l4-npath" min="2" max="12" step="1" value="6"/>
+      </div>
+      <div class="ctrl">
+        <label for="l4-euler">Euler steps <span class="val" id="l4-euler-val">80</span></label>
+        <input type="range" id="l4-euler" min="20" max="200" step="10" value="80"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="l4-draw">↻ Resample Paths</button>
+    </div>
+  </div>
+</div>
+
+<hr class="sec"/>
+
+<p style="color:var(--muted); font-size:.9em; font-style:italic; text-align:center;">
+All quantities are analytically exact. No data, no networks, no approximations.
+Score · Jacobian · Entropy · Fisher Information · Free Energy.
+</p>
+
+<!-- ═══════════════════════ JAVASCRIPT ═══════════════════════ -->
+<script>
+"use strict";
+
+// ── Seeded PRNG (mulberry32) for reproducible paths ──────────────
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+let rng = mulberry32(42);
+function randn(){
+  const u=rng(), v=rng();
+  return Math.sqrt(-2*Math.log(u+1e-15))*Math.cos(2*Math.PI*v);
+}
+
+// ── Core math ────────────────────────────────────────────────────
+function sigmaInf2(alpha, sigN){ return sigN*sigN/(1-alpha*alpha); }
+
+function getDistAtU(u, alpha, mu0, sig0, sigN){
+  const mu_u = Math.pow(alpha, u) * mu0;
+  const si2  = sigmaInf2(alpha, sigN);
+  const sig_u2 = si2 + Math.pow(alpha, 2*u)*(sig0*sig0 - si2);
+  return { mu: mu_u, sig2: Math.max(sig_u2, 1e-6) };
+}
+
+function applyOU(mu_u, sig_u2, t){
+  const e2t = Math.exp(-2*t), et = Math.exp(-t);
+  return { mu: et*mu_u, sig2: e2t*sig_u2 + 1 - e2t };
+}
+
+function score1d(x, mu_ut, sig_ut2){ return -(x - mu_ut)/sig_ut2; }
+
+function entropy1d(sig2){ return 0.5*Math.log(2*Math.PI*Math.E*sig2); }
+
+function gaussian1d(x, mu, sig2){ return Math.exp(-0.5*(x-mu)*(x-mu)/sig2)/Math.sqrt(2*Math.PI*sig2); }
+
+// ── Global params shared between labs ───────────────────────────
+const G = { mu0:2.0, sig0:0.8, alpha:0.85, sigN:0.30 };
+
+// ═══════════════════════════════════════════════════
+// LAB 1 — 1D DISTRIBUTION + SCORE
+// ═══════════════════════════════════════════════════
+(function setupLab1(){
+  const els = {
+    u:     document.getElementById('l1-u'),
+    t:     document.getElementById('l1-t'),
+    alpha: document.getElementById('l1-alpha'),
+    mu0:   document.getElementById('l1-mu0'),
+    sig0:  document.getElementById('l1-sig0'),
+    sigN:  document.getElementById('l1-sigN'),
+  };
+  const vals = {
+    u:     document.getElementById('l1-u-val'),
+    t:     document.getElementById('l1-t-val'),
+    alpha: document.getElementById('l1-alpha-val'),
+    mu0:   document.getElementById('l1-mu0-val'),
+    sig0:  document.getElementById('l1-sig0-val'),
+    sigN:  document.getElementById('l1-sigN-val'),
+  };
+
+  function getP(){
+    return {
+      u:     +els.u.value, t: +els.t.value,
+      alpha: +els.alpha.value, mu0: +els.mu0.value,
+      sig0:  +els.sig0.value, sigN: +els.sigN.value
+    };
+  }
+
+  function updateVals(p){
+    vals.u.textContent     = p.u;
+    vals.t.textContent     = p.t.toFixed(2);
+    vals.alpha.textContent = p.alpha.toFixed(2);
+    vals.mu0.textContent   = p.mu0.toFixed(2);
+    vals.sig0.textContent  = p.sig0.toFixed(2);
+    vals.sigN.textContent  = p.sigN.toFixed(2);
+    // sync global
+    G.mu0=p.mu0; G.sig0=p.sig0; G.alpha=p.alpha; G.sigN=p.sigN;
+  }
+
+  const NX = 300;
+  const xmin = -6, xmax = 6;
+  const xs = Array.from({length:NX}, (_,i) => xmin + (xmax-xmin)*i/(NX-1));
+  const NT = 80;
+  const ts = Array.from({length:NT}, (_,i) => 0.01 + 2.99*i/(NT-1));
+
+  let animU = null, animT = null;
+
+  function draw(p){
+    updateVals(p);
+    const {mu:mu_u, sig2:sig_u2} = getDistAtU(p.u, p.alpha, p.mu0, p.sig0, p.sigN);
+    const {mu:mu_ut, sig2:sig_ut2} = applyOU(mu_u, sig_u2, p.t);
+
+    const dens  = xs.map(x => gaussian1d(x, mu_ut, sig_ut2));
+    const score = xs.map(x => score1d(x, mu_ut, sig_ut2));
+    const maxD  = Math.max(...dens);
+
+    // Score norm vs t
+    const normVsT = ts.map(tv => {
+      const {mu:mu_uv, sig2:sv2} = getDistAtU(p.u, p.alpha, p.mu0, p.sig0, p.sigN);
+      const {mu:m, sig2:s2} = applyOU(mu_uv, sv2, tv);
+      return Math.abs(score1d(mu_ut, m, s2)); // at a fixed x = current mean
+    });
+
+    // Entropy vs t
+    const entVsT = ts.map(tv => {
+      const {mu:mu_uv, sig2:sv2} = getDistAtU(p.u, p.alpha, p.mu0, p.sig0, p.sigN);
+      const {sig2:s2} = applyOU(mu_uv, sv2, tv);
+      return entropy1d(s2);
+    });
+
+    const layout1 = {
+      margin:{t:10,b:40,l:50,r:20},
+      xaxis:{title:'x', range:[xmin,xmax], zeroline:true, zerolinecolor:'#ccc'},
+      yaxis:{title:'', showgrid:true},
+      legend:{x:.02,y:.98,bgcolor:'rgba(255,255,255,0.8)',font:{family:'JetBrains Mono',size:11}},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+      font:{family:'EB Garamond,Georgia,serif'},
+      annotations:[{
+        x: mu_ut, y: maxD*1.05,
+        text: `μ_u(t)=${mu_ut.toFixed(2)}`, showarrow:true, arrowhead:2,
+        ax:20, ay:-30, font:{size:11, color:'#1a3a5c'}, arrowcolor:'#1a3a5c'
+      }]
+    };
+
+    Plotly.react('p1-dist', [
+      {x:xs, y:dens,  name:'p(x|u,t)', fill:'tozeroy', fillcolor:'rgba(26,58,92,0.12)',
+       line:{color:'#1a3a5c',width:2}, type:'scatter'},
+      {x:xs, y:score.map(s=>s*0.3*maxD), name:'score × 0.3',  // scaled for display
+       line:{color:'#b5341a',width:1.8, dash:'dash'}, type:'scatter'},
+      {x:[mu_ut], y:[0], name:'μ_u(t)', mode:'markers',
+       marker:{color:'#b5341a',size:10,symbol:'diamond'}, type:'scatter'},
+    ], layout1, {responsive:true});
+
+    const layout2 = {
+      margin:{t:10,b:40,l:55,r:20},
+      xaxis:{title:'diffusion time t', zeroline:false},
+      yaxis:{title:'', showgrid:true},
+      legend:{x:.02,y:.98,bgcolor:'rgba(255,255,255,0.8)',font:{family:'JetBrains Mono',size:11}},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+      font:{family:'EB Garamond,Georgia,serif'},
+      shapes:[{type:'line', x0:p.t,x1:p.t, y0:0,y1:1, yref:'paper',
+               line:{color:'#b5341a',width:1.5,dash:'dot'}}]
+    };
+
+    Plotly.react('p1-norm', [
+      {x:ts, y:normVsT, name:'‖s(μ,u,t)‖', line:{color:'#b5341a',width:2}, type:'scatter'},
+      {x:ts, y:entVsT,  name:'H(u,t)', line:{color:'#0e6b2c',width:1.8,dash:'dash'}, type:'scatter'},
+    ], layout2, {responsive:true});
+
+    document.getElementById('lab1-status').textContent =
+      `u=${p.u}  t=${p.t.toFixed(2)}  σ_u(t)=${Math.sqrt(sig_ut2).toFixed(3)}  Fisher=${(1/sig_ut2).toFixed(3)}  H=${entropy1d(sig_ut2).toFixed(3)}`;
+  }
+
+  function init(){
+    draw(getP());
+    // Trigger lab2 refresh too
+    setTimeout(()=>{ if(window.lab2refresh) window.lab2refresh(); }, 100);
+  }
+
+  Object.values(els).forEach(el => el.addEventListener('input', ()=>{
+    draw(getP());
+    if(window.lab2refresh) window.lab2refresh();
+  }));
+
+  let animUTimer=null, animTTimer=null;
+
+  document.getElementById('l1-animate').addEventListener('click', function(){
+    if(animUTimer){ clearInterval(animUTimer); animUTimer=null; this.textContent='▶ Animate u'; return; }
+    this.textContent='⏸ Stop';
+    animUTimer = setInterval(()=>{
+      let v = +els.u.value + 1;
+      if(v > +els.u.max) v = 0;
+      els.u.value = v;
+      draw(getP());
+      if(window.lab2refresh) window.lab2refresh();
+    }, 200);
+  });
+
+  document.getElementById('l1-animate-t').addEventListener('click', function(){
+    if(animTTimer){ clearInterval(animTTimer); animTTimer=null; this.textContent='▶ Animate t (reverse)'; return; }
+    this.textContent='⏸ Stop';
+    els.t.value = els.t.max;
+    animTTimer = setInterval(()=>{
+      let v = +els.t.value - 0.05;
+      if(v < +els.t.min){ v=+els.t.max; }
+      els.t.value = v.toFixed(2);
+      draw(getP());
+    }, 80);
+  });
+
+  document.getElementById('l1-reset').addEventListener('click', ()=>{
+    if(animUTimer){clearInterval(animUTimer);animUTimer=null; document.getElementById('l1-animate').textContent='▶ Animate u';}
+    if(animTTimer){clearInterval(animTTimer);animTTimer=null; document.getElementById('l1-animate-t').textContent='▶ Animate t (reverse)';}
+    els.u.value=0; els.t.value=0.5; els.alpha.value=0.85;
+    els.mu0.value=2.0; els.sig0.value=0.8; els.sigN.value=0.3;
+    init();
+  });
+
+  init();
+  window.lab1getP = getP;
+})();
+
+// ═══════════════════════════════════════════════════
+// LAB 2 — (u,t) PLANE
+// ═══════════════════════════════════════════════════
+(function setupLab2(){
+  const NU = 30, NT = 40;
+  const u_arr = Array.from({length:NU}, (_,i) => i);
+  const t_arr = Array.from({length:NT}, (_,i) => 0.05 + 2.95*i/(NT-1));
+
+  function computeHeatmap(metric, x0, alpha, mu0, sig0, sigN){
+    return t_arr.map(t => u_arr.map(u => {
+      const {mu:mu_u, sig2:sig_u2} = getDistAtU(u, alpha, mu0, sig0, sigN);
+      const {mu:mu_ut, sig2:sig_ut2} = applyOU(mu_u, sig_u2, t);
+      switch(metric){
+        case 'score_norm': return Math.abs(score1d(x0, mu_ut, sig_ut2));
+        case 'entropy':    return entropy1d(sig_ut2);
+        case 'fisher':     return 1/sig_ut2;
+        case 'score_val':  return score1d(x0, mu_ut, sig_ut2);
+        case 'variance':   return sig_ut2;
+        default: return 0;
+      }
+    }));
+  }
+
+  function draw(){
+    const p = window.lab1getP ? window.lab1getP() : G;
+    const x0     = +document.getElementById('l2-x0').value;
+    const metric = document.getElementById('l2-metric').value;
+    const t_fixed= +document.getElementById('l2-t-fixed').value;
+
+    document.getElementById('l2-x0-val').textContent     = x0.toFixed(2);
+    document.getElementById('l2-t-fixed-val').textContent = t_fixed.toFixed(2);
+
+    const alpha = p.alpha, mu0 = p.mu0, sig0 = p.sig0, sigN = p.sigN;
+
+    const Z = computeHeatmap(metric, x0, alpha, mu0, sig0, sigN);
+
+    const metricLabel = {
+      score_norm:'Score norm |s|', entropy:'Entropy H(u,t)', fisher:'Fisher I(u,t)',
+      score_val:'Score s(x₀,u,t)', variance:'Variance σ²(u,t)'
+    }[metric];
+
+    Plotly.react('p2-heatmap', [{
+      z: Z, x: u_arr, y: t_arr,
+      type:'heatmap', colorscale:'RdBu', reversescale: metric==='score_val',
+      colorbar:{title:{text:metricLabel,side:'right'}, thickness:14, len:0.8},
+      zsmooth:'best',
+    },{
+      x:[p.u], y:[p.t], type:'scatter', mode:'markers',
+      marker:{color:'#fff', size:12, symbol:'circle', line:{color:'#111',width:2}},
+      showlegend:false
+    }], {
+      margin:{t:10,b:40,l:55,r:80},
+      xaxis:{title:'internal step u'},
+      yaxis:{title:'diffusion time t'},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+    }, {responsive:true});
+
+    // Time series: score vs u at fixed t
+    const series = u_arr.map(u => {
+      const {mu:mu_u, sig2:sig_u2} = getDistAtU(u, alpha, mu0, sig0, sigN);
+      const {mu:mu_ut, sig2:sig_ut2} = applyOU(mu_u, sig_u2, t_fixed);
+      return score1d(x0, mu_ut, sig_ut2);
+    });
+
+    Plotly.react('p2-series', [{
+      x:u_arr, y:series, type:'scatter',
+      line:{color:'#b5341a',width:2},
+      name:`s(x₀,u,t=${t_fixed.toFixed(2)})`,
+    }], {
+      margin:{t:10,b:40,l:55,r:20},
+      xaxis:{title:'internal step u'},
+      yaxis:{title:'score s(x₀, u, t_fixed)', zeroline:true, zerolinecolor:'#ccc'},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+      shapes:[{type:'line', x0:p.u,x1:p.u, y0:0,y1:1, yref:'paper',
+               line:{color:'#1a3a5c',width:1.5,dash:'dot'}}]
+    }, {responsive:true});
+
+    document.getElementById('lab2-status').textContent = `x₀=${x0.toFixed(2)}  metric=${metricLabel}`;
+  }
+
+  window.lab2refresh = draw;
+
+  ['l2-x0','l2-metric','l2-t-fixed'].forEach(id =>
+    document.getElementById(id).addEventListener('input', draw));
+  ['l2-x0','l2-t-fixed'].forEach(id =>
+    document.getElementById(id).addEventListener('input', ()=>{
+      document.getElementById('l2-x0-val').textContent = (+document.getElementById('l2-x0').value).toFixed(2);
+      document.getElementById('l2-t-fixed-val').textContent = (+document.getElementById('l2-t-fixed').value).toFixed(2);
+    }));
+  document.getElementById('l2-refresh').addEventListener('click', draw);
+  setTimeout(draw, 300);
+})();
+
+// ═══════════════════════════════════════════════════
+// LAB 3 — 2D VECTOR FIELD
+// ═══════════════════════════════════════════════════
+(function setupLab3(){
+  function deg2rad(d){ return d*Math.PI/180; }
+
+  function rotMat(theta){ return [[Math.cos(theta),-Math.sin(theta)],[Math.sin(theta),Math.cos(theta)]]; }
+  function matMul22(A,B){
+    return [[A[0][0]*B[0][0]+A[0][1]*B[1][0], A[0][0]*B[0][1]+A[0][1]*B[1][1]],
+            [A[1][0]*B[0][0]+A[1][1]*B[1][0], A[1][0]*B[0][1]+A[1][1]*B[1][1]]];
+  }
+  function matVec22(A,v){ return [A[0][0]*v[0]+A[0][1]*v[1], A[1][0]*v[0]+A[1][1]*v[1]]; }
+  function inv22(A){
+    const d = A[0][0]*A[1][1]-A[0][1]*A[1][0];
+    return [[A[1][1]/d,-A[0][1]/d],[-A[1][0]/d,A[0][0]/d]];
+  }
+  function eigSym22(A){
+    // eigenvalues of a symmetric 2×2
+    const tr = A[0][0]+A[1][1], det = A[0][0]*A[1][1]-A[0][1]*A[1][0];
+    const disc = Math.sqrt(Math.max(0,(tr/2)*(tr/2)-det));
+    return [tr/2+disc, tr/2-disc];
+  }
+
+  // Compute mean and covariance at step u
+  function getState2d(u, alpha, dtheta, r0, sx, sy){
+    const R_u = rotMat(u * dtheta);
+    const mu0 = [r0, 0];
+    const mu_u = matVec22([[Math.pow(alpha,u)*R_u[0][0], Math.pow(alpha,u)*R_u[0][1]],
+                           [Math.pow(alpha,u)*R_u[1][0], Math.pow(alpha,u)*R_u[1][1]]], mu0);
+    // covariance: anisotropic initial Σ_0 = diag(sx², sy²)
+    // rotated and shrunk: Σ_u = α^{2u} R_u Σ0 R_u^T + σ∞² I  (σ∞ from sigN=0.3, α)
+    const a2u = Math.pow(alpha, 2*u);
+    const Sigma0 = [[sx*sx, 0],[0, sy*sy]];
+    const R = rotMat(u * dtheta);
+    const RtS = matMul22(R, Sigma0);
+    const RtSRt = matMul22(RtS, [[R[0][0],R[1][0]],[R[0][1],R[1][1]]]);
+    const sigN = 0.3;
+    const si2 = alpha<1 ? sigN*sigN/(1-alpha*alpha) : 0.09;
+    const Sigma_u = [[a2u*RtSRt[0][0]+si2, a2u*RtSRt[0][1]],
+                     [a2u*RtSRt[1][0], a2u*RtSRt[1][1]+si2]];
+    return { mu: mu_u, Sigma: Sigma_u };
+  }
+
+  function applyOU2d(mu_u, Sigma_u, t){
+    const e2t = Math.exp(-2*t), et = Math.exp(-t);
+    const mu_t = [et*mu_u[0], et*mu_u[1]];
+    const Sigma_t = [[e2t*Sigma_u[0][0]+(1-e2t), e2t*Sigma_u[0][1]],
+                     [e2t*Sigma_u[1][0], e2t*Sigma_u[1][1]+(1-e2t)]];
+    return { mu: mu_t, Sigma: Sigma_t };
+  }
+
+  function scoreVec(x, mu_t, InvSig){
+    const d = [x[0]-mu_t[0], x[1]-mu_t[1]];
+    return [-matVec22(InvSig,[d[0],d[1]])[0], -matVec22(InvSig,[d[0],d[1]])[1]];
+  }
+
+  function gaussian2d(x, y, mu, Sigma){
+    const invS = inv22(Sigma);
+    const det = Sigma[0][0]*Sigma[1][1]-Sigma[0][1]*Sigma[1][0];
+    const dx = x-mu[0], dy = y-mu[1];
+    const q = invS[0][0]*dx*dx + 2*invS[0][1]*dx*dy + invS[1][1]*dy*dy;
+    return Math.exp(-0.5*q)/(2*Math.PI*Math.sqrt(Math.abs(det)));
+  }
+
+  function ellipsePoints(mu, Sigma, n=100){
+    // Cholesky
+    const L00 = Math.sqrt(Math.abs(Sigma[0][0]));
+    const L10 = Sigma[1][0]/L00;
+    const L11 = Math.sqrt(Math.max(1e-12, Sigma[1][1]-L10*L10));
+    const r = Math.sqrt(5.991); // 95% chi2, df=2
+    const xs=[], ys=[];
+    for(let i=0;i<=n;i++){
+      const th = 2*Math.PI*i/n;
+      const cx=r*Math.cos(th), cy=r*Math.sin(th);
+      xs.push(L00*cx+mu[0]); ys.push(L10*cx+L11*cy+mu[1]);
+    }
+    return {xs,ys};
+  }
+
+  const els3 = {
+    u:    document.getElementById('l3-u'),
+    t:    document.getElementById('l3-t'),
+    dth:  document.getElementById('l3-dtheta'),
+    alph: document.getElementById('l3-alpha'),
+    r0:   document.getElementById('l3-r0'),
+    ssig: document.getElementById('l3-sigsig'),
+  };
+
+  function drawLab3(){
+    const u   = +els3.u.value;
+    const t   = +els3.t.value;
+    const dth = deg2rad(+els3.dth.value);
+    const alp = +els3.alph.value;
+    const r0  = +els3.r0.value;
+    const rat = +els3.ssig.value; // sx/sy ratio
+
+    document.getElementById('l3-u-val').textContent  = u;
+    document.getElementById('l3-t-val').textContent  = t.toFixed(2);
+    document.getElementById('l3-dtheta-val').textContent = (+els3.dth.value).toFixed(0);
+    document.getElementById('l3-alpha-val').textContent  = alp.toFixed(2);
+    document.getElementById('l3-r0-val').textContent     = r0.toFixed(2);
+    document.getElementById('l3-sigsig-val').textContent = rat.toFixed(1);
+
+    const sx = 0.4*rat, sy = 0.4;
+    const {mu:mu_u, Sigma:Sig_u} = getState2d(u, alp, dth, r0, sx, sy);
+    const {mu:mu_t, Sigma:Sig_t} = applyOU2d(mu_u, Sig_u, t);
+    const InvSig = inv22(Sig_t);
+
+    // Trajectory of means
+    const traj_u = Array.from({length:u+1},(_,i)=>i);
+    const traj_x=[],traj_y=[];
+    for(let ui=0;ui<=u;ui++){
+      const s = getState2d(ui, alp, dth, r0, sx, sy);
+      traj_x.push(s.mu[0]); traj_y.push(s.mu[1]);
+    }
+
+    const ellC = ellipsePoints(mu_u, Sig_u);
+    const ellD = ellipsePoints(mu_t, Sig_t);
+
+    Plotly.react('p3-traj',[
+      {x:traj_x, y:traj_y, mode:'lines+markers', name:'μ_u trajectory',
+       line:{color:'#1a3a5c',width:1.5}, marker:{color:'#1a3a5c',size:5}},
+      {x:ellC.xs, y:ellC.ys, mode:'lines', name:'95% clean ellipse',
+       line:{color:'#1a3a5c',width:2,dash:'dot'}},
+      {x:[mu_u[0]], y:[mu_u[1]], mode:'markers', name:'current μ_u',
+       marker:{color:'#1a3a5c',size:12,symbol:'diamond'}},
+    ],{
+      margin:{t:10,b:40,l:45,r:20},
+      xaxis:{title:'x₁', range:[-r0-2,r0+2], scaleanchor:'y'},
+      yaxis:{title:'x₂', range:[-r0-2,r0+2]},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+      legend:{x:.02,y:.98,font:{family:'JetBrains Mono',size:10}},
+    },{responsive:true});
+
+    // Score vector field
+    const NG = 14, Rg = 4.0;
+    const gx = Array.from({length:NG},(_,i)=>-Rg+2*Rg*i/(NG-1));
+    const gy = Array.from({length:NG},(_,i)=>-Rg+2*Rg*i/(NG-1));
+    const qx=[],qy=[],qu=[],qv=[];
+    for(const xi of gx) for(const yi of gy){
+      const sv = scoreVec([xi,yi], mu_t, InvSig);
+      const nm = Math.sqrt(sv[0]*sv[0]+sv[1]*sv[1]);
+      const sc = 0.35/(nm+0.01); // scale arrows uniformly
+      qx.push(xi); qy.push(yi);
+      qu.push(sv[0]*sc); qv.push(sv[1]*sc);
+    }
+
+    // Density grid
+    const ND=60, Rd=4.5;
+    const dxs=Array.from({length:ND},(_,i)=>-Rd+2*Rd*i/(ND-1));
+    const dys=Array.from({length:ND},(_,i)=>-Rd+2*Rd*i/(ND-1));
+    const dZ=dys.map(yv=>dxs.map(xv=>gaussian2d(xv,yv,mu_t,Sig_t)));
+
+    const eigs = eigSym22(Sig_t);
+    const Jeigs = eigs.map(e=>(-1/e).toFixed(3));
+
+    Plotly.react('p3-score',[
+      {z:dZ,x:dxs,y:dys,type:'contour',colorscale:'Blues',
+       showscale:false,opacity:.55,contours:{coloring:'fill',showlines:true,start:0,size:0.02,end:0.4}},
+      {x:ellD.xs, y:ellD.ys, mode:'lines', name:'95% diffused ellipse',
+       line:{color:'#b5341a',width:2}},
+      {type:'scatter', mode:'markers', x:qx, y:qy,
+       marker:{symbol:'arrow', angleref:'previous',
+               color:'rgba(26,58,92,0.65)', size:9},
+       showlegend:false},
+      {x:qx.map((xi,i)=>[xi,xi+qu[i],null]).flat(),
+       y:qy.map((yi,i)=>[yi,yi+qv[i],null]).flat(),
+       mode:'lines', line:{color:'rgba(26,58,92,0.55)',width:1.2},
+       showlegend:false, hoverinfo:'skip'},
+      {x:[mu_t[0]], y:[mu_t[1]], mode:'markers', name:'μ_u(t)',
+       marker:{color:'#b5341a',size:12,symbol:'diamond'}},
+    ],{
+      margin:{t:10,b:40,l:45,r:20},
+      xaxis:{title:'x₁', range:[-Rd,Rd], scaleanchor:'y'},
+      yaxis:{title:'x₂', range:[-Rd,Rd]},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+      legend:{x:.02,y:.98,font:{family:'JetBrains Mono',size:10}},
+    },{responsive:true});
+
+    document.getElementById('lab3-status').textContent =
+      `u=${u}  t=${t.toFixed(2)}  μ_u(t)=(${mu_t[0].toFixed(2)}, ${mu_t[1].toFixed(2)})\n` +
+      `Σ eigenvalues: (${eigs[0].toFixed(3)}, ${eigs[1].toFixed(3)})  J eigenvalues: (${Jeigs[0]}, ${Jeigs[1]})`;
+  }
+
+  Object.values(els3).forEach(el => el.addEventListener('input', drawLab3));
+
+  let animT3=null;
+  document.getElementById('l3-animate').addEventListener('click', function(){
+    if(animT3){clearInterval(animT3);animT3=null;this.textContent='▶ Animate u';return;}
+    this.textContent='⏸ Stop';
+    animT3=setInterval(()=>{
+      let v=+els3.u.value+1; if(v>+els3.u.max) v=0;
+      els3.u.value=v; drawLab3();
+    },180);
+  });
+  document.getElementById('l3-reset').addEventListener('click',()=>{
+    if(animT3){clearInterval(animT3);animT3=null;document.getElementById('l3-animate').textContent='▶ Animate u';}
+    els3.u.value=0; els3.t.value=0.6; els3.dth.value=18;
+    els3.alph.value=1.0; els3.r0.value=2.0; els3.ssig.value=2.0;
+    drawLab3();
+  });
+
+  setTimeout(drawLab3,200);
+})();
+
+// ═══════════════════════════════════════════════════
+// LAB 4 — FORWARD / REVERSE PATHS
+// ═══════════════════════════════════════════════════
+(function setupLab4(){
+  const T_MAX = 3.0;
+  const COLORS_FWD = ['#111','#333','#555','#777','#999','#bbb','#aaa','#888','#666','#444','#222','#000'];
+  const COLOR_REV = '#c0427a';
+
+  function drawPaths(){
+    const p = window.lab1getP ? window.lab1getP() : G;
+    const u     = +document.getElementById('l4-u').value;
+    const npath = +document.getElementById('l4-npath').value;
+    const steps = +document.getElementById('l4-euler').value;
+
+    document.getElementById('l4-u-val').textContent     = u;
+    document.getElementById('l4-npath-val').textContent = npath;
+    document.getElementById('l4-euler-val').textContent = steps;
+
+    const {mu:mu_u, sig2:sig_u2} = getDistAtU(u, p.alpha, p.mu0, p.sig0, p.sigN);
+    const dt = T_MAX / steps;
+    const tvec = Array.from({length:steps+1},(_,i)=>i*dt);
+
+    rng = mulberry32(42 + u*1000 + npath);
+
+    const traces = [];
+
+    // Forward paths: x_0 ~ p_u, then OU forward
+    for(let pi=0;pi<npath;pi++){
+      // sample from p_u
+      let x = mu_u + Math.sqrt(sig_u2)*randn();
+      const fwd_x=[x], fwd_t=[0];
+      for(let s=0;s<steps;s++){
+        const dW = Math.sqrt(dt)*randn();
+        x += -x*dt + Math.sqrt(2)*dW;
+        fwd_x.push(x); fwd_t.push((s+1)*dt);
+      }
+      traces.push({
+        x:fwd_t, y:fwd_x, mode:'lines', type:'scatter',
+        line:{color:COLORS_FWD[pi%12],width:1.2,dash:'solid'},
+        name:pi===0?'Forward (noising)':null,
+        showlegend:pi===0, legendgroup:'fwd',
+        opacity:.7
+      });
+    }
+
+    // Reverse paths: start from N(0,1), Euler-Maruyama of reverse SDE
+    // reverse SDE: dx = [-x + 2*s(x,u,t)] dt + sqrt(2) dW
+    for(let pi=0;pi<npath;pi++){
+      let x = randn(); // start from N(0,1)
+      const rev_x=[x], rev_t=[T_MAX];
+      for(let s=0;s<steps;s++){
+        const t_now = T_MAX - s*dt;
+        const {mu:mu_ut, sig2:sig_ut2} = applyOU(mu_u, sig_u2, Math.max(t_now,0.01));
+        const sc = score1d(x, mu_ut, sig_ut2);
+        const dW = Math.sqrt(dt)*randn();
+        x += (-x + 2*sc)*dt + Math.sqrt(2)*dW;
+        rev_x.push(x); rev_t.push(T_MAX-(s+1)*dt);
+      }
+      traces.push({
+        x:rev_t, y:rev_x, mode:'lines', type:'scatter',
+        line:{color:COLOR_REV,width:1.5,dash:'dash'},
+        name:pi===0?'Reverse (generative)':null,
+        showlegend:pi===0, legendgroup:'rev',
+        opacity:.8
+      });
+    }
+
+    // True mean evolution
+    const meanFwd = tvec.map(t => {const r=applyOU(mu_u,sig_u2,t);return r.mu;});
+    traces.push({
+      x:tvec, y:meanFwd, mode:'lines', name:'E[x|u,t]',
+      line:{color:'#b5341a',width:2.5}, type:'scatter'
+    });
+
+    Plotly.react('p4-paths', traces, {
+      margin:{t:10,b:50,l:55,r:20},
+      xaxis:{title:'diffusion time t', zeroline:false},
+      yaxis:{title:'x'},
+      paper_bgcolor:'#fff', plot_bgcolor:'#fafafa',
+      legend:{x:.75,y:.98,bgcolor:'rgba(255,255,255,0.9)',font:{family:'JetBrains Mono',size:11}},
+      annotations:[
+        {x:0.02,y:1.04,xref:'paper',yref:'paper',text:'← t=0 (data)',showarrow:false,
+         font:{family:'JetBrains Mono',size:11,color:'#555'}},
+        {x:0.98,y:1.04,xref:'paper',yref:'paper',text:'t=T (noise) →',showarrow:false,
+         font:{family:'JetBrains Mono',size:11,color:'#555'}, xanchor:'right'},
+      ]
+    },{responsive:true});
+
+    document.getElementById('lab4-status').textContent =
+      `u=${u}  p_u = N(${mu_u.toFixed(2)}, ${Math.sqrt(sig_u2).toFixed(3)}²)  paths=${npath}`;
+  }
+
+  ['l4-u','l4-npath','l4-euler'].forEach(id =>
+    document.getElementById(id).addEventListener('input', drawPaths));
+
+  document.getElementById('l4-draw').addEventListener('click', ()=>{
+    rng = mulberry32(Math.floor(Date.now()%100000));
+    drawPaths();
+  });
+
+  setTimeout(drawPaths,400);
+})();
+</script>
+</body>
+</html>
