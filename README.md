@@ -53,6 +53,7 @@ python3 -m http.server 8080
 |-------|------|
 | TM3 — Rotation + OU | [rotation\_ou\_score\_lab.html](https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html) |
 | TM5 — Two Clocks (main) | [score\_two\_clocks\_lab.html](https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html) |
+| TM6 — Circle & Propagator | [circle\_score\_lab.html](https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html) |
 
 ---
 
@@ -68,6 +69,7 @@ interactive visualisations. No build step — open HTML in browser.
 | 3 | [Rotation + OU Score Lab](Toy-models/Toy-model_3/rotation_ou_score_lab.html) | 2 | `a(u+1) = R_{Δθ} a(u) + ξ_u` | Score quiver field + Jacobian eigenvalues |
 | 4 | [Bouncing Particle](Toy-models/toy-model-4/bouncing_cube_score_lab.html) | 3 | Billiard in [0,L]³ | Marginal (KDE) vs conditional (folded Gaussian) score |
 | 5 | [Score in Two Clocks](Toy-models/Toy-model_5/score_two_clocks_lab.html) ⭐ | 1–2 | AR(1): `x_{u+1} = αx_u + η_u` | Full (u,t) phase diagram; 4 interactive labs |
+| 6 | [Score on the Circle](Toy-models/Toy-model_6/circle_score_lab.html) 🆕 | 2 | Circle SDE: `dr=(1−r)du+√(2T_r)dB`, `dθ=ωdu+√(2T_θ)dB` | Separable exact score; 4-ODE order parameter; analytical propagator error ε(u,t)=2T_θ/(2T_θu+1−e^{−2t}) |
 
 ### Toy Model 5 — The Two-Clock Lab (main deliverable)
 

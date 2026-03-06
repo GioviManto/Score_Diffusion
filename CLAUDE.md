@@ -30,7 +30,8 @@ Score_Diffusion/
 │   ├── toy-model-2/toy-model-2.html                 # 1D trimodal joint p(x0,x1), score field
 │   ├── Toy-model_3/rotation_ou_score_lab.html       # 2D rotating AR(1), Jacobian eigenvalues
 │   ├── toy-model-4/bouncing_cube_score_lab.html     # 3D billiard, marginal vs conditional score
-│   └── Toy-model_5/score_two_clocks_lab.html        # MAIN: (u,t) plane, 4 labs, full analytics
+│   ├── Toy-model_5/score_two_clocks_lab.html        # MAIN: (u,t) plane, 4 labs, full analytics
+  └── Toy-model_6/circle_score_lab.html           # NEW: circle model, order param SDE, prop. error
 ├── reports/
 │   └── mezard_update.html                           # Email report for Prof. Mézard
 ├── README.md
