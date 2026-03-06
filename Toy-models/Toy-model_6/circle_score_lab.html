@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TM6 – Score on the Circle: Order Parameter SDE & Exact Propagator</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js" crossorigin="anonymous"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#f7f4ef; --ink:#1a1410; --accent:#b5341a; --accent2:#1a3a5c;
+    --muted:#6b5e50; --rule:#c9bfaf; --card:#ffffff; --code-bg:#f0ece4;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'EB Garamond',Georgia,serif; font-size:12pt; line-height:1.55;
+         color:var(--ink); background:var(--bg); max-width:960px; margin:0 auto; padding:36px 40px; }
+  h1 { font-size:22pt; font-weight:600; text-align:center; margin-bottom:4px; }
+  .subtitle { text-align:center; font-style:italic; color:var(--muted); margin-bottom:18px; }
+  h2 { font-size:14pt; font-weight:600; color:var(--accent2); border-bottom:1px solid var(--rule);
+       padding-bottom:3px; margin:24px 0 8px 0; }
+  h3 { font-size:12pt; font-weight:600; color:var(--ink); margin:14px 0 5px 0; }
+  p  { margin:6px 0 8px 0; }
+  ul,ol { padding-left:22px; margin:4px 0 8px 0; }
+  li { margin-bottom:3px; }
+
+  .math-block {
+    font-family:'JetBrains Mono',monospace; font-size:10pt;
+    background:var(--code-bg); border-left:3px solid var(--rule);
+    padding:10px 14px; margin:8px 0 10px 0; line-height:1.8;
+    overflow-x:auto;
+  }
+  code { font-family:'JetBrains Mono',monospace; font-size:9.5pt;
+         background:var(--code-bg); padding:1px 4px; border-radius:2px; }
+  .insight { background:#fff; border-left:3px solid var(--accent);
+             padding:10px 14px; margin:10px 0; }
+  .insight strong { color:var(--accent); }
+  .note { background:#f0f4ff; border-left:3px solid var(--accent2);
+          padding:8px 12px; margin:8px 0; font-size:11pt; }
+
+  /* ── Lab containers ── */
+  .lab-section {
+    background:var(--card); border:1px solid var(--rule); border-radius:4px;
+    padding:18px 22px; margin:20px 0;
+  }
+  .lab-header { font-size:13pt; font-weight:600; color:var(--accent2); margin-bottom:10px; }
+
+  /* ── Controls ── */
+  .controls { display:flex; flex-wrap:wrap; gap:10px 22px; margin:12px 0; align-items:center; }
+  .ctrl-group { display:flex; flex-direction:column; gap:2px; min-width:160px; }
+  .ctrl-label { font-size:9.5pt; font-family:'JetBrains Mono',monospace; color:var(--muted); }
+  .ctrl-row { display:flex; align-items:center; gap:6px; }
+  input[type=range] { width:130px; accent-color:var(--accent2); }
+  .ctrl-val { font-family:'JetBrains Mono',monospace; font-size:9.5pt;
+              color:var(--accent); min-width:40px; }
+
+  /* ── Status bars ── */
+  .status-bar { font-family:'JetBrains Mono',monospace; font-size:9.5pt;
+                background:var(--code-bg); padding:6px 12px; margin:8px 0;
+                border-radius:2px; color:var(--muted); line-height:1.8; }
+
+  /* ── Cols ── */
+  .cols2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .cols3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+  /* ── Regime badges ── */
+  .phases { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:10px 0; }
+  .phase { border:1px solid var(--rule); padding:6px 10px; border-radius:2px; font-size:10.5pt; }
+  .ph1 { border-left:3px solid #2a7f3f; }
+  .ph2 { border-left:3px solid var(--accent2); }
+  .ph3 { border-left:3px solid #7a4f00; }
+  .ph4 { border-left:3px solid #888; }
+  .phase-name { font-weight:600; font-size:9.5pt; font-family:'JetBrains Mono',monospace; }
+
+  /* ── Tables ── */
+  table { border-collapse:collapse; width:100%; margin:8px 0 10px 0; font-size:10.5pt; }
+  th { background:var(--accent2); color:#fff; padding:4px 8px; text-align:left;
+       font-family:'JetBrains Mono',monospace; font-size:9.5pt; }
+  td { padding:4px 8px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  tr:nth-child(even) td { background:#f3f0ea; }
+
+  hr { border:none; border-top:1px solid var(--rule); margin:16px 0; }
+  .plot-container { width:100%; min-height:340px; }
+</style>
+</head>
+<body>
+
+<h1>Toy Model 6 — Score on the Circle</h1>
+<p class="subtitle">Order Parameter SDE, Separable Exact Score, and Analytical Propagator Error</p>
+
+<p style="text-align:center;font-size:10.5pt;color:var(--muted);">
+  Part of the series: <em>Score-Based Diffusion for Dynamic Objects</em> &nbsp;·&nbsp; 2026
+</p>
+
+<div class="insight">
+  <strong>Post-Achilli direction.</strong>
+  This is the first toy model with <em>non-Gaussian</em> geometry: a stochastic process on the
+  circle with separable radial and angular dynamics. The score factorises exactly in polar
+  coordinates. The key result is that the score field is <em>fully determined</em> by a
+  4-dimensional order parameter φ(<em>u</em>) satisfying a closed ODE — the "SDE for the order
+  parameter" requested after the Achilli meeting. The rotation propagator
+  P = R<sub>ω</sub> has an <em>analytical</em> relative error ε(<em>u</em>, <em>t</em>)
+  that we derive and plot.
+</div>
+
+<!-- ══════════════════════════════════════════════ §1 ════ -->
+<h2>§1  Two-Temperature Dynamics on the Circle</h2>
+
+<p>
+  A particle moves in ℝ² with polar coordinates (<em>r</em>, <em>θ</em>).
+  The two degrees of freedom are governed by <em>independent</em> SDEs with separate temperatures:
+</p>
+
+<div class="math-block">
+  Radial (OU, confinement at r = 1):
+    dr(u) = (1 − r(u)) du  +  √(2 T_r) dB_r(u)
+
+  Angular (BM with drift):
+    dθ(u) = ω du  +  √(2 T_θ) dB_θ(u)
+</div>
+
+<p>
+  The independence of <em>r</em> and <em>θ</em> means the joint distribution
+  <em>factorises</em> in polar coordinates at every internal time <em>u</em>:
+</p>
+<div class="math-block">
+  p₀(r, θ | u)  =  p_r(r | u) · p_θ(θ | u)
+</div>
+
+<h3>Marginals (closed form)</h3>
+<div class="math-block">
+  Radial OU marginal:
+    m_r(u)  = 1 + (r₀ − 1) e^{−u}              [mean, decays to 1]
+    σ²_r(u) = T_r (1 − e^{−2u})                [variance, grows to T_r]
+    p_r(r|u) ≈ N(m_r(u), σ²_r(u))              [Gaussian approximation, exact for T_r→0]
+
+  Angular BM with drift:
+    θ_mean(u) = θ₀ + ω u                         [mean angle, rotates at rate ω]
+    σ²_θ(u)   = 2 T_θ u                          [angular variance, grows as diffusion]
+    p_θ(θ|u)  = Wrapped-N(θ_mean(u), σ²_θ(u))  [wrapped Gaussian on S¹]
+</div>
+
+<div class="note">
+  <strong>Two limiting cases:</strong>
+  (a) T_θ → 0: pure rotation, no angular spreading; the propagator P = R_ω is <em>exact</em>.
+  (b) T_r → 0: particle stays on the unit circle; dynamics reduce to
+  Toy Model 3 but with angular diffusion.
+</div>
+
+<!-- ══════════════════════════════════════════════ §2 ════ -->
+<h2>§2  Exact Score via Polar Decomposition</h2>
+
+<p>
+  The log-density in Cartesian coordinates (<em>x</em>, <em>y</em>) = (<em>r</em>cos<em>θ</em>, <em>r</em>sin<em>θ</em>):
+</p>
+<div class="math-block">
+  log p₀(x,y|u)  =  log p_r(r|u)  +  log p_θ(θ|u)  −  log r  +  const
+</div>
+<p>
+  The <strong>−log r</strong> term arises from the Jacobian of the polar → Cartesian map
+  (the volume element is r dr dθ = dx dy, so p(x,y) = p(r,θ)/r).
+  Differentiating:
+</p>
+<div class="math-block">
+  s_r(r, u)      = ∂_r log p_r  = −(r − m_r(u)) / σ²_r(u)      [radial score]
+  s^{1D}_θ(θ, u) = ∂_θ log p_θ  = −(θ_adj − θ_mean(u)) / σ²_θ(u)  [angular score]
+
+  Full 2D Cartesian score, decomposed in ê_r = (cos θ, sin θ) and ê_θ = (−sin θ, cos θ):
+
+      s(x, u) = ( s_r(r,u) − 1/r ) ê_r  +  ( s^{1D}_θ(θ,u) / r ) ê_θ
+</div>
+<p>
+  The <strong>−1/r</strong> correction to the radial component arises from the Jacobian term.
+  It pushes the score <em>inward</em> near the origin (anti-confining)
+  and is negligible for r ≈ 1.
+</p>
+
+<div class="insight">
+  <strong>Structure of the score.</strong>
+  Unlike Toy Models 1–5 (where s was linear in x), here s(x, u) is
+  <em>nonlinear in x</em> (through the 1/r and θ = atan2(y,x) dependence).
+  Nevertheless it remains <em>analytically exact</em> and fully tractable.
+  The two components — radial and tangential — are geometrically separated and
+  independently parametrised by (m_r, σ_r) and (θ_mean, σ_θ) respectively.
+</div>
+
+<!-- ══════════════════════════════════════════════ §3 ════ -->
+<h2>§3  Score as Order Parameter: the 4-ODE System</h2>
+
+<p>
+  The score field <em>s</em>(<em>x</em>, <em>u</em>) is entirely determined by the
+  <strong>order parameter vector</strong>
+</p>
+<div class="math-block">
+  φ(u) = ( m_r(u),  σ²_r(u),  θ_mean(u),  σ²_θ(u) )  ∈  ℝ⁴
+</div>
+<p>via the formula in §2. The order parameters satisfy a <strong>closed, linear ODE system</strong>:</p>
+
+<div class="math-block">
+  dm_r / du    =  −(m_r − 1)      [OU: decay toward r=1, rate 1]
+  dσ²_r / du   =  2(T_r − σ²_r)  [variance: relaxes to stationary value T_r]
+  dθ_mean / du =  ω               [angular mean: pure drift, no restoring force]
+  dσ²_θ / du   =  2 T_θ          [angular variance: grows linearly (diffusion)]
+</div>
+
+<p>
+  These are all <em>exactly solvable</em>:
+  m_r(u) = 1 + (r₀−1)e^{−u}, σ²_r(u) = T_r(1−e^{−2u}),
+  θ_mean(u) = θ₀+ωu, σ²_θ(u) = 2T_θu.
+</p>
+
+<h3>Precision form: Riccati equation</h3>
+<p>
+  For the angular direction, introduce the <strong>precision</strong>
+  κ_θ(<em>u</em>) = 1/σ²_θ(<em>u</em>) = −J_s^{tang} (the Jacobian eigenvalue in the tangential direction).
+  From dσ²_θ/du = 2T_θ:
+</p>
+<div class="math-block">
+  dκ_θ / du  =  −2 T_θ · κ²_θ           [Riccati equation for angular precision]
+
+  Solution:  κ_θ(u)  =  1 / (2 T_θ u)   [algebraic decay; starts at ∞, falls as 1/u]
+</div>
+<p>
+  For the AR(1) model in continuous time (x evolves as dx = −γx du + σ_η dW),
+  the <em>radial</em> precision satisfies the analogous Riccati:
+</p>
+<div class="math-block">
+  dκ_r / du  =  2γ κ_r  −  σ²_η κ²_r   [Riccati: two-fixed-point structure]
+
+  Fixed points:  κ_r = 0  (unstable)  and  κ_r = 2γ/σ²_η = 1/σ²_∞  (stable)
+</div>
+
+<div class="insight">
+  <strong>Unification.</strong>
+  The Riccati equation dκ/du = 2γκ − σ²_η κ² governs the precision
+  (= minus the Jacobian eigenvalue) for <em>all</em> Gaussian dynamics:
+  the circle (γ=0, angular), the AR(1) (γ>0, 1D), and the rotating AR(1) in 2D
+  (matrix Riccati). This is the core "SDE for the order parameter" from the Achilli direction.
+</div>
+
+<!-- ══════════════════════════════════════════════ §4 ════ -->
+<h2>§4  Rotation Propagator: Exact Formula and Analytical Error</h2>
+
+<h3>The rotation propagator</h3>
+<p>
+  Define P = R_ω (rotation by angle ω) acting on score <em>fields</em> as:
+</p>
+<div class="math-block">
+  [P · s_u](x)  =  R_ω · s_u( R_{−ω} · x )
+
+  i.e. evaluate s_u at the <em>back-rotated point</em>, then <em>rotate the output</em>.
+</div>
+<p>
+  <strong>When is P exact?</strong>
+  Substituting the score formula from §2 and using r invariance under rotation:
+</p>
+<div class="math-block">
+  [P · s_u](x) radial component:  s_r(r, u) − 1/r     [unchanged, since r is rotation-invariant]
+  [P · s_u](x) tangential:        −(θ − θ_mean(u) − ω) / σ²_θ(u) · (1/r)
+
+  Compare s_{u+1}(x) tangential:  −(θ − θ_mean(u+1)) / σ²_θ(u+1) · (1/r)
+                                 = −(θ − θ_mean(u) − ω) / σ²_θ(u+1) · (1/r)   [since θ_mean(u+1)=θ_mean(u)+ω]
+</div>
+<p>
+  The two are identical iff σ²_θ(<em>u</em>+1) = σ²_θ(<em>u</em>), i.e. <strong>T_θ = 0</strong>.
+  The relative error for T_θ > 0 is:
+</p>
+<div class="math-block">
+  ε_tang(u)  =  | σ²_θ(u+1) / σ²_θ(u) − 1 |
+             =  2 T_θ / (2 T_θ u)
+             =  1/u                              [t=0, clean score]
+</div>
+
+<h3>After OU diffusion (diffusion time t)</h3>
+<p>
+  Forward noise adds (1−e^{−2t}) to the effective angular variance per unit r² (Cartesian OU → polar):
+</p>
+<div class="math-block">
+  σ²_θ,eff(u, t)  ≈  σ²_θ(u) + (1 − e^{−2t})     [OU noise adds to angular spread]
+
+  ε(u, t)  =  ( σ²_θ,eff(u+1,t) − σ²_θ,eff(u,t) ) / σ²_θ,eff(u, t)
+           =  2 T_θ / ( 2 T_θ u  +  (1 − e^{−2t}) )
+</div>
+
+<div class="phases">
+  <div class="phase ph1">
+    <div class="phase-name">Large u, small t → ε ≈ 1/u (small)</div>
+    Many steps → angular variance accumulated, ratio → 1. Propagator nearly exact.
+  </div>
+  <div class="phase ph2">
+    <div class="phase-name">Small u, small t → ε = 1/u (large)</div>
+    Few steps → variance ratio is large. Propagator fails: score field at u+1 is narrower.
+  </div>
+  <div class="phase ph3">
+    <div class="phase-name">Intermediate t → ε &lt; 1/u</div>
+    OU noise dominates angular width → variance ratio → 1 faster. Phase II sweet spot.
+  </div>
+  <div class="phase ph4">
+    <div class="phase-name">Large t → ε → 0 (trivially)</div>
+    s(x,u,t) ≈ −x for all u; propagator ≈ identity everywhere.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ §5 ════ -->
+<h2>§5  After OU Diffusion: the (u, t) Plane</h2>
+
+<p>
+  Each frame is independently corrupted by OU noise at diffusion time <em>t</em>:
+</p>
+<div class="math-block">
+  X_t(u)  =  a(u) e^{−t}  +  √(1 − e^{−2t}) · Z,   Z ~ N(0, I₂)
+</div>
+<p>
+  The noised score at (<em>x</em>, <em>u</em>, <em>t</em>) is computed via the Tweedie formula
+  (Monte Carlo, exact up to sampling error):
+</p>
+<div class="math-block">
+  s(x, u, t)  =  E_{a ~ p₀(·|u)} [ (a e^{−t} − x) / (1−e^{−2t})  |  X_t = x ]
+             ≈  Σ_k w_k(x) · (a_k e^{−t} − x) / (1−e^{−2t})
+
+  where  w_k(x) ∝ N( x;  a_k e^{−t},  (1−e^{−2t}) I )  [Gaussian mixture weights]
+</div>
+
+<hr>
+
+<!-- ══════════════════════════════════════════════ LAB 1 ════ -->
+<div class="lab-section">
+  <div class="lab-header">Lab 1 — Circle Trajectory &amp; Score Field</div>
+  <p style="font-size:11pt;">
+    <strong>Left:</strong> stochastic trajectory of a(u) on the circle, coloured by internal time u.
+    <strong>Right:</strong> score quiver field s(x, u_fixed, t_fixed) — the analytical clean score at t=0
+    or the MC Tweedie score at t&gt;0.
+    The score has both a <em>radial component</em> (pointing toward the ring, ê_r direction)
+    and a <em>tangential component</em> (angular correction, ê_θ direction).
+  </p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Internal time  u</div>
+      <div class="ctrl-row">
+        <input type="range" id="l1-u" min="0.5" max="12" step="0.5" value="4">
+        <span class="ctrl-val" id="l1-u-val">4.0</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Diffusion time  t</div>
+      <div class="ctrl-row">
+        <input type="range" id="l1-t" min="0" max="2.5" step="0.05" value="0">
+        <span class="ctrl-val" id="l1-t-val">0.00</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Angular velocity  ω</div>
+      <div class="ctrl-row">
+        <input type="range" id="l1-omega" min="0" max="1.5" step="0.05" value="0.5">
+        <span class="ctrl-val" id="l1-omega-val">0.50</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Radial temp  T_r</div>
+      <div class="ctrl-row">
+        <input type="range" id="l1-Tr" min="0.02" max="0.6" step="0.02" value="0.15">
+        <span class="ctrl-val" id="l1-Tr-val">0.15</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Angular temp  T_θ</div>
+      <div class="ctrl-row">
+        <input type="range" id="l1-Ttheta" min="0.01" max="0.4" step="0.01" value="0.08">
+        <span class="ctrl-val" id="l1-Ttheta-val">0.08</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="l1-status">φ(u) = ( m_r, σ_r, θ_mean, σ_θ ) = …</div>
+  <div class="plot-container" id="plot-lab1" style="min-height:380px;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════ LAB 2 ════ -->
+<div class="lab-section">
+  <div class="lab-header">Lab 2 — Order Parameter Evolution: the 4-ODE System</div>
+  <p style="font-size:11pt;">
+    The four order parameters φ(<em>u</em>) = (m_r, σ_r, θ_mean, σ_θ) determine the score field
+    completely. Watch how they evolve: the radial parameters <em>converge</em> to stationarity,
+    while the angular parameters <em>diverge</em> (rotation + diffusion accumulate).
+    The Riccati precision κ_θ = 1/σ²_θ decays as 1/<em>u</em>.
+  </p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Max internal time  u_max</div>
+      <div class="ctrl-row">
+        <input type="range" id="l2-umax" min="4" max="20" step="1" value="10">
+        <span class="ctrl-val" id="l2-umax-val">10</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Angular velocity  ω</div>
+      <div class="ctrl-row">
+        <input type="range" id="l2-omega" min="0" max="1.5" step="0.05" value="0.5">
+        <span class="ctrl-val" id="l2-omega-val">0.50</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Radial temp  T_r</div>
+      <div class="ctrl-row">
+        <input type="range" id="l2-Tr" min="0.02" max="0.5" step="0.02" value="0.15">
+        <span class="ctrl-val" id="l2-Tr-val">0.15</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Angular temp  T_θ</div>
+      <div class="ctrl-row">
+        <input type="range" id="l2-Ttheta" min="0.01" max="0.3" step="0.01" value="0.08">
+        <span class="ctrl-val" id="l2-Ttheta-val">0.08</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Initial radius  r₀</div>
+      <div class="ctrl-row">
+        <input type="range" id="l2-r0" min="0.3" max="2.0" step="0.1" value="1.5">
+        <span class="ctrl-val" id="l2-r0-val">1.50</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="plot-container" id="plot-lab2" style="min-height:400px;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════ LAB 3 ════ -->
+<div class="lab-section">
+  <div class="lab-header">Lab 3 — Propagator Error ε(u, t) = 2T_θ / (2T_θ u + 1 − e^{−2t})</div>
+  <p style="font-size:11pt;">
+    Relative L2 error of the rotation propagator P = R_ω on the <em>tangential</em> score component.
+    <strong>Left:</strong> ε(<em>u</em>) for several values of diffusion time <em>t</em> — each curve shows
+    the analytical formula (solid) and a Monte Carlo estimate at selected points (dots).
+    <strong>Right:</strong> 2D heatmap of ε(<em>u</em>, <em>t</em>) on the (<em>u</em>, <em>t</em>) plane —
+    the propagator works best in the lower-right (large <em>u</em>, intermediate <em>t</em>: Phase II).
+  </p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Angular temp  T_θ</div>
+      <div class="ctrl-row">
+        <input type="range" id="l3-Ttheta" min="0.01" max="0.4" step="0.01" value="0.1">
+        <span class="ctrl-val" id="l3-Ttheta-val">0.10</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Angular velocity  ω</div>
+      <div class="ctrl-row">
+        <input type="range" id="l3-omega" min="0.1" max="2.0" step="0.05" value="0.5">
+        <span class="ctrl-val" id="l3-omega-val">0.50</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Radial temp  T_r</div>
+      <div class="ctrl-row">
+        <input type="range" id="l3-Tr" min="0.02" max="0.5" step="0.02" value="0.1">
+        <span class="ctrl-val" id="l3-Tr-val">0.10</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="l3-status">ε(u=5, t=0) = 1/5 = 0.200 (analytical)</div>
+  <div class="cols2">
+    <div class="plot-container" id="plot-lab3-curves" style="min-height:340px;"></div>
+    <div class="plot-container" id="plot-lab3-heatmap" style="min-height:340px;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ SCRIPT ════ -->
+<script>
+'use strict';
+
+// ── Utilities ────────────────────────────────────────────────
+function randn() {
+  const u = 1 - Math.random(), v = 1 - Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function linspace(a, b, n) {
+  const arr = [];
+  for (let i = 0; i < n; i++) arr.push(a + (b - a) * i / (n - 1));
+  return arr;
+}
+
+// ── Order parameters (analytical) ────────────────────────────
+const mR       = (u, p) => 1 + (p.r0 - 1) * Math.exp(-u);
+const varR     = (u, p) => Math.max(p.Tr * (1 - Math.exp(-2 * u)), 1e-8);
+const tMean    = (u, p) => p.theta0 + p.omega * u;
+const varTheta = (u, p) => Math.max(2 * p.Ttheta * u, 1e-8);
+
+// ── Sampling from p₀(·|u) ────────────────────────────────────
+function sampleCircle(u, N, p) {
+  const mr = mR(u, p), sr = Math.sqrt(varR(u, p));
+  const tm = tMean(u, p), st = Math.sqrt(varTheta(u, p));
+  const out = [];
+  for (let i = 0; i < N; i++) {
+    const r = mr + sr * randn();
+    const theta = tm + st * randn();
+    out.push([r * Math.cos(theta), r * Math.sin(theta)]);
+  }
+  return out;
+}
+
+// ── Analytical clean score (t = 0) ───────────────────────────
+function scoreClean(x, y, u, p) {
+  const r2 = x * x + y * y;
+  if (r2 < 1e-10) return [0, 0];
+  const r = Math.sqrt(r2);
+  const mr = mR(u, p), vr = varR(u, p);
+  const tm = tMean(u, p), vt = varTheta(u, p);
+
+  // Wrap theta to nearest branch of tm
+  let th = Math.atan2(y, x);
+  th -= tm;
+  th -= 2 * Math.PI * Math.round(th / (2 * Math.PI));
+  th += tm;
+
+  const sr = -(r - mr) / vr;          // radial score
+  const st = -(th - tm) / vt;         // angular score 1D
+
+  // ê_r = (x/r, y/r),  ê_θ = (-y/r, x/r)
+  const ex = x / r, ey = y / r;
+  const fx = -ey, fy = ex;
+
+  return [
+    (sr - 1 / r) * ex + (st / r) * fx,
+    (sr - 1 / r) * ey + (st / r) * fy
+  ];
+}
+
+// ── MC Tweedie score (t > 0) ─────────────────────────────────
+function scoreMC(x, y, t, samples) {
+  if (t < 5e-3) return null; // signal: use clean
+  const s2t = 1 - Math.exp(-2 * t);
+  const et  = Math.exp(-t);
+  const inv = 1 / s2t;
+
+  // log weights (numerically stable via max subtraction)
+  let maxLW = -Infinity;
+  const lws = samples.map(([ax, ay]) => {
+    const dx = x - ax * et, dy = y - ay * et;
+    const lw = -(dx * dx + dy * dy) * inv / 2;
+    if (lw > maxLW) maxLW = lw;
+    return lw;
+  });
+
+  let wx = 0, wy = 0, wsum = 0;
+  samples.forEach(([ax, ay], k) => {
+    const wk = Math.exp(lws[k] - maxLW);
+    wx   += wk * (ax * et - x) * inv;
+    wy   += wk * (ay * et - y) * inv;
+    wsum += wk;
+  });
+
+  return wsum < 1e-12 ? [-x, -y] : [wx / wsum, wy / wsum];
+}
+
+// ── Score dispatch (clean or MC) ─────────────────────────────
+function scoreAt(x, y, u, t, samples, p) {
+  if (t < 5e-3) return scoreClean(x, y, u, p);
+  const mc = scoreMC(x, y, t, samples);
+  return mc !== null ? mc : scoreClean(x, y, u, p);
+}
+
+// ── Rotation propagator ───────────────────────────────────────
+function propagate(scoreFn, x, y, omega) {
+  const cw = Math.cos(omega), sw = Math.sin(omega);
+  const xp =  cw * x + sw * y;
+  const yp = -sw * x + cw * y;
+  const [sx, sy] = scoreFn(xp, yp);
+  return [cw * sx - sw * sy, sw * sx + cw * sy];
+}
+
+// ── Analytical propagator error ───────────────────────────────
+function propError(u, t, Ttheta) {
+  const vt_u  = 2 * Ttheta * u;
+  const noise = 1 - Math.exp(-2 * t);
+  return (2 * Ttheta) / (vt_u + noise + 1e-12);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LAB 1 — trajectory + score field
+// ═══════════════════════════════════════════════════════════════
+function renderLab1() {
+  const u_fix   = +document.getElementById('l1-u').value;
+  const t_fix   = +document.getElementById('l1-t').value;
+  const omega   = +document.getElementById('l1-omega').value;
+  const Tr      = +document.getElementById('l1-Tr').value;
+  const Ttheta  = +document.getElementById('l1-Ttheta').value;
+  const p = { omega, Tr, Ttheta, r0: 1.2, theta0: 0 };
+
+  // ── Trajectory (10 steps, 3 realisations) ──────────────────
+  const U_max = Math.ceil(u_fix) + 2;
+  const N_traj = 3;
+  const traj_traces = [];
+  const colors_traj = ['#b5341a', '#1a3a5c', '#2a7f3f'];
+
+  for (let k = 0; k < N_traj; k++) {
+    const xs = [], ys = [];
+    let r_cur = mR(0, p) + Math.sqrt(varR(0.01, p)) * randn();
+    let th_cur = tMean(0, p) + Math.sqrt(varTheta(0.01, p)) * randn();
+    const steps = U_max * 8;
+    const du = U_max / steps;
+    for (let i = 0; i <= steps; i++) {
+      xs.push(r_cur * Math.cos(th_cur));
+      ys.push(r_cur * Math.sin(th_cur));
+      // Euler-Maruyama step
+      r_cur  += (1 - r_cur) * du + Math.sqrt(2 * Tr * du) * randn();
+      th_cur += omega * du + Math.sqrt(2 * Ttheta * du) * randn();
+    }
+    traj_traces.push({
+      x: xs, y: ys, mode: 'lines', name: `traj ${k+1}`,
+      line: { color: colors_traj[k], width: 1.2 },
+      xaxis: 'x', yaxis: 'y'
+    });
+  }
+
+  // ── Unit circle reference ───────────────────────────────────
+  const circ_th = linspace(0, 2 * Math.PI, 100);
+  traj_traces.push({
+    x: circ_th.map(Math.cos), y: circ_th.map(Math.sin),
+    mode: 'lines', line: { color: '#c9bfaf', width: 1, dash: 'dot' },
+    name: 'r=1', xaxis: 'x', yaxis: 'y', showlegend: false
+  });
+
+  // ── Score quiver field (right subplot) ─────────────────────
+  const N_mc = 300;
+  const samples = (t_fix >= 5e-3) ? sampleCircle(u_fix, N_mc, p) : [];
+  const N_grid = 16;
+  const lim = 2.0;
+  const gx = linspace(-lim, lim, N_grid);
+  const gy = linspace(-lim, lim, N_grid);
+
+  const arrX = [], arrY = [], arrU = [], arrV = [], arrC = [];
+  const scale = 0.18;
+  for (const xi of gx) {
+    for (const yi of gy) {
+      const [sx, sy] = scoreAt(xi, yi, u_fix, t_fix, samples, p);
+      const mag = Math.sqrt(sx * sx + sy * sy);
+      if (mag < 1e-8) continue;
+      const len = Math.min(scale * mag, 0.28) / mag;
+      arrX.push(xi); arrY.push(yi);
+      arrU.push(sx * len); arrV.push(sy * len);
+      arrC.push(mag);
+    }
+  }
+
+  // Normalise colour
+  const maxMag = Math.max(...arrC, 1e-6);
+
+  // Build cone-like arrows via annotations is slow; use scatter with lines
+  const quiv_traces = [];
+  for (let i = 0; i < arrX.length; i++) {
+    const frac = arrC[i] / maxMag;
+    const col = `hsl(${220 - 180 * frac}, 75%, ${35 + 30 * (1 - frac)}%)`;
+    quiv_traces.push({
+      x: [arrX[i], arrX[i] + arrU[i]],
+      y: [arrY[i], arrY[i] + arrV[i]],
+      mode: 'lines',
+      line: { color: col, width: 1.4 },
+      xaxis: 'x2', yaxis: 'y2',
+      showlegend: false
+    });
+  }
+  // Mean position marker
+  const tm_cur = tMean(u_fix, p);
+  quiv_traces.push({
+    x: [Math.cos(tm_cur)], y: [Math.sin(tm_cur)],
+    mode: 'markers', marker: { size: 10, color: '#b5341a', symbol: 'circle' },
+    name: 'θ_mean', xaxis: 'x2', yaxis: 'y2'
+  });
+  quiv_traces.push({
+    x: circ_th.map(Math.cos), y: circ_th.map(Math.sin),
+    mode: 'lines', line: { color: '#c9bfaf', width: 1, dash: 'dot' },
+    xaxis: 'x2', yaxis: 'y2', showlegend: false
+  });
+
+  // ── Update status ──────────────────────────────────────────
+  const mr_v = mR(u_fix, p).toFixed(3);
+  const sr_v = Math.sqrt(varR(u_fix, p)).toFixed(3);
+  const tm_v = (tMean(u_fix, p) % (2 * Math.PI)).toFixed(3);
+  const st_v = Math.sqrt(varTheta(u_fix, p)).toFixed(3);
+  document.getElementById('l1-status').textContent =
+    `φ(u=${u_fix}) = ( m_r=${mr_v},  σ_r=${sr_v},  θ_mean=${tm_v} rad,  σ_θ=${st_v} rad )` +
+    `   |   score type: ${t_fix < 5e-3 ? 'analytical (t=0)' : 'MC Tweedie (t=' + t_fix.toFixed(2) + ')'}`;
+
+  const all_traces = [...traj_traces, ...quiv_traces];
+  const layout = {
+    paper_bgcolor: '#f7f4ef', plot_bgcolor: '#ffffff',
+    font: { family: 'EB Garamond, serif', color: '#1a1410' },
+    margin: { l: 40, r: 20, t: 40, b: 40 },
+    grid: { rows: 1, columns: 2, pattern: 'independent' },
+    xaxis:  { range: [-2.2, 2.2], scaleanchor: 'y',  title: 'x₁', zeroline: false },
+    yaxis:  { range: [-2.2, 2.2], title: 'x₂', zeroline: false },
+    xaxis2: { range: [-2.2, 2.2], scaleanchor: 'y2', title: 'x₁', zeroline: false },
+    yaxis2: { range: [-2.2, 2.2], title: 'x₂', zeroline: false },
+    annotations: [
+      { text: 'Trajectory a(u)', xref: 'x domain', yref: 'y domain', x: 0.5, y: 1.05,
+        showarrow: false, font: { size: 11 }, xaxis: 'x' },
+      { text: `Score field  s(x, u=${u_fix}, t=${t_fix.toFixed(2)})`,
+        xref: 'x2 domain', yref: 'y2 domain', x: 0.5, y: 1.05,
+        showarrow: false, font: { size: 11 } }
+    ],
+    showlegend: false
+  };
+
+  Plotly.react('plot-lab1', all_traces, layout, { responsive: true });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LAB 2 — order parameter evolution
+// ═══════════════════════════════════════════════════════════════
+function renderLab2() {
+  const u_max  = +document.getElementById('l2-umax').value;
+  const omega  = +document.getElementById('l2-omega').value;
+  const Tr     = +document.getElementById('l2-Tr').value;
+  const Ttheta = +document.getElementById('l2-Ttheta').value;
+  const r0     = +document.getElementById('l2-r0').value;
+  const p = { omega, Tr, Ttheta, r0, theta0: 0 };
+
+  const N = 120;
+  const us = linspace(0.05, u_max, N);
+  const mr_arr   = us.map(u => mR(u, p));
+  const sr_arr   = us.map(u => Math.sqrt(varR(u, p)));
+  const tm_arr   = us.map(u => tMean(u, p));         // unbounded
+  const st_arr   = us.map(u => Math.sqrt(varTheta(u, p)));
+  const kappa_arr = us.map(u => 1 / varTheta(u, p)); // precision = 1/σ²_θ
+
+  const traces = [
+    {
+      x: us, y: mr_arr, name: 'm_r(u)',
+      mode: 'lines', line: { color: '#b5341a', width: 2 },
+      yaxis: 'y'
+    },
+    {
+      x: us, y: sr_arr, name: 'σ_r(u)',
+      mode: 'lines', line: { color: '#e88060', width: 2, dash: 'dash' },
+      yaxis: 'y'
+    },
+    {
+      x: us, y: st_arr, name: 'σ_θ(u)',
+      mode: 'lines', line: { color: '#1a3a5c', width: 2 },
+      yaxis: 'y2'
+    },
+    {
+      x: us, y: kappa_arr, name: 'κ_θ = 1/σ²_θ',
+      mode: 'lines', line: { color: '#4a8ab5', width: 2, dash: 'dot' },
+      yaxis: 'y3'
+    },
+    // Stationary reference lines
+    {
+      x: [us[0], us[us.length-1]], y: [1, 1],
+      mode: 'lines', line: { color: '#2a7f3f', width: 1, dash: 'dot' },
+      name: 'r=1 (stationary)', yaxis: 'y'
+    },
+    {
+      x: [us[0], us[us.length-1]], y: [Math.sqrt(Tr), Math.sqrt(Tr)],
+      mode: 'lines', line: { color: '#e8b060', width: 1, dash: 'dot' },
+      name: 'σ_r,∞ = √T_r', yaxis: 'y'
+    }
+  ];
+
+  const layout = {
+    paper_bgcolor: '#f7f4ef', plot_bgcolor: '#ffffff',
+    font: { family: 'EB Garamond, serif', color: '#1a1410' },
+    margin: { l: 55, r: 60, t: 30, b: 40 },
+    xaxis: { title: 'Internal time u', zeroline: false },
+    yaxis:  { title: 'm_r, σ_r  (radial)', side: 'left',  color: '#b5341a',
+              zeroline: false, range: [0, Math.max(r0 + 0.2, 1.5)] },
+    yaxis2: { title: 'σ_θ  (angular)', side: 'right', overlaying: 'y',
+              color: '#1a3a5c', zeroline: false },
+    yaxis3: { title: 'κ_θ = 1/σ²_θ', side: 'right', overlaying: 'y',
+              position: 1, color: '#4a8ab5', zeroline: false },
+    legend: { orientation: 'h', y: -0.18 },
+    title: { text: 'Order parameter φ(u) — the 4-ODE system', font: { size: 12 } }
+  };
+
+  Plotly.react('plot-lab2', traces, layout, { responsive: true });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LAB 3 — propagator error ε(u, t)
+// ═══════════════════════════════════════════════════════════════
+function renderLab3() {
+  const Ttheta = +document.getElementById('l3-Ttheta').value;
+  const Tr     = +document.getElementById('l3-Tr').value;
+  const omega  = +document.getElementById('l3-omega').value;
+
+  const u_vals = linspace(0.5, 15, 100);
+  const t_vals_curve = [0, 0.3, 0.7, 1.2, 2.0];
+  const t_colors = ['#b5341a', '#1a3a5c', '#2a7f3f', '#7a4f00', '#888888'];
+
+  // ── Curves: ε(u) for several t values ─────────────────────
+  const curve_traces = t_vals_curve.map((t, idx) => ({
+    x: u_vals,
+    y: u_vals.map(u => propError(u, t, Ttheta)),
+    mode: 'lines',
+    name: `t = ${t.toFixed(1)}`,
+    line: { color: t_colors[idx], width: 2 }
+  }));
+
+  // 1/u reference line for t=0
+  curve_traces.push({
+    x: u_vals, y: u_vals.map(u => 1/u),
+    mode: 'lines', name: '1/u (t=0, exact)',
+    line: { color: '#b5341a', width: 1, dash: 'dot' }
+  });
+
+  const layout_curves = {
+    paper_bgcolor: '#f7f4ef', plot_bgcolor: '#ffffff',
+    font: { family: 'EB Garamond, serif', color: '#1a1410' },
+    margin: { l: 55, r: 20, t: 30, b: 50 },
+    xaxis: { title: 'Internal time u', range: [0, 15], zeroline: false },
+    yaxis: { title: 'Propagator error ε(u, t)', range: [0, Math.min(1/0.5 + 0.1, 2.1)],
+             zeroline: false },
+    legend: { x: 0.65, y: 0.95 },
+    shapes: [{ type: 'line', x0: 0, x1: 15, y0: 0.1, y1: 0.1,
+               line: { color: '#888', width: 1, dash: 'dot' } }],
+    annotations: [{ x: 14, y: 0.12, text: 'ε = 0.1', showarrow: false,
+                    font: { size: 9, color: '#888' } }],
+    title: { text: 'ε(u, t)  curves', font: { size: 11 } }
+  };
+
+  Plotly.react('plot-lab3-curves', curve_traces, layout_curves, { responsive: true });
+
+  // ── Heatmap: ε(u, t) on the (u, t) plane ──────────────────
+  const u_heat = linspace(0.5, 15, 60);
+  const t_heat = linspace(0, 3, 60);
+  const z_heat = t_heat.map(t => u_heat.map(u => propError(u, t, Ttheta)));
+
+  const heatmap_trace = [{
+    type: 'heatmap',
+    x: u_heat, y: t_heat, z: z_heat,
+    colorscale: [
+      [0,   '#1a3a5c'],
+      [0.2, '#3a7ab5'],
+      [0.5, '#f0f4ff'],
+      [0.8, '#e88060'],
+      [1,   '#b5341a']
+    ],
+    zmin: 0, zmax: Math.min(1/0.5, 2),
+    colorbar: { title: 'ε(u,t)', thickness: 12 }
+  }];
+
+  const layout_heat = {
+    paper_bgcolor: '#f7f4ef', plot_bgcolor: '#ffffff',
+    font: { family: 'EB Garamond, serif', color: '#1a1410' },
+    margin: { l: 55, r: 70, t: 30, b: 50 },
+    xaxis: { title: 'Internal time u' },
+    yaxis: { title: 'Diffusion time t' },
+    title: { text: 'ε(u, t) heatmap — Phase II in lower-right', font: { size: 11 } }
+  };
+
+  Plotly.react('plot-lab3-heatmap', heatmap_trace, layout_heat, { responsive: true });
+
+  // Status
+  const e5_0 = propError(5, 0, Ttheta);
+  const e5_1 = propError(5, 1, Ttheta);
+  document.getElementById('l3-status').textContent =
+    `T_θ=${Ttheta.toFixed(2)}, ω=${omega.toFixed(2)}  |  ` +
+    `ε(u=5, t=0) = ${e5_0.toFixed(3)} (≈1/5=${(1/5).toFixed(3)})  |  ` +
+    `ε(u=5, t=1) = ${e5_1.toFixed(3)}  |  ` +
+    `ε→0 as u→∞ (propagator improves with more internal time)`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Slider wiring
+// ═══════════════════════════════════════════════════════════════
+function wire(id, valId, decimals, cb) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    vl.textContent = (+el.value).toFixed(decimals);
+    cb();
+  });
+}
+
+// Lab 1
+wire('l1-u',      'l1-u-val',      1, renderLab1);
+wire('l1-t',      'l1-t-val',      2, renderLab1);
+wire('l1-omega',  'l1-omega-val',  2, renderLab1);
+wire('l1-Tr',     'l1-Tr-val',     2, renderLab1);
+wire('l1-Ttheta', 'l1-Ttheta-val', 2, renderLab1);
+
+// Lab 2
+wire('l2-umax',   'l2-umax-val',   0, renderLab2);
+wire('l2-omega',  'l2-omega-val',  2, renderLab2);
+wire('l2-Tr',     'l2-Tr-val',     2, renderLab2);
+wire('l2-Ttheta', 'l2-Ttheta-val', 2, renderLab2);
+wire('l2-r0',     'l2-r0-val',     2, renderLab2);
+
+// Lab 3
+wire('l3-Ttheta', 'l3-Ttheta-val', 2, renderLab3);
+wire('l3-omega',  'l3-omega-val',  2, renderLab3);
+wire('l3-Tr',     'l3-Tr-val',     2, renderLab3);
+
+// ── Initial render ────────────────────────────────────────────
+renderLab1();
+renderLab2();
+renderLab3();
+</script>
+
+</body>
+</html>
