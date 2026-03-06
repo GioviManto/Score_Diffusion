@@ -1,685 +1,748 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Score-Based Diffusion for Dynamic Objects — Progress Report</title>
-
-<!-- MathJax -->
-<script>
-MathJax = {
-  tex: {
-    inlineMath: [['$','$']],
-    displayMath: [['$$','$$']],
-    tags: 'none',
-    macros: {
-      R: '\\mathbb{R}',
-      E: '\\mathbb{E}',
-      N: '\\mathcal{N}',
-      d: '\\mathrm{d}'
-    }
-  },
-  options: { skipHtmlTags: ['script','noscript','style','textarea'] }
-};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js" crossorigin="anonymous"></script>
-
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Score Fields for Dynamic Objects — Progress Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
 
-  /* ─── Reset ─────────────────────────────────────────── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root{
+  --bg:#f7f4ef; --ink:#1a1410; --accent:#b5341a; --accent2:#1a3a5c;
+  --muted:#6b5e50; --rule:#c9bfaf; --card:#ffffff; --code-bg:#f0ece4;
+  --green:#0e6b2c;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'EB Garamond',Georgia,serif;
+  background:var(--bg); color:var(--ink);
+  font-size:18px; line-height:1.78;
+  max-width:900px; margin:0 auto; padding:56px 48px 100px;
+}
 
-  /* ─── Page ──────────────────────────────────────────── */
-  html { background: #e8e4de; }
-  body {
-    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
-    font-size: 12.5pt;
-    line-height: 1.62;
-    color: #111;
-    background: #fff;
-    max-width: 660px;
-    margin: 36px auto;
-    padding: 52px 56px 60px;
-    box-shadow: 0 2px 18px rgba(0,0,0,.12);
-  }
+/* ── Header ─────────────────────────────────────────── */
+header{border-bottom:2px solid var(--ink); padding-bottom:24px; margin-bottom:52px;}
+.label{
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:12px;
+}
+h1{font-size:2.3em; font-weight:600; line-height:1.18; margin-bottom:14px;}
+.subtitle{color:var(--muted); font-style:italic; font-size:1.05em; margin-bottom:20px;}
+.meta{
+  font-size:.88em; color:var(--muted);
+  border-top:1px solid var(--rule); padding-top:14px; margin-top:14px;
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;
+}
+.meta span{display:flex; align-items:center; gap:8px;}
+.meta .dot{color:var(--rule);}
 
-  /* ─── Print ─────────────────────────────────────────── */
-  @media print {
-    html { background: white; }
-    body { margin: 0; box-shadow: none; padding: 16mm 18mm; max-width: 100%; font-size: 11pt; }
-    .page-break { page-break-before: always; }
-    a { color: #111; }
-    a[href]::after { content: ''; } /* suppress URL printing */
-  }
+/* ── Section headings ────────────────────────────────── */
+h2{
+  font-size:1.32em; font-weight:600; color:var(--ink);
+  margin:52px 0 16px; padding-bottom:7px; border-bottom:1px solid var(--rule);
+  display:flex; align-items:center; gap:12px;
+}
+h2 .num{font-family:'JetBrains Mono',monospace; font-size:.72em; color:var(--accent); font-weight:700;}
+h3{font-size:1.08em; font-weight:600; color:var(--accent2); margin:32px 0 10px;}
 
-  /* ─── Title block ────────────────────────────────────── */
-  .title-block { text-align: center; margin-bottom: 28px; }
-  h1 {
-    font-size: 17pt;
-    font-weight: 600;
-    line-height: 1.25;
-    color: #111;
-    margin-bottom: 5px;
-    letter-spacing: -0.2px;
-  }
-  .doc-subtitle {
-    font-size: 11pt;
-    font-style: italic;
-    color: #555;
-    margin-bottom: 14px;
-  }
-  .authors {
-    font-size: 11.5pt;
-    color: #111;
-    margin-bottom: 3px;
-  }
-  .affil {
-    font-size: 10pt;
-    color: #666;
-    margin-bottom: 3px;
-  }
-  .doc-date { font-size: 10.5pt; color: #555; }
+/* ── Body text ───────────────────────────────────────── */
+p{margin-bottom:1em;}
+ul,ol{margin:0 0 1em 26px;}
+li{margin-bottom:6px; line-height:1.65;}
 
-  /* ─── Horizontal rule ────────────────────────────────── */
-  hr.title-rule {
-    border: none;
-    border-top: 1px solid #bbb;
-    margin: 20px 0;
-  }
-  hr.section-rule {
-    border: none;
-    border-top: 1px solid #ddd;
-    margin: 24px 0;
-  }
+/* ── Math block ──────────────────────────────────────── */
+.math-block{
+  background:var(--card); border-left:3px solid var(--accent2);
+  padding:20px 28px; margin:24px 0; border-radius:0 6px 6px 0; overflow-x:auto;
+}
+.math-block p{margin-bottom:.5em; font-size:.95em; color:var(--muted);}
+.math-block p:last-child{margin-bottom:0;}
 
-  /* ─── Abstract ───────────────────────────────────────── */
-  .abstract {
-    margin: 0 24px 24px;
-    font-size: 11pt;
-    line-height: 1.55;
-    color: #222;
-    text-align: justify;
-  }
-  .abstract-label {
-    font-weight: 600;
-    font-variant: small-caps;
-    font-size: 10.5pt;
-    letter-spacing: 0.5px;
-  }
+/* ── Insight / info / result boxes ──────────────────── */
+.insight-box{
+  background:linear-gradient(135deg,#fff8f5 0%,#fff 100%);
+  border:1px solid #e8c8be; border-left:4px solid var(--accent);
+  padding:18px 24px; margin:28px 0; border-radius:0 8px 8px 0;
+}
+.insight-box strong{color:var(--accent);}
+.info-box{
+  background:linear-gradient(135deg,#f0f5ff 0%,#fff 100%);
+  border:1px solid #bdd0e8; border-left:4px solid var(--accent2);
+  padding:18px 24px; margin:28px 0; border-radius:0 8px 8px 0;
+}
+.info-box strong{color:var(--accent2);}
+.green-box{
+  background:linear-gradient(135deg,#f0fff4 0%,#fff 100%);
+  border:1px solid #9ecfb0; border-left:4px solid var(--green);
+  padding:18px 24px; margin:28px 0; border-radius:0 8px 8px 0;
+}
+.green-box strong{color:var(--green);}
 
-  /* ─── Section headings ───────────────────────────────── */
-  h2 {
-    font-size: 12.5pt;
-    font-weight: 600;
-    color: #111;
-    margin: 28px 0 8px 0;
-    padding-bottom: 3px;
-    border-bottom: 1px solid #ddd;
-    letter-spacing: 0.1px;
-  }
-  h2 .sec-num {
-    color: #888;
-    font-weight: 400;
-    margin-right: 6px;
-  }
-  h3 {
-    font-size: 11.5pt;
-    font-weight: 600;
-    font-style: italic;
-    color: #222;
-    margin: 16px 0 5px 0;
-  }
+/* ── Two-col cards ───────────────────────────────────── */
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:24px 0;}
+.col-card{background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:20px 22px;}
+.col-card h4{
+  font-family:'JetBrains Mono',monospace; font-size:.75em;
+  text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:10px;
+}
+.col-card p{font-size:.93em; margin-bottom:0;}
 
-  /* ─── Body text ──────────────────────────────────────── */
-  p {
-    margin: 0 0 9px 0;
-    text-align: justify;
-    hyphens: auto;
-  }
-  p + p { text-indent: 1.2em; }
-  p.noindent, h3 + p, h2 + p, .abstract + p, ul + p { text-indent: 0; }
+/* ── Table ───────────────────────────────────────────── */
+table{width:100%; border-collapse:collapse; margin:20px 0; font-size:.92em;}
+th{
+  font-family:'JetBrains Mono',monospace; font-size:.72em; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted); border-bottom:2px solid var(--rule);
+  padding:8px 12px; text-align:left; font-weight:400;
+}
+td{padding:10px 12px; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.55;}
+td:first-child{font-family:'JetBrains Mono',monospace; font-size:.82em; color:var(--accent2); white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
 
-  /* ─── Lists ──────────────────────────────────────────── */
-  ul, ol {
-    padding-left: 1.6em;
-    margin: 6px 0 10px 0;
-  }
-  li { margin-bottom: 4px; line-height: 1.55; }
+/* ── Phase chips ─────────────────────────────────────── */
+.phases{display:flex; gap:10px; flex-wrap:wrap; margin:20px 0;}
+.chip{
+  font-family:'JetBrains Mono',monospace; font-size:.74em;
+  padding:5px 14px; border-radius:20px; letter-spacing:.04em;
+  border:1.5px solid currentColor; line-height:1.3;
+}
+.chip-r{color:var(--accent); background:#fff8f5;}
+.chip-b{color:var(--accent2); background:#f0f5ff;}
+.chip-g{color:var(--green); background:#f0fff4;}
+.chip-k{color:var(--muted); background:#f5f2ec;}
 
-  /* ─── Display equations ──────────────────────────────── */
-  .display-eq {
-    margin: 12px 0;
-    overflow-x: auto;
-  }
+/* ── Figures ─────────────────────────────────────────── */
+.fig-block{margin:28px 0;}
+.fig-title{
+  font-family:'JetBrains Mono',monospace; font-size:.72em;
+  text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+  margin-bottom:6px;
+}
+.fig-div{width:100%; height:320px;}
+.fig-caption{
+  font-size:.88em; color:var(--muted); font-style:italic;
+  margin-top:8px; line-height:1.5;
+}
+.fig-row{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:24px 0;}
+@media(max-width:720px){.fig-row{grid-template-columns:1fr;}}
 
-  /* ─── Table ──────────────────────────────────────────── */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10.5pt;
-    margin: 10px 0 14px 0;
-  }
-  thead tr { border-top: 1.5px solid #111; border-bottom: 1px solid #111; }
-  tbody tr:last-child { border-bottom: 1.5px solid #111; }
-  th {
-    font-weight: 600;
-    font-style: italic;
-    text-align: left;
-    padding: 5px 8px 5px 4px;
-    background: transparent;
-    color: #111;
-    font-size: 10pt;
-  }
-  td { padding: 4px 8px 4px 4px; vertical-align: top; color: #111; }
-  tbody tr:nth-child(even) td { background: #fafafa; }
-  .tab-caption {
-    font-size: 10pt;
-    font-style: italic;
-    color: #555;
-    margin-top: -8px;
-    margin-bottom: 12px;
-    text-align: center;
-  }
+/* ── Horizontal rules ────────────────────────────────── */
+hr.sec{border:none; border-top:1px solid var(--rule); margin:52px 0;}
 
-  /* ─── Inline code / monospace ────────────────────────── */
-  code {
-    font-family: 'JetBrains Mono', 'Courier New', monospace;
-    font-size: 9.5pt;
-    color: #333;
-    background: #f4f4f4;
-    padding: 1px 3px;
-    border-radius: 2px;
-  }
+/* ── Footer ──────────────────────────────────────────── */
+footer{
+  margin-top:72px; padding-top:20px; border-top:2px solid var(--rule);
+  font-size:.82em; color:var(--muted);
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.02em;
+}
+footer a{color:var(--accent2); text-decoration:none; border-bottom:1px solid var(--rule);}
+footer a:hover{border-bottom-color:var(--accent2);}
 
-  /* ─── Links ──────────────────────────────────────────── */
-  a { color: #1a3a5c; text-decoration: none; border-bottom: 1px solid #c0c8d8; }
-  a:hover { border-bottom-color: #1a3a5c; }
+/* ── Links ───────────────────────────────────────────── */
+a{color:var(--accent2); text-decoration:none; border-bottom:1px solid var(--rule);}
+a:hover{border-bottom-color:var(--accent2);}
 
-  /* ─── Key result box ─────────────────────────────────── */
-  .result-box {
-    border: 1px solid #bbb;
-    border-left: 3px solid #555;
-    padding: 9px 14px;
-    margin: 12px 0;
-    font-size: 11.5pt;
-    background: #fafafa;
-  }
-  .result-box p { margin: 0; text-indent: 0; }
-
-  /* ─── Phase table cells ──────────────────────────────── */
-  .ph-i   { font-style: italic; }
-
-  /* ─── Footer ─────────────────────────────────────────── */
-  .footer {
-    margin-top: 32px;
-    padding-top: 10px;
-    border-top: 1px solid #ccc;
-    font-size: 9.5pt;
-    color: #888;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  /* ─── Appendix link list ─────────────────────────────── */
-  .link-list { padding-left: 0; list-style: none; }
-  .link-list li { margin-bottom: 5px; font-size: 10.5pt; }
-  .link-list .desc { color: #555; font-size: 10pt; display: block; margin-top: 1px; }
+@media(max-width:720px){
+  .two-col{grid-template-columns:1fr;}
+  body{padding:32px 22px 70px;}
+  h1{font-size:1.8em;}
+  .meta{flex-direction:column;}
+}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════
-     TITLE BLOCK
-═══════════════════════════════════════════════════════════ -->
-<div class="title-block">
-  <h1>Score-Based Diffusion Models for Dynamic Objects</h1>
-  <p class="doc-subtitle">Propagator structure across internal time — progress report</p>
-  <p class="authors">Giovanni Manto &amp; Marco Benedetti</p>
-  <p class="affil">&#201;cole Normale Sup&#233;rieure &ndash; PSL</p>
-  <p class="doc-date">March 2026 &ensp;&middot;&ensp; <em>Report for Prof.&nbsp;Marc M&#233;zard</em></p>
+<!-- ══════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════ -->
+<header>
+  <div class="label">Score-Based Diffusion &nbsp;·&nbsp; Progress Report &nbsp;·&nbsp; March 2026</div>
+  <h1>Score Fields for Dynamic Objects</h1>
+  <p class="subtitle">
+    On the propagator structure of the score across internal time —
+    solvable toy models, closed-form results, and the order parameter formulation.
+  </p>
+  <div class="meta">
+    <span>
+      Giovanni Mantovani &amp; Marco Lomele
+      <span class="dot">·</span>
+      Università Bocconi
+    </span>
+    <span>
+      Report for Prof. Marc Mézard
+      <span class="dot">·</span>
+      March 2026
+    </span>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════════════
+     §1  PROBLEM SETTING
+═══════════════════════════════════════════════════════ -->
+<h2><span class="num">§1</span> Problem Setting</h2>
+
+<p>
+Score-based diffusion models are well understood for static data. We study the
+<em>dynamic</em> case: a <strong>dynamic object</strong> — a video, a trajectory, a rotating shape —
+is a sequence of frames
+\(a^\mu = \{a_u\}_{u=0}^{T-1}\) with \(a_u \in \mathbb{R}^d\).
+The model must learn the score function <em>jointly across all frames</em>, while consecutive
+frames are highly correlated. The question is how to exploit this structure.
+</p>
+
+<p>
+Two independent notions of time govern the problem. We call this the
+<strong>two-clock architecture</strong>.
+</p>
+
+<div class="two-col">
+  <div class="col-card">
+    <h4>Internal time &nbsp; \(u\)</h4>
+    <p>
+      The <em>semantic</em> clock: the frame index, the position along the trajectory.
+      The system evolves according to its own Markovian dynamics (rotation, drift, diffusion).
+      Think of \(u = 0, 1, 2, \ldots, T{-}1\).
+    </p>
+  </div>
+  <div class="col-card">
+    <h4>Diffusion time &nbsp; \(t\)</h4>
+    <p>
+      The <em>noise</em> clock: an independent Ornstein–Uhlenbeck process corrupts each frame
+      toward \(\mathcal{N}(0, I_d)\) as \(t \to \infty\), regardless of \(u\).
+    </p>
+  </div>
 </div>
 
-<hr class="title-rule">
+<p>
+The forward process corrupts each frame independently:
+</p>
 
-<div class="abstract">
-<span class="abstract-label">Abstract.</span>
-We study how the per-frame score field
-$s(x, u, t) \;{:=}\; \nabla_x \log p_t(x \mid u)$
-of a score-based diffusion model evolves across <em>internal time</em> $u$
-(the frame index of a dynamic object such as a video or trajectory),
-at fixed <em>diffusion time</em> $t$.
-Working in fully solvable Gaussian settings — AR(1) chains and rotating AR(1) processes —
-we derive the exact propagator $P$ that maps $s(\cdot, u-1, t)$ to $s(\cdot, u, t)$,
-characterise the four dynamical regimes of the joint $(u,t)$ plane,
-and identify the intermediate-$t$ window where $P$ takes its simplest form.
-We further introduce the circle model as the first non-Gaussian test bed,
-where the score separates into radial and angular components,
-and we derive a closed Riccati equation governing the evolution of the score's
-precision tensor across $u$.
+<div class="math-block">
+  \[
+    X_t(u) \;=\; a_u\,e^{-t} \;+\; \sqrt{1 - e^{-2t}}\;Z(u), \qquad Z(u) \sim \mathcal{N}(0, I_d).
+  \]
+  <p>
+    The per-frame score is then \(s(x, u, t) := \nabla_x \log p_t(x \mid u)\), defined on the
+    full \((x, u, t)\) space.
+  </p>
 </div>
 
-<hr class="title-rule">
+<div class="insight-box">
+  <strong>Propagator hypothesis.</strong>
+  Because consecutive frames are highly correlated, we hypothesise the existence of an operator
+  \(P\) — possibly linear, possibly stationary — such that
+  \[
+    s(\,\cdot\,, u, t) \;\approx\; P\bigl[\,s(\,\cdot\,, u-1, t)\bigr].
+  \]
+  Identifying \(P\) would reduce the learning problem from \(\mathcal{O}(dT)\) to
+  \(\mathcal{O}(d)\), and would provide a principled parametrisation of sequential diffusion models.
+  We study this in <em>exactly solvable</em> Gaussian settings where all quantities are
+  closed-form.
+</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     §1 SETTING
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">1.</span> Setting and Motivation</h2>
 
-<p>
-Score-based generative models have been developed primarily for static objects such as images.
-We are interested in the case of <em>dynamic objects</em> — short sequences of frames forming a
-trajectory — where a key structure is available: consecutive frames are highly correlated.
-A trajectory of length $T$ is a sequence $a^\mu = \{a_u\}_{u=0}^{T-1}$ with $a_u \in \R^d$.
-The naive approach embeds the full object in $\R^{dT}$; we instead aim to exploit the temporal
-correlations explicitly.
-</p>
-
-<p>
-Two independent time parameters govern the problem.
-<em>Internal time</em> $u \in \{0,\ldots,T{-}1\}$ describes the physical or semantic evolution
-of the object.
-<em>Diffusion time</em> $t \geq 0$ is the Ornstein–Uhlenbeck (OU) noise clock applied
-independently to each frame:
-$$
-  X_t(u) \;=\; a_u\,e^{-t} \;+\; \sqrt{1 - e^{-2t}}\;Z(u), \qquad Z(u) \sim \N(0, I_d).
-$$
-The <em>per-frame score</em> is $s(x, u, t) := \nabla_x \log p_t(x \mid u)$.
-</p>
+<!-- ══════════════════════════════════════════════════════
+     §2  TOY MODELS
+═══════════════════════════════════════════════════════ -->
+<h2><span class="num">§2</span> Solvable Toy Models</h2>
 
 <p>
-The central question is whether there exists a propagator $P$ — possibly linear,
-stationary, and related to the generator of the underlying dynamics — such that
-$$
-  s(\cdot,\, u,\, t) \;\approx\; P\bigl[s(\cdot,\, u-1,\, t)\bigr].
-$$
-Identifying $P$ would reduce score learning from an $O(dT)$ problem to an $O(d)$ problem,
-and would provide a principled parametrisation of video diffusion models.
-</p>
-
-<!-- ══════════════════════════════════════════════════════════
-     §2 TOY MODELS
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">2.</span> Solvable Toy Models</h2>
-
-<p>
-We have constructed six toy models in increasing order of complexity,
-all with closed-form scores (no neural networks).
-Table&nbsp;1 summarises the series.
+We have constructed six toy models in increasing complexity. All scores are derived analytically —
+no neural networks at any stage. Each model is implemented as a self-contained interactive HTML
+laboratory, hosted on GitHub Pages.
 </p>
 
 <table>
   <thead>
     <tr>
-      <th style="width:18%">Model</th>
-      <th style="width:8%">$d$</th>
-      <th style="width:28%">Internal dynamics</th>
-      <th style="width:46%">Key finding</th>
+      <th>Model</th>
+      <th>Dimension</th>
+      <th>Internal dynamics</th>
+      <th>Key result</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><strong>TM1</strong> — Gaussian mixture</td>
+      <td>TM1 &nbsp; Gaussian mixture</td>
       <td>2</td>
-      <td>Static (no $u$)</td>
-      <td>Baseline: score interpolates from anisotropic to isotropic as $t\uparrow$</td>
+      <td>Static — no \(u\)</td>
+      <td>Baseline: score softens from anisotropic to isotropic as \(t \uparrow\)</td>
     </tr>
     <tr>
-      <td><strong>TM2</strong> — Drift + noise</td>
+      <td>TM2 &nbsp; Drift + noise</td>
       <td>1</td>
-      <td>$x_{u+1} = x_u + c + \eta$</td>
+      <td>\(x_{u+1} = x_u + c + \eta\)</td>
       <td>Joint score decomposes exactly as prior gradient plus transition correction</td>
     </tr>
     <tr>
-      <td><strong>TM3</strong> — Rotating AR(1)</td>
+      <td>TM3 &nbsp; Rotating AR(1)</td>
       <td>2</td>
-      <td>$a_{u+1} = R_{\Delta\theta}\,a_u + \xi_u$</td>
-      <td>Propagator is exactly $P = R_{\Delta\theta}$ in the isotropic-covariance regime</td>
+      <td>\(a_{u+1} = R_{\Delta\theta}\,a_u + \xi_u\)</td>
+      <td>Propagator is exactly \(P = R_{\Delta\theta}\) in the isotropic-covariance limit</td>
     </tr>
     <tr>
-      <td><strong>TM4</strong> — Billiard</td>
+      <td>TM4 &nbsp; Billiard</td>
       <td>3</td>
-      <td>Bouncing particle in $[0,L]^3$</td>
-      <td>Analytic folded-Gaussian conditional score matches KDE marginal</td>
+      <td>Bouncing particle in \([0,L]^3\)</td>
+      <td>Analytic folded-Gaussian conditional score matches the KDE marginal</td>
     </tr>
     <tr>
-      <td><strong>TM5</strong> — Two clocks</td>
+      <td>TM5 &nbsp; Two clocks</td>
       <td>1–2</td>
-      <td>AR(1): $x_{u+1} = \alpha x_u + \eta_u$</td>
-      <td>Four-regime phase diagram on the $(u,t)$ plane; Phase II is the optimal window for $P$</td>
+      <td>AR(1): \(x_{u+1} = \alpha x_u + \eta_u\)</td>
+      <td>Four-regime phase diagram on \((u,t)\); Phase II is the optimal window for \(P\)</td>
     </tr>
     <tr>
-      <td><strong>TM6</strong> — Circle (new)</td>
+      <td>TM6 &nbsp; Circle &nbsp;(new)</td>
       <td>2</td>
-      <td>$\d r = (1{-}r)\,\d u + \sqrt{2T_r}\,\d B_r$; $\;\d\theta = \omega\,\d u + \sqrt{2T_\theta}\,\d B_\theta$</td>
-      <td>First non-Gaussian model; score factorises in polar coordinates; Riccati equation for precision</td>
+      <td>\(\mathrm{d}r = (1{-}r)\,\mathrm{d}u + \sqrt{2T_r}\,\mathrm{d}B_r\); &nbsp; \(\mathrm{d}\theta = \omega\,\mathrm{d}u + \sqrt{2T_\theta}\,\mathrm{d}B_\theta\)</td>
+      <td>First non-Gaussian model; score separates in polar coordinates; Riccati equation for precision</td>
     </tr>
   </tbody>
 </table>
-<p class="tab-caption">Table 1. Summary of toy models. All scores are derived analytically.</p>
 
-<!-- ══════════════════════════════════════════════════════════
-     §3 ROTATING AR(1)
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">3.</span> Rotating AR(1): an Exact Propagator</h2>
 
-<h3>Model and exact score.</h3>
+<!-- ══════════════════════════════════════════════════════
+     §3  MAIN RESULTS
+═══════════════════════════════════════════════════════ -->
+<h2><span class="num">§3</span> Main Results</h2>
 
-<p>
-The internal dynamics are a discrete rotating AR(1) process in $\R^2$:
-$$
-  a(u+1) = R_{\Delta\theta}\,a(u) + \xi_u, \qquad \xi_u \sim \N(0,\,\sigma_\eta^2 I_2),
-$$
-where $R_{\Delta\theta}$ is the rotation matrix by angle $\Delta\theta$.
-Starting from $a(0) \sim \N(\mu_0, \Sigma_0)$, the marginal at step $u$ is Gaussian
-$\N(\mu_u, \Sigma_u)$ with
-$\mu_u = R_{\Delta\theta}^u\,\mu_0$ and
-$\Sigma_u = R_{\Delta\theta}^u\,\Sigma_0\,R_{\Delta\theta}^{-u} + \sigma_\infty^2 I$
-(converging to isotropic variance $\sigma_\infty^2 = \sigma_\eta^2$).
-After OU diffusion at time $t$, the marginal is $\N(\mu_u(t), \Sigma_u(t))$ with
-$\mu_u(t) = e^{-t}\mu_u$ and $\Sigma_u(t) = e^{-2t}\Sigma_u + (1-e^{-2t})I$.
-The per-frame score is
-$$
-  s(x,u,t) \;=\; -\,\Sigma_u(t)^{-1}\bigl(x - \mu_u(t)\bigr).
-$$
-</p>
 
-<h3>The rotation propagator.</h3>
+<h3>3.1 &nbsp; The rotation propagator &nbsp; (TM3)</h3>
 
 <p>
-In the isotropic limit $\Sigma_u(t) = \sigma^2(t)\,I$ — reached for large $u$ or intermediate $t$ — one finds
-$$
-  s(x,\,u{+}1,\,t)
-  \;=\; -\frac{x - R_{\Delta\theta}\,\mu_u(t)}{\sigma^2(t)}
-  \;=\; R_{\Delta\theta}\cdot s\!\bigl(R_{-\Delta\theta}\,x,\;u,\;t\bigr).
-$$
+The internal dynamics are \(a(u+1) = R_{\Delta\theta}\,a(u) + \xi_u\), with
+\(\xi_u \sim \mathcal{N}(0, \sigma_\eta^2 I_2)\) and \(R_{\Delta\theta}\) a rotation by angle
+\(\Delta\theta\). Starting from \(a(0) \sim \mathcal{N}(\mu_0, \Sigma_0)\), the marginal at step
+\(u\) is Gaussian with mean \(\mu_u = R_{\Delta\theta}^u\,\mu_0\) and covariance
+\(\Sigma_u\) converging to isotropic \(\sigma_\infty^2 I\). After OU diffusion at time \(t\),
+the per-frame score is:
 </p>
 
-<div class="result-box">
-<p>
-<strong>Result.</strong>
-The propagator $P = R_{\Delta\theta}$ acts on the score field as
-$[P\cdot s_u](x) = R_{\Delta\theta}\cdot s_u(R_{-\Delta\theta}\,x)$:
-it rotates <em>both</em> the evaluation point and the output vector.
-This is <em>exact</em> when the covariance is isotropic, and approximates the true
-$s_{u+1}$ with an error controlled by the anisotropy of $\Sigma_u(t)$.
-</p>
+<div class="math-block">
+  \[
+    s(x,\, u,\, t) \;=\; -\,\Sigma_u(t)^{-1}\bigl(x - \mu_u(t)\bigr),
+  \]
+  <p>
+    where \(\mu_u(t) = e^{-t}\mu_u\) and
+    \(\Sigma_u(t) = e^{-2t}\Sigma_u + (1 - e^{-2t})I\).
+  </p>
 </div>
 
-<h3>Jacobian and dimensional collapse.</h3>
-
 <p>
-The Jacobian of the score with respect to $x$ is $J_s(u,t) = -\Sigma_u(t)^{-1}$,
-with eigenvalues $\lambda_k^J = -1/\lambda_k(\Sigma_u(t))$.
-As $t\to\infty$ all eigenvalues of $\Sigma_u(t)$ tend to $1$, so all Jacobian eigenvalues
-collapse to $-1$: the score becomes isotropic and loses all memory of the dynamics.
-The <em>spectral gap</em> $\lambda_1^J - \lambda_2^J$ is a natural diagnostic of how much
-dynamical information the score still carries.
-The triad identity $\mathcal{I}(u,t) = -\lambda_k^J = 1/\sigma^2_u(t)$
-(Fisher information equals minus the Jacobian eigenvalue) holds exactly for Gaussian models.
+In the isotropic limit \(\Sigma_u(t) = \sigma^2(t)\,I\) — reached when \(u\) is large or
+\(t\) is intermediate — a direct computation gives:
 </p>
 
-<!-- ══════════════════════════════════════════════════════════
-     §4 TWO CLOCKS
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">4.</span> The Two-Clock Phase Diagram</h2>
+<div class="math-block">
+  \[
+    s(x,\, u{+}1,\, t)
+    \;=\; -\frac{x - R_{\Delta\theta}\,\mu_u(t)}{\sigma^2(t)}
+    \;=\; R_{\Delta\theta} \cdot s\!\bigl(R_{-\Delta\theta}\,x,\; u,\; t\bigr).
+  \]
+</div>
 
-<h3>AR(1) with OU diffusion.</h3>
-
-<p>
-For the univariate AR(1) chain $x_{u+1} = \alpha x_u + \eta_u$ ($\alpha \in (0,1)$,
-$\eta_u \sim \N(0,\sigma_\eta^2)$), the marginal is Gaussian for all $u$ with
-$\mu_u = \alpha^u \mu_0$ and $\sigma_u^2 = \sigma_\infty^2 + \alpha^{2u}(\sigma_0^2 - \sigma_\infty^2)$,
-where $\sigma_\infty^2 = \sigma_\eta^2/(1-\alpha^2)$.
-After OU noise, $\mu_u(t) = e^{-t}\mu_u$ and $\sigma_u^2(t) = 1 + e^{-2t}(\sigma_u^2 - 1)$.
-The exact score is $s(x,u,t) = -(x-\mu_u(t))/\sigma_u^2(t)$.
-</p>
-
-<p>
-The score is linear in $x$: $s = A(u,t)\,x + b(u,t)$ with Jacobian $A = -1/\sigma_u^2(t)$
-and offset $b = \mu_u(t)/\sigma_u^2(t)$.
-The propagator decomposes as: (i) the <em>mean part</em> $\mu_{u+1}(t) = \alpha\,\mu_u(t)$,
-an exact $\alpha$-contraction that is entirely <em>independent of $t$</em>;
-(ii) the <em>variance part</em> $A(u{+}1,t)/A(u,t) = \sigma_u^2(t)/\sigma_{u+1}^2(t)$,
-determined by the AR(1) variance recursion.
-At stationarity ($\sigma_u^2 \approx \sigma_{u+1}^2 \approx \sigma_\infty^2$), the variance
-ratio tends to $1$ and the propagator reduces to a pure rescaling by $\alpha$.
-</p>
-
-<h3>Four regimes on the $(u,t)$ plane.</h3>
+<div class="info-box">
+  <strong>Result.</strong>
+  The propagator \(P = R_{\Delta\theta}\) acts as
+  \(\bigl[P \cdot s_u\bigr](x) = R_{\Delta\theta}\cdot s_u(R_{-\Delta\theta}\,x)\):
+  it rotates the evaluation point backwards, then rotates the output forwards.
+  This is <em>exact</em> when the covariance is isotropic, and degrades gracefully otherwise,
+  with an error controlled by the spectral gap of \(\Sigma_u(t)\).
+</div>
 
 <p>
-The scalar function $\sigma_u^2(t)$ — and hence the entire score — organises into four qualitatively
-distinct regions, confirmed by interactive inspection of the heatmaps in TM5.
+The Jacobian of the score, \(J_s = -\Sigma_u(t)^{-1}\), provides a spectral diagnostic.
+Its eigenvalues all collapse to \(-1\) as \(t \to \infty\) — the score loses all memory of
+the dynamics. The identity
+\(\mathcal{I}(u,t) \,=\, -\lambda_k(J_s) \,=\, 1/\sigma_u^2(t)\)
+(Fisher information equals minus the Jacobian eigenvalue)
+holds exactly for all Gaussian models.
 </p>
+
+
+<h3>3.2 &nbsp; Four regimes on the \((u,t)\) plane &nbsp; (TM5)</h3>
+
+<p>
+For the univariate AR(1) chain, the closed-form score is
+\(s(x,u,t) = -(x - \mu_u(t))/\sigma_u^2(t)\), where
+\(\sigma_u^2(t) = 1 + e^{-2t}(\sigma_u^2 - 1)\).
+The entire landscape — score norm, Fisher information, entropy — organises into four
+qualitatively distinct regions of the \((u,t)\) plane.
+</p>
+
+<div class="phases">
+  <span class="chip chip-r">Phase I &nbsp; Sharp</span>
+  <span class="chip chip-b">Phase II &nbsp; Best window</span>
+  <span class="chip chip-k">Phase III &nbsp; Stationary</span>
+  <span class="chip chip-k">Phase IV &nbsp; Universal noise</span>
+</div>
 
 <table>
   <thead>
     <tr>
       <th>Phase</th>
       <th>Region</th>
-      <th>Character</th>
+      <th>What happens to the score</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><strong>I</strong> &ensp;Sharp</td>
-      <td>$u$ small, $t$ small</td>
-      <td>Score tracks initial condition closely; high Fisher information; strong anisotropy</td>
+      <td>I &nbsp; Sharp</td>
+      <td>\(u\) small, \(t\) small</td>
+      <td>Score tracks the initial condition closely; strong anisotropy and high Fisher information</td>
     </tr>
     <tr>
-      <td><strong>II</strong> &ensp;Best window</td>
-      <td>$t$ intermediate</td>
-      <td>Variance balances signal and noise; propagator structure most legible; optimal regime for fitting $P$</td>
+      <td>II &nbsp; Best window</td>
+      <td>\(t\) intermediate</td>
+      <td>Variance balances signal and noise; propagator structure is most legible; optimal regime for fitting \(P\)</td>
     </tr>
     <tr>
-      <td><strong>III</strong> &ensp;Stationary</td>
-      <td>$u$ large, $t$ small</td>
-      <td>$\sigma_u^2 \to \sigma_\infty^2$; variance part of propagator $\to 1$; only mean still evolves</td>
+      <td>III &nbsp; Stationary</td>
+      <td>\(u\) large, \(t\) small</td>
+      <td>Variance converges to \(\sigma_\infty^2\); variance part of propagator \(\to 1\); only the mean still evolves</td>
     </tr>
     <tr>
-      <td><strong>IV</strong> &ensp;Universal noise</td>
-      <td>$t$ large</td>
-      <td>$\sigma_u^2(t) \to 1$ for all $u$; $s(x,u,t) \approx -x$; all dynamical structure erased</td>
+      <td>IV &nbsp; Universal noise</td>
+      <td>\(t\) large</td>
+      <td>\(\sigma_u^2(t) \to 1\) for all \(u\); score \(\approx -x\); all dynamical information erased</td>
     </tr>
   </tbody>
 </table>
-<p class="tab-caption">Table 2. Four regimes of the per-frame score on the $(u,t)$ plane.</p>
-
-<!-- ══════════════════════════════════════════════════════════
-     §5 CIRCLE MODEL
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">5.</span> Circle Model: Order Parameter SDE</h2>
 
 <p>
-The circle model is our first test bed with <em>non-Gaussian</em> geometry.
-The two-dimensional process $(r(u), \theta(u))$ evolves according to independent SDEs:
-$$
-  \d r = (1-r)\,\d u + \sqrt{2T_r}\,\d B_r, \qquad
-  \d\theta = \omega\,\d u + \sqrt{2T_\theta}\,\d B_\theta,
-$$
-with $T_r$ setting the radial confinement strength and $T_\theta$ the angular diffusion.
+The one-step propagator decomposes cleanly: the <em>mean component</em>
+\(\mu_{u+1}(t) = \alpha\,\mu_u(t)\) propagates as a pure \(\alpha\)-contraction,
+entirely <em>independent of \(t\)</em>; the <em>variance component</em>
+\(A(u{+}1,t)/A(u,t) = \sigma_u^2(t)/\sigma_{u+1}^2(t)\)
+is determined by the AR(1) recursion and equals \(1\) at stationarity.
 </p>
 
-<h3>Separable exact score.</h3>
+
+<h3>3.3 &nbsp; Order parameter SDE and the Riccati equation &nbsp; (TM6)</h3>
 
 <p>
-Because $r$ and $\theta$ are independent, the joint density factorises:
-$p_0(r,\theta \mid u) = p_r(r \mid u)\cdot p_\theta(\theta \mid u)$.
-In Cartesian coordinates $(x,y) = (r\cos\theta, r\sin\theta)$, the score separates into
-radial and tangential components:
-$$
-  s(x,u) \;=\; \Bigl(s_r(r,u) - \tfrac{1}{r}\Bigr)\hat{e}_r
-           \;+\; \frac{s_\theta^{\scriptscriptstyle 1D}(\theta,u)}{r}\,\hat{e}_\theta,
-$$
-where $s_r = -(r - m_r)/\sigma_r^2$, $s_\theta^{\scriptscriptstyle 1D} = -(\theta - \theta_{\mathrm{mean}})/\sigma_\theta^2$,
-and the $-1/r$ correction arises from the Jacobian of the polar change of variables.
-The order parameters $\varphi(u) = (m_r, \sigma_r^2, \theta_{\mathrm{mean}}, \sigma_\theta^2)$
-satisfy a closed, linear ODE system that can be read off from the two SDEs above.
+The circle model is our first non-Gaussian test bed.
+Because the radial and angular processes are independent,
+the joint density factorises, \(p_0(r,\theta \mid u) = p_r(r \mid u)\cdot p_\theta(\theta \mid u)\),
+and the Cartesian score separates into a radial and a tangential part:
 </p>
 
-<h3>Riccati equation for precision.</h3>
-
-<p>
-Let $\kappa_\theta(u) = 1/\sigma_\theta^2(u)$ denote the angular precision
-(equal to minus the tangential Jacobian eigenvalue).
-Since $\sigma_\theta^2(u) = 2T_\theta u$, the precision satisfies
-$$
-  \frac{\d\kappa_\theta}{\d u} \;=\; -2T_\theta\,\kappa_\theta^2,
-  \qquad \kappa_\theta(u) = \frac{1}{2T_\theta u}.
-$$
-For the contracting AR(1) model (contraction rate $\gamma = -\log\alpha > 0$), the
-<em>radial</em> precision $\kappa = 1/\sigma^2$ satisfies the Riccati equation
-$$
-  \frac{\d\kappa}{\d u} \;=\; 2\gamma\kappa \;-\; \sigma_\eta^2\,\kappa^2,
-$$
-whose stable fixed point is $\kappa_* = 2\gamma/\sigma_\eta^2 = 1/\sigma_\infty^2$.
-</p>
-
-<div class="result-box">
-<p>
-<strong>Result.</strong>
-The Riccati equation $\d\kappa/\d u = 2\gamma\kappa - \sigma_\eta^2\kappa^2$
-governs the evolution of the score's precision (equivalently, its Jacobian eigenvalue)
-for all Gaussian internal dynamics.
-It unifies the AR(1) ($\gamma > 0$) and circle ($\gamma = 0$) models.
-The score field is entirely determined by the order parameter vector
-$\varphi(u) \in \R^4$ — a closed, finite-dimensional description.
-</p>
+<div class="math-block">
+  \[
+    s(x, u) \;=\;
+    \Bigl(s_r(r,u) \;-\; \tfrac{1}{r}\Bigr)\hat{e}_r
+    \;+\;
+    \frac{s_\theta(\theta,u)}{r}\,\hat{e}_\theta,
+  \]
+  <p>
+    where \(s_r = -(r - m_r)/\sigma_r^2\), \(s_\theta = -(\theta - \theta_{\mathrm{mean}})/\sigma_\theta^2\),
+    and the \(-1/r\) correction comes from the Jacobian of the polar change of variables.
+    The score is fully determined by the order parameter
+    \(\varphi(u) = (m_r,\,\sigma_r^2,\,\theta_{\mathrm{mean}},\,\sigma_\theta^2) \in \mathbb{R}^4\),
+    each component satisfying a simple closed ODE.
+  </p>
 </div>
 
-<h3>Analytical propagator error.</h3>
-
 <p>
-The rotation propagator $P = R_\omega$ fails whenever the angular variance changes between
-steps, i.e. when $T_\theta > 0$. A direct calculation gives the exact relative error on the
-tangential score component:
-$$
-  \varepsilon(u, t) \;=\; \frac{2T_\theta}{2T_\theta\,u \;+\; (1 - e^{-2t})}.
-$$
-At $t = 0$ this simplifies to $\varepsilon(u, 0) = 1/u$, an algebraic decay.
-The denominator grows with diffusion time $t$ because OU noise broadens the effective
-angular distribution, making the ratio $\sigma_\theta^2(u{+}1)/\sigma_\theta^2(u)$ closer
-to $1$. This confirms quantitatively that <em>Phase II</em> (intermediate $t$, large $u$)
-is the regime where $P = R_\omega$ is most accurate.
+Introducing the <em>precision</em> \(\kappa = 1/\sigma^2\) (equal to minus the Jacobian eigenvalue),
+the variance equations translate into a Riccati equation.
+For the AR(1) model with contraction rate \(\gamma = -\log\alpha\):
 </p>
 
-<!-- ══════════════════════════════════════════════════════════
-     §6 SUMMARY
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">6.</span> Summary of Results</h2>
+<div class="math-block">
+  \[
+    \frac{\mathrm{d}\kappa}{\mathrm{d}u} \;=\; 2\gamma\kappa \;-\; \sigma_\eta^2\,\kappa^2.
+  \]
+  <p>
+    Stable fixed point: \(\kappa_* = 2\gamma/\sigma_\eta^2 = 1/\sigma_\infty^2\).
+    For the circle model (\(\gamma = 0\)): \(\mathrm{d}\kappa_\theta/\mathrm{d}u = -2T_\theta\,\kappa_\theta^2\),
+    giving \(\kappa_\theta(u) = 1/(2T_\theta u)\) — an algebraic decay.
+  </p>
+</div>
 
 <p>
-The following points represent what we currently understand with certainty from the
-analytical toy models.
+Finally, the relative error of the rotation propagator \(P = R_\omega\) on the tangential score
+component is computable in closed form:
 </p>
 
-<ul>
-  <li>
-    <em>Linearity in $x$.</em>
-    For all Gaussian internal dynamics, $s(x,u,t)$ is linear in $x$ for every $u$ and $t$,
-    with coefficients obeying closed ODEs. The propagator $P$ maps linear fields to linear
-    fields and is parametrised by two scalars (a variance ratio and the contraction $\alpha$).
-  </li>
-  <li>
-    <em>Rotation propagator.</em>
-    For rotating AR(1), the propagator $[P\cdot s_u](x) = R_{\Delta\theta}\cdot s_u(R_{-\Delta\theta}x)$
-    is exact in the isotropic-covariance limit and has a quantifiable error otherwise.
-  </li>
-  <li>
-    <em>$t$-independence of mean propagation.</em>
-    The shift $\mu_{u+1}(t) = \alpha\,\mu_u(t)$ holds for all $t$: the mean component of
-    the propagator does not depend on the diffusion time.
-  </li>
-  <li>
-    <em>Triad identity.</em>
-    Fisher information $= -$Jacobian eigenvalue $= 1/\sigma_u^2(t)$, exactly, for all
-    Gaussian toy models. This identity provides three equivalent diagnostics for the same
-    quantity.
-  </li>
-  <li>
-    <em>Dimensional collapse.</em>
-    All Jacobian eigenvalues $\to -1$ as $t \to \infty$. The spectral gap is a monotone
-    measure of how much dynamical structure remains visible in the score at noise level $t$.
-  </li>
-  <li>
-    <em>Riccati unification.</em>
-    The evolution of the score's precision in internal time $u$ is governed by a Riccati
-    equation, closing the description at the level of order parameters.
-  </li>
-</ul>
+<div class="math-block">
+  \[
+    \varepsilon(u,\,t) \;=\; \frac{2T_\theta}{2T_\theta\,u \;+\; (1 - e^{-2t})}.
+  \]
+  <p>
+    At \(t = 0\): \(\varepsilon = 1/u\) (algebraic decay in internal time).
+    At intermediate \(t\) (Phase II): the denominator grows, reducing the error further.
+  </p>
+</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     §7 NEXT STEPS
-═══════════════════════════════════════════════════════════ -->
-<h2><span class="sec-num">7.</span> Open Questions and Next Steps</h2>
+<div class="green-box">
+  <strong>Unification.</strong>
+  The Riccati equation \(\mathrm{d}\kappa/\mathrm{d}u = 2\gamma\kappa - \sigma_\eta^2\kappa^2\)
+  governs the precision — equivalently, the Jacobian eigenvalue — for <em>all</em> Gaussian
+  internal dynamics. It unifies the AR(1) (\(\gamma > 0\)), the circle (\(\gamma = 0\)),
+  and extends to the matrix case for the rotating AR(1) in \(\mathbb{R}^2\).
+  The score field is entirely parametrised by a finite-dimensional order parameter satisfying
+  a closed dynamical system.
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     §4  NEXT STEPS
+═══════════════════════════════════════════════════════ -->
+<h2><span class="num">§4</span> Next Steps</h2>
 
 <ol>
   <li>
-    <strong>Matrix Riccati and rotating covariance.</strong>
-    Derive the full $2\times 2$ Riccati equation for the precision tensor $K_u = \Sigma_u^{-1}$
-    in the rotating AR(1) model, and verify that the rotation invariance of the steady state
-    implies $K_\infty \propto I$.
+    <strong>Matrix Riccati for rotating covariance.</strong>
+    Derive the full \(2\times 2\) Riccati equation for the precision tensor \(K_u = \Sigma_u^{-1}\)
+    in the rotating AR(1) model. Verify that the rotational symmetry of the steady state forces
+    \(K_\infty \propto I\), recovering the isotropic limit analytically.
   </li>
   <li>
     <strong>Beyond Gaussians.</strong>
     For a two-component Gaussian mixture with rotating means, the score acquires a nonlinear
-    correction. Characterise when the rotation propagator remains a good approximation and
-    quantify the leading-order departure.
+    correction to the propagator. Quantify the leading-order departure from \(P = R_{\Delta\theta}\)
+    as a function of the mixture separation and diffusion time \(t\).
   </li>
   <li>
-    <strong>Large-$d$ limit.</strong>
+    <strong>Large-\(d\) analysis.</strong>
     Investigate whether the four-regime phase diagram sharpens into genuine phase transitions
-    as $d \to \infty$, in analogy with the speciation and collapse transitions of
-    Biroli–Bonnaire–de&nbsp;Bortoli–M&#233;zard for static data.
+    as \(d \to \infty\), in analogy with the speciation and collapse transitions studied in
+    Biroli–Bonnaire–de Bortoli–Mézard for static data.
   </li>
   <li>
-    <strong>Stochastic generalisation.</strong>
-    Extend the Riccati analysis to the case where the internal dynamics are themselves random
-    (i.e.\ where $\alpha$ or $\omega$ fluctuate), and study how the propagator $P$ becomes
-    distribution-valued.
+    <strong>Empirical score extraction.</strong>
+    Train a small score network on the circle model and compare the learned \(P\) against
+    the analytical rotation propagator. Measure whether Phase II (intermediate \(t\)) is
+    indeed the regime where the learned propagator is most accurate.
   </li>
 </ol>
 
-<!-- ══════════════════════════════════════════════════════════
-     APPENDIX
-═══════════════════════════════════════════════════════════ -->
-<hr class="section-rule">
 
-<h2><span class="sec-num">A.</span> Interactive Demonstrations</h2>
+<!-- ══════════════════════════════════════════════════════
+     §A  INTERACTIVE LABS
+═══════════════════════════════════════════════════════ -->
+<hr class="sec">
+
+<h2><span class="num">§A</span> Interactive Laboratories</h2>
 
 <p>
-All toy models are implemented as self-contained HTML files (MathJax + Plotly, no build step)
-and are hosted on GitHub Pages. The interactive labs allow real-time exploration of all
-parameters with sliders.
+Each toy model is a self-contained HTML file (MathJax + Plotly, no server required).
+All computations are in-browser; every slider updates the plots in real time.
 </p>
 
-<ul class="link-list">
-  <li>
-    <a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html" target="_blank">TM3 — Rotating AR(1) score lab</a>
-    <span class="desc">Score quiver field, Jacobian eigenvalues, anisotropy collapse as $t$ increases</span>
-  </li>
-  <li>
-    <a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html" target="_blank">TM5 — Two clocks lab</a>
-    <span class="desc">$(u,t)$ phase heatmap; entropy, Fisher information and variance on the two-clock plane</span>
-  </li>
-  <li>
-    <a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 — Circle model lab</a>
-    <span class="desc">Separable score field; order parameter evolution; propagator error $\varepsilon(u,t)$ curves and heatmap</span>
-  </li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Lab</th>
+      <th>What to explore</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html" target="_blank">TM3 &nbsp; Rotating AR(1)</a></td>
+      <td>Score quiver field; Jacobian eigenvalues; watch anisotropy collapse as \(t\) increases</td>
+    </tr>
+    <tr>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html" target="_blank">TM5 &nbsp; Two clocks</a></td>
+      <td>\((u,t)\) phase heatmap; entropy, Fisher information and variance on the two-clock plane</td>
+    </tr>
+    <tr>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 &nbsp; Circle model</a></td>
+      <td>Separable score field; order parameter evolution; propagator error \(\varepsilon(u,t)\) curves and heatmap</td>
+    </tr>
+  </tbody>
+</table>
 
-<p style="margin-top:10px; font-size:10.5pt; color:#555;">
-Repository: <a href="https://github.com/GioviManto/Score_Diffusion" target="_blank">github.com/GioviManto/Score_Diffusion</a>
+
+<!-- ══════════════════════════════════════════════════════
+     §C  KEY FIGURES
+═══════════════════════════════════════════════════════ -->
+<hr class="sec">
+
+<h2><span class="num">§C</span> Key Figures</h2>
+
+<p>
+The figures below are computed from closed-form expressions — no sampling, no training.
+They can be explored interactively in the linked laboratories.
 </p>
 
-<!-- ══════════════════════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════════════════════ -->
-<div class="footer">
-  <span>Giovanni Manto &amp; Marco Benedetti &ensp;&middot;&ensp; March 2026</span>
-  <span>Score-Based Diffusion for Dynamic Objects</span>
+<div class="fig-row">
+  <div class="fig-block">
+    <div class="fig-title">Fig. 1 &nbsp;— &nbsp; Two-clock variance map &nbsp; (TM5)</div>
+    <div class="fig-div" id="fig-phase"></div>
+    <p class="fig-caption">
+      Heatmap of \(\sigma_u^2(t)\) on the \((u,t)\) plane for the AR(1) model
+      (\(\alpha=0.8\), \(\sigma_0 = 2\), \(\sigma_\eta = 0.5\)).
+      The four phases are visible: dark regions (small variance, high Fisher information)
+      correspond to Phase I; the right-hand column is Phase III;
+      the top band is Phase IV where all \(u\)-dependence vanishes.
+    </p>
+  </div>
+  <div class="fig-block">
+    <div class="fig-title">Fig. 2 &nbsp;— &nbsp; Propagator error \(\varepsilon(u,t)\) &nbsp; (TM6)</div>
+    <div class="fig-div" id="fig-error"></div>
+    <p class="fig-caption">
+      Relative L2 error of the rotation propagator \(P = R_\omega\)
+      on the tangential score component: \(\varepsilon = 2T_\theta / (2T_\theta u + 1 - e^{-2t})\),
+      with \(T_\theta = 0.10\).
+      The lower-right corner (large \(u\), intermediate \(t\)) is Phase II —
+      where the propagator is most accurate.
+    </p>
+  </div>
 </div>
 
+<h3>Animations from the interactive laboratories</h3>
+
+<p>
+The following animations, available in the live labs, give direct visual intuition for the
+mathematical structure.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Animation</th>
+      <th>What it shows</th>
+      <th>Where</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Forward + reverse paths</td>
+      <td>Black trajectories: forward OU noising of AR(1) frames as \(t\) increases. Pink dashed: reverse score-driven paths recovering the data. Shown on the \((x, u)\) plane at fixed \(u\).</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html" target="_blank">TM5 Lab 4</a></td>
+    </tr>
+    <tr>
+      <td>Rotating score field</td>
+      <td>2D quiver field \(s(x, u, t)\) for the rotating AR(1). As \(u\) increases the arrows rotate rigidly — the propagator \(P = R_{\Delta\theta}\) in action. Jacobian eigenvalues shown in real time.</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html" target="_blank">TM3 Lab</a></td>
+    </tr>
+    <tr>
+      <td>Circle trajectory + score</td>
+      <td>Stochastic particles on the ring (coloured by \(u\)) alongside the exact separable score field — radial arrows pointing toward \(r=1\), tangential arrows following angular drift.</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 Lab 1</a></td>
+    </tr>
+    <tr>
+      <td>Order parameter evolution</td>
+      <td">The four order parameters \((m_r, \sigma_r, \theta_{\mathrm{mean}}, \sigma_\theta)\) plotted against \(u\). Radial parameters converge; angular parameters grow. Precision \(\kappa_\theta = 1/(2T_\theta u)\) decays as \(1/u\).</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 Lab 2</a></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════ -->
+<footer>
+  <span>Giovanni Mantovani &amp; Marco Lomele &nbsp;·&nbsp; Università Bocconi</span>
+  <span><a href="https://github.com/GioviManto/Score_Diffusion" target="_blank">github.com/GioviManto/Score_Diffusion</a></span>
+</footer>
+
+<script>
+// ── Shared palette ────────────────────────────────────────
+const BG = '#f7f4ef', CARD = '#ffffff', MUTED = '#6b5e50', RULE = '#c9bfaf';
+const ACCENT = '#b5341a', ACCENT2 = '#1a3a5c';
+
+const PLOTLY_LAYOUT_BASE = {
+  paper_bgcolor: BG, plot_bgcolor: CARD,
+  font: { family: "'EB Garamond', Georgia, serif", size: 12, color: '#1a1410' },
+  margin: { l: 52, r: 16, t: 16, b: 48 }
+};
+
+function linspace(a, b, n) {
+  return Array.from({length: n}, (_, i) => a + (b - a) * i / (n - 1));
+}
+
+// ── Figure 1: Two-clock variance σ²_u(t) ─────────────────
+(function() {
+  const alpha = 0.8, sigma0 = 2.0, sigmaEta = 0.5;
+  const sigInf2 = sigmaEta**2 / (1 - alpha**2);
+
+  const U = linspace(0, 14, 80);
+  const T = linspace(0, 2.8, 80);
+
+  const z = T.map(t =>
+    U.map(u => {
+      const su2 = sigInf2 + (sigma0**2 - sigInf2) * Math.pow(alpha, 2*u);
+      return 1 + Math.exp(-2*t) * (su2 - 1);
+    })
+  );
+
+  // Colorscale: dark navy (low var = Phase I) → cream → warm red (high var = Phase IV)
+  const cs = [
+    [0,   '#1a3a5c'],
+    [0.2, '#4a7aaa'],
+    [0.45,'#c9bfaf'],
+    [0.7, '#e8a070'],
+    [1,   '#b5341a']
+  ];
+
+  const annotations = [
+    { x: 1.2,  y: 0.3,  text: '<b>I</b>',  font:{size:13,color:'#fff'}, showarrow:false },
+    { x: 7,    y: 1.3,  text: '<b>II</b>', font:{size:13,color:'#1a1410'}, showarrow:false },
+    { x: 11.5, y: 0.3,  text: '<b>III</b>',font:{size:13,color:'#1a1410'}, showarrow:false },
+    { x: 7,    y: 2.5,  text: '<b>IV</b>', font:{size:13,color:'#fff'}, showarrow:false }
+  ];
+
+  Plotly.newPlot('fig-phase', [{
+    type: 'heatmap', x: U, y: T, z: z,
+    colorscale: cs, zmin: 0.9, zmax: 4.5,
+    colorbar: { title: { text:'σ²', side:'right' }, thickness: 12, len: 0.9,
+                tickfont: {size:11}, titlefont:{size:12} },
+    hovertemplate: 'u=%{x:.1f}, t=%{y:.2f}<br>σ²=%{z:.3f}<extra></extra>'
+  }], {
+    ...PLOTLY_LAYOUT_BASE,
+    xaxis: { title: { text: 'Internal time  u', standoff:8 }, zeroline:false, showgrid:false },
+    yaxis: { title: { text: 'Diffusion time  t', standoff:8 }, zeroline:false, showgrid:false },
+    annotations: annotations
+  }, { responsive: true, displayModeBar: false });
+})();
+
+// ── Figure 2: Propagator error ε(u,t) ────────────────────
+(function() {
+  const Ttheta = 0.10;
+  const U = linspace(0.4, 14, 80);
+  const T = linspace(0, 2.8, 80);
+
+  const z = T.map(t =>
+    U.map(u => {
+      const denom = 2*Ttheta*u + (1 - Math.exp(-2*t));
+      return Math.min(2*Ttheta / (denom + 1e-10), 2.0);
+    })
+  );
+
+  const cs = [
+    [0,   '#1a3a5c'],
+    [0.15,'#4a9ab5'],
+    [0.4, '#c9bfaf'],
+    [0.7, '#e8a070'],
+    [1,   '#b5341a']
+  ];
+
+  Plotly.newPlot('fig-error', [{
+    type: 'heatmap', x: U, y: T, z: z,
+    colorscale: cs, zmin: 0, zmax: 1.5,
+    colorbar: { title: { text:'ε(u,t)', side:'right' }, thickness: 12, len: 0.9,
+                tickfont:{size:11}, titlefont:{size:12} },
+    hovertemplate: 'u=%{x:.1f}, t=%{y:.2f}<br>ε=%{z:.3f}<extra></extra>'
+  }], {
+    ...PLOTLY_LAYOUT_BASE,
+    xaxis: { title: { text: 'Internal time  u', standoff:8 }, zeroline:false, showgrid:false },
+    yaxis: { title: { text: 'Diffusion time  t', standoff:8 }, zeroline:false, showgrid:false },
+    annotations: [
+      { x: 11, y: 1.2, text: '<b>Phase II</b><br><i>ε small</i>',
+        font:{size:11,color:'#fff'}, showarrow:false, align:'center' },
+      { x: 1.5, y: 0.1, text: '<b>ε ≈ 1/u</b>',
+        font:{size:11,color:'#fff'}, showarrow:false }
+    ]
+  }, { responsive: true, displayModeBar: false });
+})();
+</script>
 </body>
 </html>
