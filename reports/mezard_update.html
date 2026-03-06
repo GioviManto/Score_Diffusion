@@ -171,7 +171,7 @@ a:hover{border-bottom-color:var(--accent2);}
       Università Bocconi
     </span>
     <span>
-      Report for Prof. Marc Mézard
+      Update Report
       <span class="dot">·</span>
       March 2026
     </span>
@@ -266,37 +266,37 @@ laboratory, hosted on GitHub Pages. Click on the model name to open the laborato
   </thead>
   <tbody>
     <tr>
-      <td>TM1 &nbsp; Gaussian mixture</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-1/ou_diffusion_explainer.html" target="_blank">TM1 &nbsp; Gaussian mixture</a></td>
       <td>2</td>
       <td>Static — no \(u\)</td>
       <td>Baseline: score softens from anisotropic to isotropic as \(t \uparrow\)</td>
     </tr>
     <tr>
-      <td>TM2 &nbsp; Drift + noise</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-2/toy-model-2.html" target="_blank">TM2 &nbsp; Drift + noise</a></td>
       <td>1</td>
       <td>\(x_{u+1} = x_u + c + \eta\)</td>
       <td>Joint score decomposes exactly as prior gradient plus transition correction</td>
     </tr>
     <tr>
-      <td>TM3 &nbsp; Rotating AR(1)</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-3/rotation_ou_score_lab.html" target="_blank">TM3 &nbsp; Rotating AR(1)</a></td>
       <td>2</td>
       <td>\(a_{u+1} = R_{\Delta\theta}\,a_u + \xi_u\)</td>
       <td>Propagator is exactly \(P = R_{\Delta\theta}\) in the isotropic-covariance limit</td>
     </tr>
     <tr>
-      <td>TM4 &nbsp; Billiard</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-4/bouncing_cube_score_lab.html" target="_blank">TM4 &nbsp; Billiard</a></td>
       <td>3</td>
       <td>Bouncing particle in \([0,L]^3\)</td>
       <td>Analytic folded-Gaussian conditional score matches the KDE marginal</td>
     </tr>
     <tr>
-      <td>TM5 &nbsp; Two clocks</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-5/score_two_clocks_lab.html" target="_blank">TM5 &nbsp; Two clocks</a></td>
       <td>1–2</td>
       <td>AR(1): \(x_{u+1} = \alpha x_u + \eta_u\)</td>
       <td>Four-regime phase diagram on \((u,t)\); Phase II is the optimal window for \(P\)</td>
     </tr>
     <tr>
-      <td>TM6 &nbsp; Circle &nbsp;(new)</td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-6/circle_score_lab.html" target="_blank">TM6 &nbsp; Circle Non-Gaussian</a></td>
       <td>2</td>
       <td>\(\mathrm{d}r = (1{-}r)\,\mathrm{d}u + \sqrt{2T_r}\,\mathrm{d}B_r\); &nbsp; \(\mathrm{d}\theta = \omega\,\mathrm{d}u + \sqrt{2T_\theta}\,\mathrm{d}B_\theta\)</td>
       <td>First non-Gaussian model; score separates in polar coordinates; Riccati equation for precision</td>
@@ -311,7 +311,7 @@ laboratory, hosted on GitHub Pages. Click on the model name to open the laborato
 <h2><span class="num">§3</span> Main Results</h2>
 
 
-<h3>3.1 &nbsp; The rotation propagator &nbsp; (TM3)</h3>
+<h3>3.1 &nbsp; <a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-3/rotation_ou_score_lab.html" target="_blank">The rotation propagator &nbsp; (TM3)</a></h3>
 
 <p>
 The internal dynamics are \(a(u+1) = R_{\Delta\theta}\,a(u) + \xi_u\), with
@@ -364,7 +364,7 @@ holds exactly for all Gaussian models.
 </p>
 
 
-<h3>3.2 &nbsp; Four regimes on the \((u,t)\) plane &nbsp; (TM5)</h3>
+<h3>3.2 &nbsp; <a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-5/score_two_clocks_lab.html" target="_blank"> Four regimes on the \((u,t)\) plane &nbsp; (TM5)</a></h3>
 
 <p>
 For the univariate AR(1) chain, the closed-form score is
@@ -374,39 +374,32 @@ The entire landscape — score norm, Fisher information, entropy — organises i
 qualitatively distinct regions of the \((u,t)\) plane.
 </p>
 
-<div class="phases">
-  <span class="chip chip-r">Phase I &nbsp; Sharp</span>
-  <span class="chip chip-b">Phase II &nbsp; Best window</span>
-  <span class="chip chip-k">Phase III &nbsp; Stationary</span>
-  <span class="chip chip-k">Phase IV &nbsp; Universal noise</span>
-</div>
-
 <table>
   <thead>
     <tr>
-      <th>Phase</th>
+      <th style="text-align:left;">Phase</th>
       <th>Region</th>
       <th>What happens to the score</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>I &nbsp; Sharp</td>
+      <td style="text-align:left;">I &nbsp; Sharp</td>
       <td>\(u\) small, \(t\) small</td>
       <td>Score tracks the initial condition closely; strong anisotropy and high Fisher information</td>
     </tr>
     <tr>
-      <td>II &nbsp; Best window</td>
+      <td style="text-align:left;">II &nbsp; Best window</td>
       <td>\(t\) intermediate</td>
       <td>Variance balances signal and noise; propagator structure is most legible; optimal regime for fitting \(P\)</td>
     </tr>
     <tr>
-      <td>III &nbsp; Stationary</td>
+      <td style="text-align:left;">III &nbsp; Stationary</td>
       <td>\(u\) large, \(t\) small</td>
       <td>Variance converges to \(\sigma_\infty^2\); variance part of propagator \(\to 1\); only the mean still evolves</td>
     </tr>
     <tr>
-      <td>IV &nbsp; Universal noise</td>
+      <td style="text-align:left;">IV &nbsp; Universal noise</td>
       <td>\(t\) large</td>
       <td>\(\sigma_u^2(t) \to 1\) for all \(u\); score \(\approx -x\); all dynamical information erased</td>
     </tr>
@@ -422,7 +415,7 @@ is determined by the AR(1) recursion and equals \(1\) at stationarity.
 </p>
 
 
-<h3>3.3 &nbsp; Order parameter SDE and the Riccati equation &nbsp; (TM6)</h3>
+<h3>3.3 &nbsp; <a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-6/circle_score_lab.html" target="_blank">Order parameter SDE and the Riccati equation &nbsp; (TM6)</a></h3>
 
 <p>
 The circle model is our first non-Gaussian test bed.
@@ -494,7 +487,20 @@ component is computable in closed form:
      §4  NEXT STEPS
 ═══════════════════════════════════════════════════════ -->
 <h2><span class="num">§4</span> Next Steps</h2>
+<h3> Empirical Tests</h3>
+<p>The following empirical tests could be worth exploring:</p>
+<ol>
+  <li>
+    <strong>thing 1.</strong>
+    lerem ipsum dolor sit amet, consectetur adipiscing elit. 
+    Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+  </li>
+</ol>
 
+<h3> Theoretical Connections</h3>
+<p>
+The following theoretical connections could be worth exploring:
+</p>
 <ol>
   <li>
     <strong>Matrix Riccati for rotating covariance.</strong>
@@ -528,7 +534,9 @@ component is computable in closed form:
 ═══════════════════════════════════════════════════════ -->
 <hr class="sec">
 
-<h2><span class="num">§A</span> Interactive Laboratories</h2>
+<h1> Appendix </h1>
+
+<h2><span class="num">§A</span> Key Interactive Laboratories</h2>
 
 <p>
 Each toy model is a self-contained HTML file (MathJax + Plotly, no server required).
@@ -544,15 +552,15 @@ All computations are in-browser; every slider updates the plots in real time.
   </thead>
   <tbody>
     <tr>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html" target="_blank">TM3 &nbsp; Rotating AR(1)</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-3/rotation_ou_score_lab.html" target="_blank">TM3 &nbsp; Rotating AR(1)</a></td>
       <td>Score quiver field; Jacobian eigenvalues; watch anisotropy collapse as \(t\) increases</td>
     </tr>
     <tr>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html" target="_blank">TM5 &nbsp; Two clocks</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-5/score_two_clocks_lab.html" target="_blank">TM5 &nbsp; Two clocks</a></td>
       <td>\((u,t)\) phase heatmap; entropy, Fisher information and variance on the two-clock plane</td>
     </tr>
     <tr>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 &nbsp; Circle model</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-6/circle_score_lab.html" target="_blank">TM6 &nbsp; Circle model</a></td>
       <td>Separable score field; order parameter evolution; propagator error \(\varepsilon(u,t)\) curves and heatmap</td>
     </tr>
   </tbody>
@@ -564,7 +572,7 @@ All computations are in-browser; every slider updates the plots in real time.
 ═══════════════════════════════════════════════════════ -->
 <hr class="sec">
 
-<h2><span class="num">§C</span> Key Figures</h2>
+<h2><span class="num">§B</span> Key Figures</h2>
 
 <p>
 The figures below are computed from closed-form expressions — no sampling, no training.
@@ -615,22 +623,22 @@ mathematical structure.
     <tr>
       <td>Forward + reverse paths</td>
       <td>Black trajectories: forward OU noising of AR(1) frames as \(t\) increases. Pink dashed: reverse score-driven paths recovering the data. Shown on the \((x, u)\) plane at fixed \(u\).</td>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html" target="_blank">TM5 Lab 4</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-5/score_two_clocks_lab.html" target="_blank">TM5 Lab 4</a></td>
     </tr>
     <tr>
       <td>Rotating score field</td>
       <td>2D quiver field \(s(x, u, t)\) for the rotating AR(1). As \(u\) increases the arrows rotate rigidly — the propagator \(P = R_{\Delta\theta}\) in action. Jacobian eigenvalues shown in real time.</td>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html" target="_blank">TM3 Lab</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-3/rotation_ou_score_lab.html" target="_blank">TM3 Lab</a></td>
     </tr>
     <tr>
       <td>Circle trajectory + score</td>
       <td>Stochastic particles on the ring (coloured by \(u\)) alongside the exact separable score field — radial arrows pointing toward \(r=1\), tangential arrows following angular drift.</td>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 Lab 1</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-6/circle_score_lab.html" target="_blank">TM6 Lab 1</a></td>
     </tr>
     <tr>
       <td>Order parameter evolution</td>
       <td">The four order parameters \((m_r, \sigma_r, \theta_{\mathrm{mean}}, \sigma_\theta)\) plotted against \(u\). Radial parameters converge; angular parameters grow. Precision \(\kappa_\theta = 1/(2T_\theta u)\) decays as \(1/u\).</td>
-      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_6/circle_score_lab.html" target="_blank">TM6 Lab 2</a></td>
+      <td><a href="https://giovimanto.github.io/Score_Diffusion/Toy-models/toy-model-6/circle_score_lab.html" target="_blank">TM6 Lab 2</a></td>
     </tr>
   </tbody>
 </table>

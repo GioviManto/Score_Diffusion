@@ -7,57 +7,151 @@
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js" crossorigin="anonymous"></script>
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
   :root {
     --bg:#f7f4ef; --ink:#1a1410; --accent:#b5341a; --accent2:#1a3a5c;
     --muted:#6b5e50; --rule:#c9bfaf; --card:#ffffff; --code-bg:#f0ece4;
+    --math-color:#1a3a5c;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'EB Garamond',Georgia,serif; font-size:12pt; line-height:1.55;
-         color:var(--ink); background:var(--bg); max-width:960px; margin:0 auto; padding:36px 40px; }
-  h1 { font-size:22pt; font-weight:600; text-align:center; margin-bottom:4px; }
-  .subtitle { text-align:center; font-style:italic; color:var(--muted); margin-bottom:18px; }
-  h2 { font-size:14pt; font-weight:600; color:var(--accent2); border-bottom:1px solid var(--rule);
-       padding-bottom:3px; margin:24px 0 8px 0; }
-  h3 { font-size:12pt; font-weight:600; color:var(--ink); margin:14px 0 5px 0; }
-  p  { margin:6px 0 8px 0; }
+  body {
+    font-family:'EB Garamond', Georgia, serif;
+    background:var(--bg);
+    color:var(--ink);
+    font-size:18px;
+    line-height:1.75;
+    max-width:1050px;
+    margin:0 auto;
+    padding:56px 36px 96px;
+  }
+  header {
+    border-bottom:2px solid var(--ink);
+    padding-bottom:22px;
+    margin-bottom:44px;
+  }
+  .label {
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+  h1 {
+    font-size:2.55em;
+    font-weight:600;
+    line-height:1.18;
+    margin-bottom:12px;
+  }
+  .subtitle {
+    color:var(--muted);
+    font-style:italic;
+    font-size:1.05em;
+  }
+  h2 {
+    font-size:1.35em;
+    font-weight:600;
+    color:var(--ink);
+    margin:50px 0 14px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--rule);
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  h2 .num {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72em;
+    color:var(--accent);
+    font-weight:700;
+  }
+  h3 { font-size:1.1em; font-weight:600; color:var(--ink); margin:14px 0 5px 0; }
+  p { margin-bottom:1em; }
   ul,ol { padding-left:22px; margin:4px 0 8px 0; }
   li { margin-bottom:3px; }
 
   .math-block {
-    font-family:'JetBrains Mono',monospace; font-size:10pt;
-    background:var(--code-bg); border-left:3px solid var(--rule);
-    padding:10px 14px; margin:8px 0 10px 0; line-height:1.8;
+    background:var(--card); border-left:3px solid var(--accent2);
+    padding:18px 26px; margin:22px 0; border-radius:0 6px 6px 0;
     overflow-x:auto;
   }
-  code { font-family:'JetBrains Mono',monospace; font-size:9.5pt;
-         background:var(--code-bg); padding:1px 4px; border-radius:2px; }
-  .insight { background:#fff; border-left:3px solid var(--accent);
-             padding:10px 14px; margin:10px 0; }
-  .insight strong { color:var(--accent); }
-  .note { background:#f0f4ff; border-left:3px solid var(--accent2);
-          padding:8px 12px; margin:8px 0; font-size:11pt; }
+  .math-block .MathJax { color:var(--math-color); }
+  code {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.82em;
+    background:var(--code-bg);
+    padding:2px 6px;
+    border-radius:3px;
+  }
+  .insight-box {
+    background:linear-gradient(135deg, #fff8f5 0%, #fff 100%);
+    border:1px solid #e8c8be;
+    border-left:4px solid var(--accent);
+    padding:18px 22px;
+    margin:24px 0;
+    border-radius:0 8px 8px 0;
+  }
+  .insight-box strong { color:var(--accent); }
+  .info-box {
+    background:linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+    border:1px solid #bdd0e8;
+    border-left:4px solid var(--accent2);
+    padding:18px 22px;
+    margin:24px 0;
+    border-radius:0 8px 8px 0;
+  }
+  .info-box strong { color:var(--accent2); }
 
   /* ── Lab containers ── */
   .lab-section {
-    background:var(--card); border:1px solid var(--rule); border-radius:4px;
-    padding:18px 22px; margin:20px 0;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding:18px 22px;
+    margin:24px 0;
+    overflow:hidden;
   }
-  .lab-header { font-size:13pt; font-weight:600; color:var(--accent2); margin-bottom:10px; }
+  .lab-header {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.86em;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--accent2);
+    font-weight:600;
+    margin-bottom:10px;
+  }
 
   /* ── Controls ── */
   .controls { display:flex; flex-wrap:wrap; gap:10px 22px; margin:12px 0; align-items:center; }
   .ctrl-group { display:flex; flex-direction:column; gap:2px; min-width:160px; }
-  .ctrl-label { font-size:9.5pt; font-family:'JetBrains Mono',monospace; color:var(--muted); }
+  .ctrl-label {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.73em;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
   .ctrl-row { display:flex; align-items:center; gap:6px; }
   input[type=range] { width:130px; accent-color:var(--accent2); }
-  .ctrl-val { font-family:'JetBrains Mono',monospace; font-size:9.5pt;
-              color:var(--accent); min-width:40px; }
+  .ctrl-val {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.85em;
+    color:var(--ink);
+    font-weight:700;
+    min-width:40px;
+  }
 
   /* ── Status bars ── */
-  .status-bar { font-family:'JetBrains Mono',monospace; font-size:9.5pt;
-                background:var(--code-bg); padding:6px 12px; margin:8px 0;
-                border-radius:2px; color:var(--muted); line-height:1.8; }
+  .status-bar {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78em;
+    background:var(--code-bg);
+    padding:6px 12px;
+    margin:8px 0;
+    border-radius:2px;
+    color:var(--muted);
+    line-height:1.55;
+  }
 
   /* ── Cols ── */
   .cols2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -65,34 +159,45 @@
 
   /* ── Regime badges ── */
   .phases { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:10px 0; }
-  .phase { border:1px solid var(--rule); padding:6px 10px; border-radius:2px; font-size:10.5pt; }
+  .phase { border:1px solid var(--rule); padding:6px 10px; border-radius:2px; font-size:0.9em; }
   .ph1 { border-left:3px solid #2a7f3f; }
   .ph2 { border-left:3px solid var(--accent2); }
   .ph3 { border-left:3px solid #7a4f00; }
   .ph4 { border-left:3px solid #888; }
-  .phase-name { font-weight:600; font-size:9.5pt; font-family:'JetBrains Mono',monospace; }
+  .phase-name { font-weight:600; font-size:0.78em; font-family:'JetBrains Mono', monospace; }
 
   /* ── Tables ── */
-  table { border-collapse:collapse; width:100%; margin:8px 0 10px 0; font-size:10.5pt; }
-  th { background:var(--accent2); color:#fff; padding:4px 8px; text-align:left;
-       font-family:'JetBrains Mono',monospace; font-size:9.5pt; }
+  table { border-collapse:collapse; width:100%; margin:8px 0 10px 0; font-size:0.9em; }
+  th {
+    background:var(--accent2);
+    color:#fff;
+    padding:4px 8px;
+    text-align:left;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78em;
+  }
   td { padding:4px 8px; border-bottom:1px solid var(--rule); vertical-align:top; }
   tr:nth-child(even) td { background:#f3f0ea; }
 
   hr { border:none; border-top:1px solid var(--rule); margin:16px 0; }
+  hr.section { border:none; border-top:1px solid var(--rule); margin:46px 0; }
   .plot-container { width:100%; min-height:340px; }
+
+  @media (max-width: 920px) {
+    body { padding:34px 18px 70px; }
+    h1 { font-size:1.95em; }
+    .cols2 { grid-template-columns:1fr; }
+  }
 </style>
 </head>
 <body>
+<header>
+  <div class="label">Score Diffusion · Toy Model 6 · Circle</div>
+  <h1>Score on the Circle</h1>
+  <p class="subtitle">Order parameter SDE, separable exact score, and analytical propagator error. Part of <em>Score-Based Diffusion for Dynamic Objects</em> (2026).</p>
+</header>
 
-<h1>Toy Model 6 — Score on the Circle</h1>
-<p class="subtitle">Order Parameter SDE, Separable Exact Score, and Analytical Propagator Error</p>
-
-<p style="text-align:center;font-size:10.5pt;color:var(--muted);">
-  Part of the series: <em>Score-Based Diffusion for Dynamic Objects</em> &nbsp;·&nbsp; 2026
-</p>
-
-<div class="insight">
+<div class="insight-box">
   <strong>Post-Achilli direction.</strong>
   This is the first toy model with <em>non-Gaussian</em> geometry: a stochastic process on the
   circle with separable radial and angular dynamics. The score factorises exactly in polar
@@ -103,8 +208,7 @@
   that we derive and plot.
 </div>
 
-<!-- ══════════════════════════════════════════════ §1 ════ -->
-<h2>§1  Two-Temperature Dynamics on the Circle</h2>
+<h2><span class="num">§1</span> Two-Temperature Dynamics on the Circle</h2>
 
 <p>
   A particle moves in ℝ² with polar coordinates (<em>r</em>, <em>θ</em>).
@@ -112,11 +216,14 @@
 </p>
 
 <div class="math-block">
-  Radial (OU, confinement at r = 1):
-    dr(u) = (1 − r(u)) du  +  √(2 T_r) dB_r(u)
-
-  Angular (BM with drift):
-    dθ(u) = ω du  +  √(2 T_θ) dB_θ(u)
+$$
+\text{Radial (OU, confinement at } r=1\text{):}\quad
+\mathrm{d}r(u) = (1 - r(u))\,\mathrm{d}u + \sqrt{2T_r}\,\mathrm{d}B_r(u)
+$$
+$$
+\text{Angular (BM with drift):}\quad
+\mathrm{d}\theta(u) = \omega\,\mathrm{d}u + \sqrt{2T_\theta}\,\mathrm{d}B_\theta(u).
+$$
 </div>
 
 <p>
@@ -124,23 +231,28 @@
   <em>factorises</em> in polar coordinates at every internal time <em>u</em>:
 </p>
 <div class="math-block">
-  p₀(r, θ | u)  =  p_r(r | u) · p_θ(θ | u)
+$$
+p_0(r,\theta \mid u) = p_r(r \mid u) \cdot p_\theta(\theta \mid u)
+$$
 </div>
 
 <h3>Marginals (closed form)</h3>
 <div class="math-block">
-  Radial OU marginal:
-    m_r(u)  = 1 + (r₀ − 1) e^{−u}              [mean, decays to 1]
-    σ²_r(u) = T_r (1 − e^{−2u})                [variance, grows to T_r]
-    p_r(r|u) ≈ N(m_r(u), σ²_r(u))              [Gaussian approximation, exact for T_r→0]
-
-  Angular BM with drift:
-    θ_mean(u) = θ₀ + ω u                         [mean angle, rotates at rate ω]
-    σ²_θ(u)   = 2 T_θ u                          [angular variance, grows as diffusion]
-    p_θ(θ|u)  = Wrapped-N(θ_mean(u), σ²_θ(u))  [wrapped Gaussian on S¹]
+$$
+\text{Radial OU marginal:}\quad
+m_r(u) = 1 + (r_0 - 1)e^{-u},\quad
+\sigma_r^2(u) = T_r(1 - e^{-2u}),\quad
+p_r(r\mid u) \approx \mathcal{N}(m_r(u), \sigma_r^2(u)).
+$$
+$$
+\text{Angular BM with drift:}\quad
+\theta_{\text{mean}}(u) = \theta_0 + \omega u,\quad
+\sigma_\theta^2(u) = 2T_\theta u,\quad
+p_\theta(\theta\mid u) = \text{Wrapped-}\mathcal{N}(\theta_{\text{mean}}(u), \sigma_\theta^2(u)).
+$$
 </div>
 
-<div class="note">
+<div class="info-box">
   <strong>Two limiting cases:</strong>
   (a) T_θ → 0: pure rotation, no angular spreading; the propagator P = R_ω is <em>exact</em>.
   (b) T_r → 0: particle stays on the unit circle; dynamics reduce to
@@ -148,13 +260,16 @@
 </div>
 
 <!-- ══════════════════════════════════════════════ §2 ════ -->
-<h2>§2  Exact Score via Polar Decomposition</h2>
+<hr class="section"/>
+<h2><span class="num">§2</span> Exact Score via Polar Decomposition</h2>
 
 <p>
   The log-density in Cartesian coordinates (<em>x</em>, <em>y</em>) = (<em>r</em>cos<em>θ</em>, <em>r</em>sin<em>θ</em>):
 </p>
 <div class="math-block">
-  log p₀(x,y|u)  =  log p_r(r|u)  +  log p_θ(θ|u)  −  log r  +  const
+$$
+\log p_0(x,y\mid u) = \log p_r(r\mid u) + \log p_\theta(\theta\mid u) - \log r + \text{const}
+$$
 </div>
 <p>
   The <strong>−log r</strong> term arises from the Jacobian of the polar → Cartesian map
@@ -162,12 +277,16 @@
   Differentiating:
 </p>
 <div class="math-block">
-  s_r(r, u)      = ∂_r log p_r  = −(r − m_r(u)) / σ²_r(u)      [radial score]
-  s^{1D}_θ(θ, u) = ∂_θ log p_θ  = −(θ_adj − θ_mean(u)) / σ²_θ(u)  [angular score]
-
-  Full 2D Cartesian score, decomposed in ê_r = (cos θ, sin θ) and ê_θ = (−sin θ, cos θ):
-
-      s(x, u) = ( s_r(r,u) − 1/r ) ê_r  +  ( s^{1D}_θ(θ,u) / r ) ê_θ
+$$
+s_r(r,u) = \frac{\partial}{\partial r}\log p_r = -\frac{r - m_r(u)}{\sigma_r^2(u)},\qquad
+s_\theta^{\mathrm{1D}}(\theta,u) = \frac{\partial}{\partial\theta}\log p_\theta = -\frac{\theta_{\text{adj}} - \theta_{\text{mean}}(u)}{\sigma_\theta^2(u)}.
+$$
+$$
+\text{Full 2D Cartesian score (}\hat{e}_r = (\cos\theta,\sin\theta),\;\hat{e}_\theta = (-\sin\theta,\cos\theta)\text{):}
+$$
+$$
+\mathbf{s}(x,u) = \Bigl(s_r(r,u) - \frac{1}{r}\Bigr)\hat{e}_r + \frac{s_\theta^{\mathrm{1D}}(\theta,u)}{r}\,\hat{e}_\theta.
+$$
 </div>
 <p>
   The <strong>−1/r</strong> correction to the radial component arises from the Jacobian term.
@@ -175,7 +294,7 @@
   and is negligible for r ≈ 1.
 </p>
 
-<div class="insight">
+<div class="insight-box">
   <strong>Structure of the score.</strong>
   Unlike Toy Models 1–5 (where s was linear in x), here s(x, u) is
   <em>nonlinear in x</em> (through the 1/r and θ = atan2(y,x) dependence).
@@ -185,22 +304,27 @@
 </div>
 
 <!-- ══════════════════════════════════════════════ §3 ════ -->
-<h2>§3  Score as Order Parameter: the 4-ODE System</h2>
+<hr class="section"/>
+<h2><span class="num">§3</span> Score as Order Parameter: the 4-ODE System</h2>
 
 <p>
   The score field <em>s</em>(<em>x</em>, <em>u</em>) is entirely determined by the
   <strong>order parameter vector</strong>
 </p>
 <div class="math-block">
-  φ(u) = ( m_r(u),  σ²_r(u),  θ_mean(u),  σ²_θ(u) )  ∈  ℝ⁴
+$$
+\varphi(u) = \bigl( m_r(u),\; \sigma_r^2(u),\; \theta_{\text{mean}}(u),\; \sigma_\theta^2(u) \bigr) \in \mathbb{R}^4
+$$
 </div>
 <p>via the formula in §2. The order parameters satisfy a <strong>closed, linear ODE system</strong>:</p>
 
 <div class="math-block">
-  dm_r / du    =  −(m_r − 1)      [OU: decay toward r=1, rate 1]
-  dσ²_r / du   =  2(T_r − σ²_r)  [variance: relaxes to stationary value T_r]
-  dθ_mean / du =  ω               [angular mean: pure drift, no restoring force]
-  dσ²_θ / du   =  2 T_θ          [angular variance: grows linearly (diffusion)]
+$$
+\frac{\mathrm{d}m_r}{\mathrm{d}u} = -(m_r - 1),\quad
+\frac{\mathrm{d}\sigma_r^2}{\mathrm{d}u} = 2(T_r - \sigma_r^2),\quad
+\frac{\mathrm{d}\theta_{\text{mean}}}{\mathrm{d}u} = \omega,\quad
+\frac{\mathrm{d}\sigma_\theta^2}{\mathrm{d}u} = 2T_\theta.
+$$
 </div>
 
 <p>
@@ -216,21 +340,27 @@
   From dσ²_θ/du = 2T_θ:
 </p>
 <div class="math-block">
-  dκ_θ / du  =  −2 T_θ · κ²_θ           [Riccati equation for angular precision]
-
-  Solution:  κ_θ(u)  =  1 / (2 T_θ u)   [algebraic decay; starts at ∞, falls as 1/u]
+$$
+\frac{\mathrm{d}\kappa_\theta}{\mathrm{d}u} = -2T_\theta\,\kappa_\theta^2\qquad\text{(Riccati for angular precision)}
+$$
+$$
+\text{Solution:}\quad \kappa_\theta(u) = \frac{1}{2T_\theta u}.
+$$
 </div>
 <p>
   For the AR(1) model in continuous time (x evolves as dx = −γx du + σ_η dW),
   the <em>radial</em> precision satisfies the analogous Riccati:
 </p>
 <div class="math-block">
-  dκ_r / du  =  2γ κ_r  −  σ²_η κ²_r   [Riccati: two-fixed-point structure]
-
-  Fixed points:  κ_r = 0  (unstable)  and  κ_r = 2γ/σ²_η = 1/σ²_∞  (stable)
+$$
+\frac{\mathrm{d}\kappa_r}{\mathrm{d}u} = 2\gamma\kappa_r - \sigma_\eta^2\kappa_r^2\qquad\text{(Riccati: two fixed points)}
+$$
+$$
+\text{Fixed points:}\quad \kappa_r = 0\;\text{(unstable)},\quad \kappa_r = \frac{2\gamma}{\sigma_\eta^2} = \frac{1}{\sigma_\infty^2}\;\text{(stable)}.
+$$
 </div>
 
-<div class="insight">
+<div class="insight-box">
   <strong>Unification.</strong>
   The Riccati equation dκ/du = 2γκ − σ²_η κ² governs the precision
   (= minus the Jacobian eigenvalue) for <em>all</em> Gaussian dynamics:
@@ -239,36 +369,44 @@
 </div>
 
 <!-- ══════════════════════════════════════════════ §4 ════ -->
-<h2>§4  Rotation Propagator: Exact Formula and Analytical Error</h2>
+<hr class="section"/>
+<h2><span class="num">§4</span> Rotation Propagator: Exact Formula and Analytical Error</h2>
 
 <h3>The rotation propagator</h3>
 <p>
   Define P = R_ω (rotation by angle ω) acting on score <em>fields</em> as:
 </p>
 <div class="math-block">
-  [P · s_u](x)  =  R_ω · s_u( R_{−ω} · x )
-
-  i.e. evaluate s_u at the <em>back-rotated point</em>, then <em>rotate the output</em>.
+$$
+[P\cdot s_u](x) = R_\omega\cdot s_u(R_{-\omega}\cdot x)
+$$
 </div>
+<p>
+  i.e. evaluate \(s_u\) at the <em>back-rotated point</em>, then <em>rotate the output</em>.
+</p>
 <p>
   <strong>When is P exact?</strong>
   Substituting the score formula from §2 and using r invariance under rotation:
 </p>
 <div class="math-block">
-  [P · s_u](x) radial component:  s_r(r, u) − 1/r     [unchanged, since r is rotation-invariant]
-  [P · s_u](x) tangential:        −(θ − θ_mean(u) − ω) / σ²_θ(u) · (1/r)
-
-  Compare s_{u+1}(x) tangential:  −(θ − θ_mean(u+1)) / σ²_θ(u+1) · (1/r)
-                                 = −(θ − θ_mean(u) − ω) / σ²_θ(u+1) · (1/r)   [since θ_mean(u+1)=θ_mean(u)+ω]
+$$
+[P\cdot s_u](x)\text{ radial: } s_r(r,u) - 1/r.\qquad
+[P\cdot s_u](x)\text{ tangential: } -\frac{\theta - \theta_{\text{mean}}(u) - \omega}{\sigma_\theta^2(u)}\cdot\frac{1}{r}.
+$$
+$$
+s_{u+1}(x)\text{ tangential: } -\frac{\theta - \theta_{\text{mean}}(u+1)}{\sigma_\theta^2(u+1)}\cdot\frac{1}{r}
+= -\frac{\theta - \theta_{\text{mean}}(u) - \omega}{\sigma_\theta^2(u+1)}\cdot\frac{1}{r}.
+$$
 </div>
 <p>
   The two are identical iff σ²_θ(<em>u</em>+1) = σ²_θ(<em>u</em>), i.e. <strong>T_θ = 0</strong>.
   The relative error for T_θ > 0 is:
 </p>
 <div class="math-block">
-  ε_tang(u)  =  | σ²_θ(u+1) / σ²_θ(u) − 1 |
-             =  2 T_θ / (2 T_θ u)
-             =  1/u                              [t=0, clean score]
+$$
+\varepsilon_{\text{tang}}(u) = \left| \frac{\sigma_\theta^2(u+1)}{\sigma_\theta^2(u)} - 1 \right|
+= \frac{2T_\theta}{2T_\theta u} = \frac{1}{u}\qquad(t=0,\;\text{clean score}).
+$$
 </div>
 
 <h3>After OU diffusion (diffusion time t)</h3>
@@ -276,10 +414,13 @@
   Forward noise adds (1−e^{−2t}) to the effective angular variance per unit r² (Cartesian OU → polar):
 </p>
 <div class="math-block">
-  σ²_θ,eff(u, t)  ≈  σ²_θ(u) + (1 − e^{−2t})     [OU noise adds to angular spread]
-
-  ε(u, t)  =  ( σ²_θ,eff(u+1,t) − σ²_θ,eff(u,t) ) / σ²_θ,eff(u, t)
-           =  2 T_θ / ( 2 T_θ u  +  (1 − e^{−2t}) )
+$$
+\sigma_{\theta,\text{eff}}^2(u,t) \approx \sigma_\theta^2(u) + (1 - e^{-2t}).
+$$
+$$
+\varepsilon(u,t) = \frac{\sigma_{\theta,\text{eff}}^2(u+1,t) - \sigma_{\theta,\text{eff}}^2(u,t)}{\sigma_{\theta,\text{eff}}^2(u,t)}
+= \frac{2T_\theta}{2T_\theta u + (1 - e^{-2t})}.
+$$
 </div>
 
 <div class="phases">
@@ -302,23 +443,29 @@
 </div>
 
 <!-- ══════════════════════════════════════════════ §5 ════ -->
-<h2>§5  After OU Diffusion: the (u, t) Plane</h2>
+<hr class="section"/>
+<h2><span class="num">§5</span> After OU Diffusion: the (u, t) Plane</h2>
 
 <p>
   Each frame is independently corrupted by OU noise at diffusion time <em>t</em>:
 </p>
 <div class="math-block">
-  X_t(u)  =  a(u) e^{−t}  +  √(1 − e^{−2t}) · Z,   Z ~ N(0, I₂)
+$$
+X_t(u) = a(u)\,e^{-t} + \sqrt{1 - e^{-2t}}\,Z,\qquad Z \sim \mathcal{N}(0, I_2).
+$$
 </div>
 <p>
   The noised score at (<em>x</em>, <em>u</em>, <em>t</em>) is computed via the Tweedie formula
   (Monte Carlo, exact up to sampling error):
 </p>
 <div class="math-block">
-  s(x, u, t)  =  E_{a ~ p₀(·|u)} [ (a e^{−t} − x) / (1−e^{−2t})  |  X_t = x ]
-             ≈  Σ_k w_k(x) · (a_k e^{−t} − x) / (1−e^{−2t})
-
-  where  w_k(x) ∝ N( x;  a_k e^{−t},  (1−e^{−2t}) I )  [Gaussian mixture weights]
+$$
+s(x,u,t) = \mathbb{E}_{a\sim p_0(\cdot\mid u)}\!\left[ \frac{a e^{-t} - x}{1 - e^{-2t}} \;\bigg|\; X_t = x \right]
+\approx \frac{\sum_k w_k(x)(a_k e^{-t} - x)}{1 - e^{-2t}},
+$$
+$$
+\text{where } w_k(x) \propto \mathcal{N}\!\bigl(x;\; a_k e^{-t},\; (1-e^{-2t})I\bigr).
+$$
 </div>
 
 <hr>
