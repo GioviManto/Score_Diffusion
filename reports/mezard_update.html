@@ -491,10 +491,19 @@ component is computable in closed form:
 <p>The following empirical tests could be worth exploring:</p>
 <ol>
   <li>
-    <strong>thing 1.</strong>
-    lerem ipsum dolor sit amet, consectetur adipiscing elit. 
-    Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    <strong>Curl (Vector Calculus).</strong>
+    Model the rotation of the vector field induced by the natural dynamics of the rotating 
+    particle system using the curl operator. Curl is constant for fixed frame at a given \(u\), varies across different \(u\). 
   </li>
+  
+  <li>
+    <strong>Unconditional vs Guided score on MNIST.</strong>
+    Simplify the problem: given the known label of a digit, compare the unconditional vs label-guided vector field at different rotations.
+    Experiment with applying a stochastic rotation and having a neural network infer the angle, using the values of the vector field as ground truth.
+    Alternatively, explore speciation and collapse transitions when using a diffusion process to predict the rotation of a 
+    digit discretized in classes like 0-90, 91-180, 181-270, 271-360. 
+  </li>
+
 </ol>
 
 <h3> Theoretical Connections</h3>
@@ -525,6 +534,12 @@ The following theoretical connections could be worth exploring:
     Train a small score network on the circle model and compare the learned \(P\) against
     the analytical rotation propagator. Measure whether Phase II (intermediate \(t\)) is
     indeed the regime where the learned propagator is most accurate.
+  </li>
+  <li>
+    <strong>Notions from Random Matrix Theory.</strong>
+  </li>
+  <li>
+    <strong>Order Parameter SDEs.</strong>
   </li>
 </ol>
 
