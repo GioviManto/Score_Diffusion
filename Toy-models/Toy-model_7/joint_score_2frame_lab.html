@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TM7 — Joint Score: Two Frames</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+:root{
+  --bg:#f7f4ef; --ink:#1a1410; --accent:#b5341a; --accent2:#1a3a5c;
+  --muted:#6b5e50; --rule:#c9bfaf; --card:#ffffff; --code-bg:#f0ece4;
+  --green:#0e6b2c; --pink:#c0427a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'EB Garamond',Georgia,serif;
+  background:var(--bg); color:var(--ink);
+  font-size:18px; line-height:1.78;
+  max-width:1000px; margin:0 auto; padding:56px 36px 100px;
+}
+header{border-bottom:2px solid var(--ink); padding-bottom:22px; margin-bottom:48px;}
+.label{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;}
+h1{font-size:2.4em; font-weight:600; line-height:1.16; margin-bottom:14px;}
+.subtitle{color:var(--muted); font-style:italic; font-size:1.05em;}
+h2{font-size:1.32em; font-weight:600; color:var(--ink); margin:52px 0 15px; padding-bottom:6px; border-bottom:1px solid var(--rule); display:flex; align-items:center; gap:12px;}
+h2 .num{font-family:'JetBrains Mono',monospace; font-size:.72em; color:var(--accent); font-weight:700;}
+h3{font-size:1.08em; font-weight:600; color:var(--accent2); margin:28px 0 10px;}
+p{margin-bottom:1em;}
+ul,ol{margin:0 0 1em 24px;}
+li{margin-bottom:5px;}
+.math-block{background:var(--card); border-left:3px solid var(--accent2); padding:18px 26px; margin:22px 0; border-radius:0 6px 6px 0; overflow-x:auto;}
+.math-block .caption{font-size:.82em; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:6px;}
+.insight-box{background:linear-gradient(135deg,#fff8f5 0%,#fff 100%); border:1px solid #e8c8be; border-left:4px solid var(--accent); padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;}
+.insight-box strong{color:var(--accent);}
+.info-box{background:linear-gradient(135deg,#f0f5ff 0%,#fff 100%); border:1px solid #bdd0e8; border-left:4px solid var(--accent2); padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;}
+.info-box strong{color:var(--accent2);}
+.warning-box{background:linear-gradient(135deg,#fff5e0 0%,#fff 100%); border:1px solid #e8d0a0; border-left:4px solid #b87c00; padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;}
+.green-box{background:linear-gradient(135deg,#f0fff4 0%,#fff 100%); border:1px solid #9ecfb0; border-left:4px solid var(--green); padding:18px 22px; margin:26px 0; border-radius:0 8px 8px 0;}
+.green-box strong{color:var(--green);}
+code{font-family:'JetBrains Mono',monospace; font-size:.82em; background:var(--code-bg); padding:2px 6px; border-radius:3px;}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:22px 0;}
+.col-card{background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:18px;}
+.col-card h4{font-family:'JetBrains Mono',monospace; font-size:.78em; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px;}
+table{width:100%; border-collapse:collapse; margin:18px 0; font-size:.9em;}
+th{font-family:'JetBrains Mono',monospace; font-size:.76em; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); border-bottom:2px solid var(--rule); padding:8px 10px; text-align:left;}
+td{padding:9px 10px; border-bottom:1px solid var(--rule); vertical-align:top;}
+td:first-child{font-family:'JetBrains Mono',monospace; font-size:.82em; color:var(--accent2);}
+.lab{margin-top:44px; background:var(--card); border:1px solid var(--rule); border-radius:12px; overflow:hidden;}
+.lab-header{background:var(--ink); color:#f7f4ef; padding:16px 22px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+.lab-header h3{font-family:'JetBrains Mono',monospace; font-size:.86em; letter-spacing:.08em; text-transform:uppercase; color:#f7f4ef; margin:0;}
+.lab-body{padding:24px 26px;}
+.controls{display:flex; flex-wrap:wrap; gap:18px; margin-bottom:20px; align-items:flex-end;}
+.ctrl{display:flex; flex-direction:column; gap:5px; min-width:140px;}
+.ctrl label{font-family:'JetBrains Mono',monospace; font-size:.75em; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+.ctrl input[type=range]{width:100%; accent-color:var(--accent);}
+.ctrl .val{font-family:'JetBrains Mono',monospace; font-size:.82em; color:var(--ink); text-align:right;}
+.plot-wrap{width:100%; min-height:340px;}
+.status{font-family:'JetBrains Mono',monospace; font-size:.78em; color:var(--muted); margin-top:10px; padding:8px 12px; background:var(--code-bg); border-radius:4px;}
+hr.sec{border:none; border-top:1px solid var(--rule); margin:48px 0;}
+.eq-label{font-family:'JetBrains Mono',monospace; font-size:.72em; color:var(--accent); float:right; margin-top:2px;}
+.step{counter-increment:step; margin:20px 0;}
+.step::before{content:counter(step); font-family:'JetBrains Mono',monospace; font-size:.72em; background:var(--accent2); color:#fff; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; margin-right:10px; font-weight:700;}
+ol.steps{counter-reset:step; list-style:none; margin-left:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">Toy Model 7 · Joint Score · 2026-03-12</div>
+  <h1>The Joint Score: Two Frames</h1>
+  <p class="subtitle">Why the propagator requires the full joint distribution — exact derivation for K = 2, AR(1) + OU diffusion</p>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════ §1 -->
+<h2><span class="num">01</span> The Core Error, Stated Precisely</h2>
+
+<p>
+In toy models TM3–TM6 we computed, for each internal time index \(u\), the <em>marginal</em> score:
+</p>
+
+<div class="math-block">
+$$s^\text{marg}(x_u,\, u,\, t) \;=\; \nabla_{x_u} \log p_t(x_u \mid u)$$
+<div class="caption">OLD formulation — marginal score at frame u</div>
+</div>
+
+<p>
+where \(p_t(x_u \mid u)\) is obtained by integrating out <em>all other frames</em>:
+$$p_t(x_u \mid u) \;=\; \int \mathrm{d}a_u \; p_0(a_u \mid u)\; \mathcal{N}\!\left(x_u;\, a_u e^{-t},\, \Delta_t\right).$$
+This is the distribution you would get if you took a single snapshot at index \(u\) and forgot that it belongs to a sequence.
+Crucially, the score \(s^\text{marg}(x_u, u, t)\) is a function of \(x_u\) <strong>alone</strong> — it sees no information from the other frames \(x_{u' \neq u}\).
+</p>
+
+<div class="warning-box">
+<strong>Why this is wrong for the propagator.</strong>
+We are studying video/trajectory generation: the model generates an <em>entire sequence</em>
+\((x_0, x_1, \ldots, x_{K-1})\) as a single sample from a joint distribution \(P_0\) over sequences.
+The score that drives the reverse diffusion is the gradient of the <em>log of this joint distribution</em>, not of its marginals.
+Computing marginal scores is equivalent to assuming the frames are statistically <em>independent</em> — which contradicts the very correlation structure we are trying to study.
+</div>
+
+<p>The correct object is:</p>
+
+<div class="math-block">
+$$\mathbf{S}(x_0,\ldots,x_{K-1},\, t) \;=\; \nabla_{(x_0,\ldots,x_{K-1})} \log P_t(x_0,\ldots,x_{K-1})$$
+<div class="caption">CORRECT formulation — joint score, a vector in ℝ^{dK}</div>
+</div>
+
+<p>
+The \(k\)-th block component (Mézard, board, 2026-03-12) is:
+$$S_k(x, t) \;=\; \frac{e^{-t}\,\langle a_k \rangle_{a \mid x} \;-\; x_k}{\Delta_t}$$
+where \(\langle a_k \rangle_{a \mid x}\) is the expectation of the clean frame \(a_k\) conditioned on the <strong>full noisy trajectory</strong> \(x = (x_0,\ldots,x_{K-1})\). This is the optimal Bayesian denoiser for frame \(k\) given all observations simultaneously — a Kalman smoother.
+</p>
+
+<!-- ═══════════════════════════════════════════════════════════ §2 -->
+<h2><span class="num">02</span> Setup: AR(1) + OU, Two Frames (K = 2)</h2>
+
+<p>
+We take the simplest non-trivial case: two frames \((a_0, a_1) \in \mathbb{R}^2\). The internal dynamics is a one-step AR(1) process:
+</p>
+
+<div class="math-block">
+$$a_1 \;=\; \alpha\, a_0 \;+\; \eta, \qquad \eta \sim \mathcal{N}(0,\, \sigma_\eta^2),$$
+<div class="caption">AR(1) transition, one step. α ∈ (0,1) is the contraction; σ_η² is the innovation noise.</div>
+</div>
+
+<p>with initial distribution \(a_0 \sim \mathcal{N}(\mu_0, \sigma_0^2)\). The full dataset is a collection of pairs \(\{(a_0^\mu, a_1^\mu)\}_{\mu=1}^n\), all drawn from the same joint law.</p>
+
+<h3>Step 1 — Joint distribution of clean frames</h3>
+
+<p>Since \(a_1 = \alpha a_0 + \eta\) with \(\eta \perp a_0\), the pair \((a_0, a_1)\) is jointly Gaussian:</p>
+
+<div class="math-block">
+$$\begin{pmatrix} a_0 \\ a_1 \end{pmatrix} \sim \mathcal{N}\!\left( \begin{pmatrix} \mu_0 \\ \alpha\mu_0 \end{pmatrix},\; \Sigma_0 \right)$$
+<div class="caption">Joint clean distribution. Mean of a₁ = α·(mean of a₀) by linearity.</div>
+</div>
+
+<p>where the joint covariance \(\Sigma_0\) has entries:</p>
+
+<div class="math-block">
+$$\Sigma_0 \;=\; \begin{pmatrix} \sigma_0^2 & \alpha\,\sigma_0^2 \\ \alpha\,\sigma_0^2 & \alpha^2\sigma_0^2 + \sigma_\eta^2 \end{pmatrix}$$
+<div class="caption">
+Derivation: Var(a₀) = σ₀²; Var(a₁) = Var(αa₀+η) = α²σ₀²+σ_η²;
+Cov(a₀,a₁) = E[(a₀−μ₀)(αa₀+η−αμ₀)] = αE[(a₀−μ₀)²] + E[(a₀−μ₀)·η] = ασ₀²+0.
+</div>
+</div>
+
+<p>The off-diagonal entry \(\alpha\sigma_0^2\) encodes the correlation. If \(\alpha = 0\), frames are independent and \(\Sigma_0\) is diagonal.</p>
+
+<h3>Step 2 — Forward (OU) diffusion applied independently to each frame</h3>
+
+<p>
+We corrupt each frame independently with the Ornstein–Uhlenbeck process. At diffusion time \(t\):
+$$x_k \;=\; a_k\, e^{-t} \;+\; \sqrt{\Delta_t}\, z_k, \qquad z_k \sim \mathcal{N}(0,1),\quad z_0 \perp z_1,$$
+where \(\Delta_t \equiv 1 - e^{-2t}\). The noise is added <em>independently</em> to each frame — there is no correlation in the added noise. Only the clean data \((a_0, a_1)\) is correlated.
+</p>
+
+<p>The joint noisy distribution \(P_t(x_0, x_1)\) is therefore:</p>
+
+<div class="math-block">
+$$P_t(x_0, x_1) \;=\; \int\!\!\int \mathrm{d}a_0\,\mathrm{d}a_1\; P_0(a_0,a_1)\; \mathcal{N}(x_0;\, a_0 e^{-t},\, \Delta_t)\; \mathcal{N}(x_1;\, a_1 e^{-t},\, \Delta_t)$$
+<div class="caption">
+Marginalise over all possible clean pairs (a₀,a₁). Since everything is Gaussian, this integral is itself Gaussian.
+</div>
+</div>
+
+<p>Since both the prior \(P_0\) and the noise are Gaussian, \(P_t\) is again Gaussian. We compute its parameters by the standard rules for linear transformations of Gaussians. Writing \(x = e^{-t} a + \sqrt{\Delta_t} z\):</p>
+
+<div class="math-block">
+$$P_t(x_0, x_1) \;=\; \mathcal{N}\!\left( \begin{pmatrix} x_0 \\ x_1 \end{pmatrix};\; e^{-t}\begin{pmatrix}\mu_0 \\ \alpha\mu_0\end{pmatrix},\; \Sigma_t \right)$$
+<div class="caption">Joint noisy distribution at diffusion time t.</div>
+</div>
+
+<p>The key result is the joint covariance at diffusion time \(t\):</p>
+
+<div class="math-block">
+$$\boxed{\Sigma_t \;=\; e^{-2t}\,\Sigma_0 \;+\; \Delta_t\, I_2}$$
+$$= \begin{pmatrix} \sigma_0^2 e^{-2t} + \Delta_t & \alpha\,\sigma_0^2 e^{-2t} \\ \alpha\,\sigma_0^2 e^{-2t} & (\alpha^2\sigma_0^2+\sigma_\eta^2)\,e^{-2t} + \Delta_t \end{pmatrix}$$
+<div class="caption">
+Derivation: Cov(x_i, x_j) = e^{-2t}Cov(a_i,a_j) + Δ_t·δ_{ij}.
+The first term comes from the signal; the second from the independent OU noise.
+The off-diagonal is e^{-2t}·ασ₀² — it decays with diffusion time.
+</div>
+</div>
+
+<p>
+Define the three scalar entries for compactness:
+$$A \;\equiv\; \sigma_0^2 e^{-2t} + \Delta_t, \qquad B \;\equiv\; \alpha\sigma_0^2 e^{-2t}, \qquad C \;\equiv\; (\alpha^2\sigma_0^2+\sigma_\eta^2)e^{-2t} + \Delta_t.$$
+Then \(\Sigma_t = \begin{pmatrix} A & B \\ B & C \end{pmatrix}\).
+<strong>Note that \(B = \alpha\sigma_0^2 e^{-2t}\) is the entire inter-frame coupling. At \(t\to\infty\), \(B\to 0\). At \(t=0\), \(B = \alpha\sigma_0^2\) (maximum coupling).</strong>
+</p>
+
+<h3>Step 3 — The joint score (exact closed form)</h3>
+
+<p>For a Gaussian \(\mathcal{N}(x;\, \mu,\, \Sigma)\), the score is simply \(\nabla_x \log p = -\Sigma^{-1}(x - \mu)\). Applying this to our \(P_t\):</p>
+
+<div class="math-block">
+$$\mathbf{S}(x_0, x_1,\, t) \;=\; -\,\Sigma_t^{-1}\begin{pmatrix} x_0 - e^{-t}\mu_0 \\ x_1 - \alpha e^{-t}\mu_0 \end{pmatrix}$$
+<div class="caption">Joint score = negative precision matrix times centred observation.</div>
+</div>
+
+<p>The inverse of the 2×2 matrix \(\Sigma_t = \begin{pmatrix}A&B\\B&C\end{pmatrix}\) is:</p>
+
+<div class="math-block">
+$$\Sigma_t^{-1} \;=\; \frac{1}{D}\begin{pmatrix} C & -B \\ -B & A \end{pmatrix}, \qquad D \;\equiv\; \det\Sigma_t = AC - B^2.$$
+<div class="caption">Standard 2×2 matrix inverse. D = AC−B² is the determinant.</div>
+</div>
+
+<p>Writing \(\tilde{x}_0 = x_0 - e^{-t}\mu_0\) and \(\tilde{x}_1 = x_1 - \alpha e^{-t}\mu_0\) for the centred observations, the two components of the joint score are:</p>
+
+<div class="math-block">
+$$\boxed{S_0(x_0, x_1, t) \;=\; -\frac{C\,\tilde{x}_0 \;-\; B\,\tilde{x}_1}{D}}$$
+$$\boxed{S_1(x_0, x_1, t) \;=\; -\frac{-B\,\tilde{x}_0 \;+\; A\,\tilde{x}_1}{D}}$$
+<div class="caption">
+Exact joint score components. Both depend on BOTH x₀ and x₁ through the off-diagonal coupling B.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §3 -->
+<h2><span class="num">03</span> Old vs New: The Coupling Term</h2>
+
+<p>
+The old <em>marginal</em> scores treated each frame as independent. For frame 0, marginalising \(a_1\) gives \(p_t(x_0 \mid 0) = \mathcal{N}(x_0;\, e^{-t}\mu_0,\, A)\), so:
+</p>
+
+<div class="math-block">
+$$s_0^\text{marg}(x_0, t) \;=\; -\frac{\tilde{x}_0}{A}, \qquad s_1^\text{marg}(x_1, t) \;=\; -\frac{\tilde{x}_1}{C}$$
+<div class="caption">OLD per-frame marginal scores. Each depends on only one argument.</div>
+</div>
+
+<p>
+The joint score component \(S_0\) differs from \(s_0^\text{marg}\) by an explicit coupling term. Computing the difference:
+$$S_0 \;-\; s_0^\text{marg} \;=\; -\frac{C\tilde{x}_0 - B\tilde{x}_1}{D} + \frac{\tilde{x}_0}{A} \;=\; \tilde{x}_0\!\left(\frac{1}{A} - \frac{C}{D}\right) + \frac{B\tilde{x}_1}{D}$$
+Using \(D = AC - B^2\), so \(1/A - C/D = (D-AC)/(AD) = -B^2/(AD)\):
+</p>
+
+<div class="math-block">
+$$S_0 \;-\; s_0^\text{marg} \;=\; \frac{B}{D}\!\left(\tilde{x}_1 \;-\; \frac{B}{A}\,\tilde{x}_0\right)$$
+<div class="caption">
+The coupling term. B/D is the coupling strength (vanishes as t→∞ since B→0).
+The factor (x̃₁ − (B/A)x̃₀) is the Kalman "innovation": the residual of x₁
+after predicting it from x₀ using the linear predictor B/A.
+</div>
+</div>
+
+<div class="insight-box">
+<strong>Physical meaning of the coupling term.</strong>
+<ul>
+  <li><strong>\(B/D\) — coupling strength:</strong> proportional to \(\alpha\sigma_0^2 e^{-2t}\), which is the inter-frame correlation in the signal. It vanishes as \(t\to\infty\) (noise dominates, frames become uncorrelated in \(x\)) and is largest at \(t=0\).</li>
+  <li><strong>\(\tilde{x}_1 - (B/A)\tilde{x}_0\) — Kalman innovation:</strong> this is the component of \(x_1\) that is <em>not</em> explained by \(x_0\). If \(x_1\) is exactly what \(x_0\) predicts (via the AR(1) rule), the correction vanishes. If \(x_1\) is above/below the prediction, the score at frame 0 is pushed accordingly.</li>
+  <li><strong>Interpretation:</strong> when generating frame 0, the model "looks ahead" to frame 1 to see if it is consistent. If frame 1 is unexpectedly large, the generator infers that \(a_0\) was probably also large, and steers \(x_0\) upward. This is the inter-frame information flow that was entirely absent in the old formulation.</li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §4 -->
+<h2><span class="num">04</span> The Kalman Smoother Connection</h2>
+
+<p>
+There is an equivalent way to write the joint score that reveals its deep structure. Recall from Mézard's board that the \(k\)-th component is:
+$$S_k(x, t) \;=\; \frac{e^{-t}\langle a_k \rangle_{a \mid x} - x_k}{\Delta_t}.$$
+For our 2-frame Gaussian model, the posterior \(P(a_0, a_1 \mid x_0, x_1)\) is Gaussian. By the standard formula for conditional Gaussian distributions:
+</p>
+
+<div class="math-block">
+$$\begin{pmatrix}\langle a_0 \rangle \\ \langle a_1 \rangle\end{pmatrix}_{a \mid x} \;=\; \boldsymbol{\mu}_0 \;+\; e^{-t}\,\Sigma_0\,\Sigma_t^{-1}\begin{pmatrix}\tilde{x}_0\\\tilde{x}_1\end{pmatrix}$$
+<div class="caption">
+Kalman smoother: posterior mean of clean frames given noisy observations.
+The matrix e^{-t}Σ₀Σ_t^{-1} is the Kalman gain (in smoother form). It is linear in x.
+</div>
+</div>
+
+<p>Let us verify this gives the same score. Inserting into \(S_k = (e^{-t}\langle a_k\rangle - x_k)/\Delta_t\):</p>
+
+<div class="math-block">
+$$e^{-t}\langle a \rangle - x \;=\; e^{-t}\boldsymbol{\mu}_0 \;+\; e^{-2t}\Sigma_0\Sigma_t^{-1}(x - e^{-t}\boldsymbol{\mu}_0) \;-\; x$$
+$$= \;(e^{-2t}\Sigma_0\Sigma_t^{-1} - I)(x - e^{-t}\boldsymbol{\mu}_0)$$
+$$= \;(e^{-2t}\Sigma_0 - \Sigma_t)\Sigma_t^{-1}(x - e^{-t}\boldsymbol{\mu}_0) \;=\; -\Delta_t\,\Sigma_t^{-1}(x - e^{-t}\boldsymbol{\mu}_0)$$
+<div class="caption">
+Key step: e^{-2t}Σ₀ − Σ_t = e^{-2t}Σ₀ − (e^{-2t}Σ₀ + Δ_t·I) = −Δ_t·I.
+Dividing by Δ_t recovers S = −Σ_t^{-1}(x − μ_t). The two expressions are identical. ✓
+</div>
+</div>
+
+<div class="green-box">
+<strong>The Kalman smoother IS the propagator.</strong>
+The formula \(\langle a_k \rangle_{a|x} = \mu_{0,k} + e^{-t}(\Sigma_0\Sigma_t^{-1})_k \cdot (x - e^{-t}\boldsymbol{\mu}_0)\) is the exact
+smoother. Each row \(k\) of the matrix \(e^{-t}\Sigma_0\Sigma_t^{-1}\) tells you how to combine <em>all</em> observed frames to estimate the clean frame \(a_k\).
+This matrix — specifically, how its row structure changes with \(k\) — is the propagator.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §5 -->
+<h2><span class="num">05</span> Precision Matrix and Markov Structure</h2>
+
+<p>
+For K frames, the old AR(1) chain has a <em>tridiagonal</em> precision matrix \(\Sigma_0^{-1}\). Let us see this explicitly for K=2:
+</p>
+
+<div class="math-block">
+$$\Sigma_0^{-1} \;=\; \frac{1}{\sigma_0^2\sigma_\eta^2}\begin{pmatrix} \alpha^2\sigma_0^2+\sigma_\eta^2 & -\alpha\sigma_0^2 \\ -\alpha\sigma_0^2 & \sigma_0^2 \end{pmatrix}$$
+<div class="caption">
+Precision of the clean AR(1) chain. Off-diagonal entries are −α·(something), reflecting the Markov coupling.
+At t=0: Σ_t^{-1} = Σ_0^{-1} → this tridiagonal structure is the score's Jacobian.
+</div>
+</div>
+
+<p>
+After OU diffusion: \(\Sigma_t = e^{-2t}\Sigma_0 + \Delta_t I\). The precision \(\Sigma_t^{-1}\) is no longer tridiagonal for generic \(t\), but:
+</p>
+<ul>
+  <li>At \(t \to 0\): \(\Sigma_t \to \Sigma_0\), so \(\Sigma_t^{-1} \to \Sigma_0^{-1}\) → <strong>tridiagonal</strong> (Markov structure fully visible).</li>
+  <li>At \(t \to \infty\): \(\Sigma_t \to \Delta_t I\), so \(\Sigma_t^{-1} \to I/\Delta_t\) → <strong>diagonal</strong> (score decouples, \(\mathbf{S} \to -x/\Delta_t\)).</li>
+  <li>At intermediate \(t\): the off-diagonal entry of \(\Sigma_t^{-1}\) is \(-B/D = -\alpha\sigma_0^2 e^{-2t}/(AC-B^2)\), which decays monotonically with \(t\).</li>
+</ul>
+
+<p>This decay of off-diagonal coupling with \(t\) is the quantitative version of the four-regime phase diagram from TM5 — but now in the correct joint picture.</p>
+
+<!-- ═══════════════════════════════════════════════════════════ LABS -->
+<hr class="sec"/>
+
+<!-- LAB 1 -->
+<div class="lab" id="lab1">
+  <div class="lab-header">
+    <div>
+      <h3>Lab 1 — 1D Slice: Joint vs Marginal Score at Frame 0</h3>
+      <p style="color:#c9bfaf; font-size:.85em; margin-top:4px;">
+        Fix x₁. Plot S₀(x₀, x₁, t) [joint, blue] vs s₀ᵐᵃʳᵍ(x₀, t) [marginal, red] as functions of x₀.
+        Vary x₁ to see the coupling. At t large, curves merge.
+      </p>
+    </div>
+  </div>
+  <div class="lab-body">
+    <div class="controls">
+      <div class="ctrl">
+        <label>t (diffusion time)</label>
+        <input type="range" id="l1_t" min="0.01" max="3.0" step="0.01" value="0.5"/>
+        <div class="val" id="l1_t_val">0.50</div>
+      </div>
+      <div class="ctrl">
+        <label>α (AR contraction)</label>
+        <input type="range" id="l1_alpha" min="0.0" max="0.99" step="0.01" value="0.8"/>
+        <div class="val" id="l1_alpha_val">0.80</div>
+      </div>
+      <div class="ctrl">
+        <label>σ₀ (initial std)</label>
+        <input type="range" id="l1_s0" min="0.1" max="2.0" step="0.05" value="1.0"/>
+        <div class="val" id="l1_s0_val">1.00</div>
+      </div>
+      <div class="ctrl">
+        <label>σ_η (innovation std)</label>
+        <input type="range" id="l1_seta" min="0.05" max="2.0" step="0.05" value="0.5"/>
+        <div class="val" id="l1_seta_val">0.50</div>
+      </div>
+      <div class="ctrl">
+        <label>x₁ (observed frame 1)</label>
+        <input type="range" id="l1_x1" min="-3.0" max="3.0" step="0.1" value="1.0"/>
+        <div class="val" id="l1_x1_val">1.00</div>
+      </div>
+      <div class="ctrl">
+        <label>μ₀ (prior mean)</label>
+        <input type="range" id="l1_mu0" min="-2.0" max="2.0" step="0.1" value="0.0"/>
+        <div class="val" id="l1_mu0_val">0.00</div>
+      </div>
+    </div>
+    <div class="plot-wrap" id="lab1plot"></div>
+    <div class="status" id="lab1status">—</div>
+  </div>
+</div>
+
+<!-- LAB 2 -->
+<div class="lab" id="lab2">
+  <div class="lab-header">
+    <div>
+      <h3>Lab 2 — 2D Joint Score Field (S₀, S₁) on (x₀, x₁) Plane</h3>
+      <p style="color:#c9bfaf; font-size:.85em; margin-top:4px;">
+        Quiver plot of the full joint score vector. At small t the arrows tilt (off-diagonal coupling).
+        At large t they point purely toward the origin (decoupled).
+      </p>
+    </div>
+  </div>
+  <div class="lab-body">
+    <div class="controls">
+      <div class="ctrl">
+        <label>t (diffusion time)</label>
+        <input type="range" id="l2_t" min="0.01" max="3.0" step="0.01" value="0.3"/>
+        <div class="val" id="l2_t_val">0.30</div>
+      </div>
+      <div class="ctrl">
+        <label>α</label>
+        <input type="range" id="l2_alpha" min="0.0" max="0.99" step="0.01" value="0.8"/>
+        <div class="val" id="l2_alpha_val">0.80</div>
+      </div>
+      <div class="ctrl">
+        <label>σ₀</label>
+        <input type="range" id="l2_s0" min="0.1" max="2.0" step="0.05" value="1.0"/>
+        <div class="val" id="l2_s0_val">1.00</div>
+      </div>
+      <div class="ctrl">
+        <label>σ_η</label>
+        <input type="range" id="l2_seta" min="0.05" max="2.0" step="0.05" value="0.5"/>
+        <div class="val" id="l2_seta_val">0.50</div>
+      </div>
+      <div class="ctrl">
+        <label>Show marginal arrows</label>
+        <input type="checkbox" id="l2_show_marg" checked style="margin-top:8px;"/>
+      </div>
+    </div>
+    <div class="plot-wrap" id="lab2plot"></div>
+    <div class="status" id="lab2status">—</div>
+  </div>
+</div>
+
+<!-- LAB 3 -->
+<div class="lab" id="lab3">
+  <div class="lab-header">
+    <div>
+      <h3>Lab 3 — Coupling Coefficient vs Diffusion Time t</h3>
+      <p style="color:#c9bfaf; font-size:.85em; margin-top:4px;">
+        The off-diagonal entry of Σ_t^{-1} (= −B/D) quantifies inter-frame coupling in the joint score.
+        Watch it decay from its peak at t=0 toward zero.
+      </p>
+    </div>
+  </div>
+  <div class="lab-body">
+    <div class="controls">
+      <div class="ctrl">
+        <label>α</label>
+        <input type="range" id="l3_alpha" min="0.0" max="0.99" step="0.01" value="0.8"/>
+        <div class="val" id="l3_alpha_val">0.80</div>
+      </div>
+      <div class="ctrl">
+        <label>σ₀</label>
+        <input type="range" id="l3_s0" min="0.1" max="2.0" step="0.05" value="1.0"/>
+        <div class="val" id="l3_s0_val">1.00</div>
+      </div>
+      <div class="ctrl">
+        <label>σ_η</label>
+        <input type="range" id="l3_seta" min="0.05" max="2.0" step="0.05" value="0.5"/>
+        <div class="val" id="l3_seta_val">0.50</div>
+      </div>
+    </div>
+    <div class="plot-wrap" id="lab3plot"></div>
+    <div class="status" id="lab3status">—</div>
+  </div>
+</div>
+
+<!-- LAB 4 -->
+<div class="lab" id="lab4">
+  <div class="lab-header">
+    <div>
+      <h3>Lab 4 — Kalman Gain Matrix vs t</h3>
+      <p style="color:#c9bfaf; font-size:.85em; margin-top:4px;">
+        The posterior mean ⟨a|x⟩ = μ₀ + e^{-t}Σ₀Σ_t^{-1}(x−μ_t).
+        Plot the 4 entries of the gain matrix e^{-t}Σ₀Σ_t^{-1} as functions of t.
+        The off-diagonal entries are the "cross-frame" information transfer.
+      </p>
+    </div>
+  </div>
+  <div class="lab-body">
+    <div class="controls">
+      <div class="ctrl">
+        <label>α</label>
+        <input type="range" id="l4_alpha" min="0.0" max="0.99" step="0.01" value="0.8"/>
+        <div class="val" id="l4_alpha_val">0.80</div>
+      </div>
+      <div class="ctrl">
+        <label>σ₀</label>
+        <input type="range" id="l4_s0" min="0.1" max="2.0" step="0.05" value="1.0"/>
+        <div class="val" id="l4_s0_val">1.00</div>
+      </div>
+      <div class="ctrl">
+        <label>σ_η</label>
+        <input type="range" id="l4_seta" min="0.05" max="2.0" step="0.05" value="0.5"/>
+        <div class="val" id="l4_seta_val">0.50</div>
+      </div>
+    </div>
+    <div class="plot-wrap" id="lab4plot"></div>
+    <div class="status" id="lab4status">—</div>
+  </div>
+</div>
+
+<script>
+/* ===== CORE MATH ===================================================
+   All quantities are exact closed-form for K=2, 1D AR(1) + OU.
+
+   Parameters: mu0, s0 (=σ₀), alpha (=α), seta (=σ_η), t
+
+   Σ₀ = [[s0², α·s0²], [α·s0², α²·s0²+seta²]]
+   μ₀ = [mu0, α·mu0]
+
+   After OU at time t:
+   Δ_t = 1 - exp(-2t)
+   e_t = exp(-t)
+   Σ_t = e^{-2t}·Σ₀ + Δ_t·I
+
+   Entries: A = s0²·e_t²+Δ_t,  B = α·s0²·e_t²,  C = (α²·s0²+seta²)·e_t²+Δ_t
+   D = AC - B²
+
+   Joint score:
+   S₀ = -(C·x̃₀ - B·x̃₁) / D
+   S₁ = -(-B·x̃₀ + A·x̃₁) / D
+   where x̃ₖ = xₖ - eₜ·μ₀ₖ
+
+   Marginal scores:
+   s₀_marg = -x̃₀ / A
+   s₁_marg = -x̃₁ / C
+
+   Kalman gain matrix G = e_t · Σ₀ · Σ_t^{-1} = (e_t/D) · [[C·s0², -B·s0²], [...]]
+   (computed explicitly below)
+================================================================== */
+
+function sigma0(s0, alpha, seta) {
+  // Returns entries of Σ₀: {v0, c01, v1}
+  return {
+    v0: s0*s0,
+    c01: alpha * s0*s0,
+    v1: alpha*alpha*s0*s0 + seta*seta
+  };
+}
+
+function sigmaT(s0, alpha, seta, t) {
+  const et2 = Math.exp(-2*t);
+  const Dt  = 1 - Math.exp(-2*t);
+  const s0s = sigma0(s0, alpha, seta);
+  const A = s0s.v0 * et2 + Dt;
+  const B = s0s.c01 * et2;           // off-diagonal
+  const C = s0s.v1  * et2 + Dt;
+  const D = A*C - B*B;
+  return {A, B, C, D, Dt, et: Math.exp(-t)};
+}
+
+function jointScore(x0, x1, mu0, s0, alpha, seta, t) {
+  const st = sigmaT(s0, alpha, seta, t);
+  const {A, B, C, D, et} = st;
+  const xt0 = x0 - et*mu0;
+  const xt1 = x1 - alpha*et*mu0;
+  const S0 = -(C*xt0 - B*xt1) / D;
+  const S1 = -(A*xt1 - B*xt0) / D;
+  return {S0, S1};
+}
+
+function margScore0(x0, mu0, s0, alpha, seta, t) {
+  const st = sigmaT(s0, alpha, seta, t);
+  return -(x0 - st.et*mu0) / st.A;
+}
+
+function margScore1(x1, mu0, s0, alpha, seta, t) {
+  const st = sigmaT(s0, alpha, seta, t);
+  return -(x1 - alpha*st.et*mu0) / st.C;
+}
+
+// Kalman gain matrix G = e_t * Σ₀ * Σ_t^{-1}
+// Σ_t^{-1} = (1/D) * [[C,-B],[-B,A]]
+// Σ₀ * Σ_t^{-1} = (1/D) * [[v0·C - c01·B,  -v0·B + c01·A],
+//                             [c01·C - v1·B,  -c01·B + v1·A]]
+function kalmanGain(s0, alpha, seta, t) {
+  const st = sigmaT(s0, alpha, seta, t);
+  const {A, B, C, D, et} = st;
+  const {v0, c01, v1} = sigma0(s0, alpha, seta);
+  const g = et / D;
+  return {
+    G00: g*(v0*C - c01*B),
+    G01: g*(-v0*B + c01*A),
+    G10: g*(c01*C - v1*B),
+    G11: g*(-c01*B + v1*A)
+  };
+}
+
+/* ===== SLIDER WIRING ============================================= */
+function wire(ids, callback) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      const vId = id + '_val';
+      const vEl = document.getElementById(vId);
+      if (vEl) vEl.textContent = parseFloat(el.value).toFixed(2);
+      callback();
+    });
+  });
+}
+function v(id) { return parseFloat(document.getElementById(id).value); }
+function checked(id) { return document.getElementById(id).checked; }
+
+/* ===== PLOT CONFIG =============================================== */
+const plotCfg = {responsive:true};
+
+const layout1d = (xlab, ylab, title) => ({
+  margin:{t:30,b:50,l:55,r:15},
+  paper_bgcolor:'#fff', plot_bgcolor:'#fff',
+  font:{family:'EB Garamond, Georgia, serif', size:14},
+  xaxis:{title:xlab, zeroline:true, zerolinecolor:'#ccc', gridcolor:'#eee'},
+  yaxis:{title:ylab, zeroline:true, zerolinecolor:'#ccc', gridcolor:'#eee'},
+  title:{text:title, font:{size:14}},
+  legend:{font:{size:12}}
+});
+
+/* ===== LAB 1 ===================================================== */
+function lab1() {
+  const t     = v('l1_t');
+  const alpha = v('l1_alpha');
+  const s0    = v('l1_s0');
+  const seta  = v('l1_seta');
+  const x1    = v('l1_x1');
+  const mu0   = v('l1_mu0');
+
+  const xs = [];
+  for (let i=-200; i<=200; i++) xs.push(i*0.03);
+
+  const S0arr   = xs.map(x0 => jointScore(x0, x1, mu0, s0, alpha, seta, t).S0);
+  const s0marg  = xs.map(x0 => margScore0(x0, mu0, s0, alpha, seta, t));
+
+  // Coupling term
+  const st = sigmaT(s0, alpha, seta, t);
+  const {A, B, C, D, et} = st;
+  const xt1 = x1 - alpha*et*mu0;
+  const coupling_val = (B/D) * (xt1 - (B/A)*0);  // at x0=0
+
+  const traces = [
+    {x:xs, y:S0arr,  name:'S₀ joint(x₀, x₁='+x1.toFixed(2)+')', line:{color:'#1a3a5c', width:2.5}},
+    {x:xs, y:s0marg, name:'s₀ marginal(x₀)', line:{color:'#b5341a', width:2.5, dash:'dot'}},
+    {x:xs, y:xs.map((_,i) => S0arr[i]-s0marg[i]), name:'difference (coupling term)', line:{color:'#0e6b2c', width:1.5, dash:'dash'}, yaxis:'y2'}
+  ];
+
+  const layout = {
+    margin:{t:30,b:50,l:55,r:55},
+    paper_bgcolor:'#fff', plot_bgcolor:'#fff',
+    font:{family:'EB Garamond, Georgia, serif', size:14},
+    xaxis:{title:'x₀', zeroline:true, zerolinecolor:'#ccc', gridcolor:'#eee'},
+    yaxis:{title:'Score S₀', zeroline:true, zerolinecolor:'#ccc', gridcolor:'#eee'},
+    yaxis2:{title:'Difference', overlaying:'y', side:'right', zeroline:true, zerolinecolor:'#ccc', gridcolor:'none'},
+    legend:{font:{size:12}},
+    title:{text:`Joint vs Marginal Score at frame 0  |  t=${t.toFixed(2)}, α=${alpha.toFixed(2)}, x₁=${x1.toFixed(2)}`, font:{size:13}}
+  };
+
+  traces[2].line.color='#0e6b2c';
+  Plotly.react('lab1plot', traces, layout, plotCfg);
+
+  // Status
+  const off_diag_prec = -B/D;
+  document.getElementById('lab1status').textContent =
+    `A=${A.toFixed(4)}  B=${B.toFixed(4)}  C=${C.toFixed(4)}  D=${D.toFixed(4)} | ` +
+    `off-diag(Σ_t^{-1}) = -B/D = ${off_diag_prec.toFixed(4)} | ` +
+    `diag: -C/D=${(-C/D).toFixed(4)}, -A/D=${(-A/D).toFixed(4)}`;
+}
+
+/* ===== LAB 2 ===================================================== */
+function lab2() {
+  const t        = v('l2_t');
+  const alpha    = v('l2_alpha');
+  const s0       = v('l2_s0');
+  const seta     = v('l2_seta');
+  const showMarg = checked('l2_show_marg');
+  const mu0 = 0;
+
+  // Grid for quiver
+  const N = 14;
+  const rng = 2.5;
+  const grid = [];
+  for (let i=0; i<N; i++) for (let j=0; j<N; j++) {
+    grid.push({x0:-rng + 2*rng*j/(N-1), x1:-rng + 2*rng*i/(N-1)});
+  }
+
+  let jS0=[],jS1=[],mS0=[],mS1=[],gx=[],gy=[];
+  const scale = 0.18;
+  const traces = [];
+
+  grid.forEach(({x0,x1}) => {
+    const sc = jointScore(x0, x1, mu0, s0, alpha, seta, t);
+    const norm = Math.sqrt(sc.S0*sc.S0 + sc.S1*sc.S1) + 1e-8;
+    const sf = scale * Math.tanh(norm/0.8) / norm;
+    gx.push(x0); gy.push(x1);
+    jS0.push(sc.S0 * sf); jS1.push(sc.S1 * sf);
+    if (showMarg) {
+      mS0.push(margScore0(x0,mu0,s0,alpha,seta,t) * sf);
+      mS1.push(margScore1(x1,mu0,s0,alpha,seta,t) * sf);
+    }
+  });
+
+  // Build arrow traces for joint score (blue)
+  const jArrows = buildArrows(gx, gy, jS0, jS1, '#1a3a5c', 0.7, 'Joint score');
+  traces.push(...jArrows);
+
+  if (showMarg) {
+    const mArrows = buildArrows(gx, gy, mS0, mS1, '#b5341a', 0.5, 'Marginal score');
+    traces.push(...mArrows);
+  }
+
+  const st = sigmaT(s0, alpha, seta, t);
+  const layout = {
+    margin:{t:35,b:50,l:55,r:15},
+    paper_bgcolor:'#fff', plot_bgcolor:'#fff',
+    font:{family:'EB Garamond, Georgia, serif', size:14},
+    xaxis:{title:'x₀', range:[-rng-0.3,rng+0.3], zeroline:true, zerolinecolor:'#ccc', gridcolor:'#eee'},
+    yaxis:{title:'x₁', scaleanchor:'x', range:[-rng-0.3,rng+0.3], zeroline:true, zerolinecolor:'#ccc', gridcolor:'#eee'},
+    title:{text:`Joint score field (x₀,x₁)  |  t=${t.toFixed(2)}, α=${alpha.toFixed(2)}`, font:{size:13}},
+    showlegend:false,
+    height:480
+  };
+  Plotly.react('lab2plot', traces, layout, plotCfg);
+
+  document.getElementById('lab2status').textContent =
+    `off-diag coupling: B/D = ${(st.B/st.D).toFixed(4)} | at t→0 max coupling = α·σ₀²/det = ${(alpha*s0*s0/(s0*s0*(alpha*alpha*s0*s0+seta*seta)-(alpha*s0*s0)*(alpha*s0*s0))).toFixed(4)} | at t→∞: 0`;
+}
+
+function buildArrows(gx, gy, us, vs, color, op, name) {
+  // Each arrow = line from (x,y) to (x+u, y+v)
+  // Return scatter traces (thin lines) for each arrow
+  const xs=[], ys=[];
+  for (let i=0; i<gx.length; i++) {
+    xs.push(gx[i], gx[i]+us[i], null);
+    ys.push(gy[i], gy[i]+vs[i], null);
+  }
+  return [{
+    x:xs, y:ys, mode:'lines',
+    line:{color:color, width:1.5},
+    opacity:op, name:name
+  }];
+}
+
+/* ===== LAB 3 ===================================================== */
+function lab3() {
+  const alpha = v('l3_alpha');
+  const s0    = v('l3_s0');
+  const seta  = v('l3_seta');
+
+  const ts = [];
+  for (let i=0; i<=300; i++) ts.push(0.01 + 3.0*i/300);
+
+  const offDiag = ts.map(t => {
+    const {B,D} = sigmaT(s0,alpha,seta,t);
+    return -B/D;
+  });
+  const diag0 = ts.map(t => {
+    const {C,D} = sigmaT(s0,alpha,seta,t);
+    return -C/D;
+  });
+  const diag1 = ts.map(t => {
+    const {A,D} = sigmaT(s0,alpha,seta,t);
+    return -A/D;
+  });
+  // Marginal "precision" (old approach)
+  const margPrec0 = ts.map(t => {
+    const {A} = sigmaT(s0,alpha,seta,t);
+    return -1/A;
+  });
+  const margPrec1 = ts.map(t => {
+    const {C} = sigmaT(s0,alpha,seta,t);
+    return -1/C;
+  });
+
+  const traces = [
+    {x:ts, y:offDiag,  name:'Off-diagonal: −B/D  [coupling]', line:{color:'#b5341a', width:2.5}},
+    {x:ts, y:diag0,    name:'Diag (0,0): −C/D', line:{color:'#1a3a5c', width:2}},
+    {x:ts, y:diag1,    name:'Diag (1,1): −A/D', line:{color:'#1a3a5c', width:2, dash:'dash'}},
+    {x:ts, y:margPrec0, name:'OLD: −1/A  [marg prec 0]', line:{color:'#c0427a', width:1.5, dash:'dot'}},
+    {x:ts, y:margPrec1, name:'OLD: −1/C  [marg prec 1]', line:{color:'#c0427a', width:1.5, dash:'longdash'}}
+  ];
+  const layout = layout1d('t (diffusion time)', 'Precision entry',
+    `Entries of Σ_t^{-1} vs t  |  α=${alpha.toFixed(2)}, σ₀=${s0.toFixed(2)}, σ_η=${seta.toFixed(2)}`);
+  Plotly.react('lab3plot', traces, layout, plotCfg);
+
+  const t0 = sigmaT(s0,alpha,seta,0.001);
+  document.getElementById('lab3status').textContent =
+    `At t≈0: off-diag = ${(-t0.B/t0.D).toFixed(4)} | At t=2: off-diag = ${(-sigmaT(s0,alpha,seta,2).B/sigmaT(s0,alpha,seta,2).D).toFixed(4)} | Coupling decays as ~ α·σ₀²·e^{-2t}`;
+}
+
+/* ===== LAB 4 ===================================================== */
+function lab4() {
+  const alpha = v('l4_alpha');
+  const s0    = v('l4_s0');
+  const seta  = v('l4_seta');
+
+  const ts = [];
+  for (let i=0; i<=300; i++) ts.push(0.01 + 3.0*i/300);
+
+  const G00=[], G01=[], G10=[], G11=[];
+  ts.forEach(t => {
+    const g = kalmanGain(s0,alpha,seta,t);
+    G00.push(g.G00); G01.push(g.G01);
+    G10.push(g.G10); G11.push(g.G11);
+  });
+
+  const traces = [
+    {x:ts, y:G00, name:'G₀₀ = ∂⟨a₀⟩/∂x₀  [same frame]', line:{color:'#1a3a5c', width:2.5}},
+    {x:ts, y:G11, name:'G₁₁ = ∂⟨a₁⟩/∂x₁  [same frame]', line:{color:'#1a3a5c', width:2.5, dash:'dash'}},
+    {x:ts, y:G01, name:'G₀₁ = ∂⟨a₀⟩/∂x₁  [cross: x₁→â₀]', line:{color:'#b5341a', width:2.5}},
+    {x:ts, y:G10, name:'G₁₀ = ∂⟨a₁⟩/∂x₀  [cross: x₀→â₁]', line:{color:'#0e6b2c', width:2.5, dash:'dash'}}
+  ];
+  const layout = layout1d('t (diffusion time)', 'Kalman gain entry',
+    `Kalman gain matrix G = e^{-t} Σ₀ Σ_t^{-1}  |  α=${alpha.toFixed(2)}, σ₀=${s0.toFixed(2)}, σ_η=${seta.toFixed(2)}`);
+  Plotly.react('lab4plot', traces, layout, plotCfg);
+
+  const g0 = kalmanGain(s0,alpha,seta,0.01);
+  const g2 = kalmanGain(s0,alpha,seta,2.0);
+  document.getElementById('lab4status').textContent =
+    `At t≈0: G≈ [[${g0.G00.toFixed(3)}, ${g0.G01.toFixed(3)}], [${g0.G10.toFixed(3)}, ${g0.G11.toFixed(3)}]]  |  ` +
+    `At t=2: G≈ [[${g2.G00.toFixed(3)}, ${g2.G01.toFixed(3)}], [${g2.G10.toFixed(3)}, ${g2.G11.toFixed(3)}]]`;
+}
+
+/* ===== INIT ====================================================== */
+['l1_t','l1_alpha','l1_s0','l1_seta','l1_x1','l1_mu0'].forEach(id => {
+  const el=document.getElementById(id);
+  document.getElementById(id+'_val').textContent=parseFloat(el.value).toFixed(2);
+});
+['l2_t','l2_alpha','l2_s0','l2_seta'].forEach(id => {
+  const el=document.getElementById(id);
+  document.getElementById(id+'_val').textContent=parseFloat(el.value).toFixed(2);
+});
+['l3_alpha','l3_s0','l3_seta'].forEach(id => {
+  const el=document.getElementById(id);
+  document.getElementById(id+'_val').textContent=parseFloat(el.value).toFixed(2);
+});
+['l4_alpha','l4_s0','l4_seta'].forEach(id => {
+  const el=document.getElementById(id);
+  document.getElementById(id+'_val').textContent=parseFloat(el.value).toFixed(2);
+});
+
+wire(['l1_t','l1_alpha','l1_s0','l1_seta','l1_x1','l1_mu0'], lab1);
+wire(['l2_t','l2_alpha','l2_s0','l2_seta'], lab2);
+document.getElementById('l2_show_marg').addEventListener('change', lab2);
+wire(['l3_alpha','l3_s0','l3_seta'], lab3);
+wire(['l4_alpha','l4_s0','l4_seta'], lab4);
+
+lab1(); lab2(); lab3(); lab4();
+</script>
+
+</body>
+</html>

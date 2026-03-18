@@ -2,22 +2,74 @@
 
 ## Project Aim
 
-We study how the **score field** `s(x, u, t) = ∇_x log p_t(x | u)` of a generative
-diffusion model evolves across **internal time** `u` (frame index of a dynamic object
-such as a video or trajectory), for a fixed **diffusion time** `t`.
+We study the **joint score field** of a diffusion model applied to an entire sequence
+(video, trajectory). The sequence is a dynamic object: frames `a(0), a(1), ..., a(K)`
+evolve under a known Markov process with internal time `u` and are **jointly** noised
+by independent Ornstein–Uhlenbeck (OU) diffusion at diffusion time `t`.
 
-The central hypothesis is the existence of a **propagator** `P` such that:
+**Central hypothesis:** a propagator `P` exists such that consecutive *blocks* of the
+joint score are approximately related:
 
 ```
-S_{:,u}(x) ≈ P( S_{:,u−1}(x) )
+S_{:,u}(x)  ≈  P_t( S_{:,u−1}(x) )
 ```
 
-where `P` may be linear, stationary (independent of `u`), and related to the generator
-of the underlying SDE. We pursue this with **fully solvable Gaussian toy models** —
-no neural networks, closed-form scores throughout.
+We attack this with **fully solvable Gaussian toy models** — no neural networks,
+exact closed-form everywhere.
 
-**Post-Achilli-call direction (March 2026):** write a closed SDE/ODE for the score
-coefficients evolving in `u` — treating (mean, covariance) as order parameters.
+---
+
+## Critical Correction (Mézard meeting, 2026-03-12)
+
+### What was wrong before
+
+Previous toy models (TM1–TM5) computed the **per-frame marginal score**:
+
+```
+s(x_u, u, t) = ∇_{x_u} log p_t(x_u | u)        ← WRONG
+```
+
+This marginalises over all other frames, discarding all inter-frame correlations from the
+score. It implicitly treats frames as independently generated — i.e. assumes
+`P_0(a_0,...,a_K) = ∏_u p_0(a_u | u)`, which is false for any correlated process.
+
+### Correct formulation
+
+The **joint score** lives in `ℝ^{dK}` (all frames simultaneously):
+
+```
+S(x_0,...,x_K, t) = ∇_{(x_0,...,x_K)} log P_t(x_0,...,x_K)
+```
+
+The k-th block component is (exact formula, board 2026-03-12):
+
+```
+S_k(x, t) = ⟨(a_k e^{−t} − x_k) / Δ_t⟩_{a | x}
+```
+
+where the expectation is over the full posterior:
+
+```
+P(a_0,...,a_K | x_0,...,x_K)  ∝  P_0(a_0,...,a_K) × ∏_k N(x_k ; a_k e^{−t}, Δ_t)
+```
+
+and the Markov prior factorises as:
+
+```
+P_0(a_0,...,a_K) = p_0(a_0) · M(a_1|a_0) · M(a_2|a_1) · ... · M(a_K|a_{K-1})
+```
+
+### Why Gaussian AR(1) is now the perfect testbed
+
+For AR(1): `a_{u+1} = α a_u + η_u`, `η_u ~ N(0, σ_η²)`:
+
+- The joint prior `P_0(a_0,...,a_K)` is a `K`-dim Gaussian with covariance
+  `Σ_0^{ij} = α^{|i−j|} σ_∞²` (stationary) or computed from initial conditions.
+- The posterior `P(a|x)` is also Gaussian → **Kalman smoother** gives exact
+  conditional mean `⟨a_k⟩_{a|x}` as a **linear function of the full x**.
+- The joint score is **linear** in `x ∈ ℝ^K`:
+  `S(x, t) = −Σ_t^{−1}(x − μ_t)` where `Σ_t = e^{−2t} Σ_0 + Δ_t I`.
+- The precision `Σ_0^{−1}` is **tridiagonal** for AR(1) → sparse structure in the score.
 
 ---
 
@@ -26,119 +78,155 @@ coefficients evolving in `u` — treating (mean, covariance) as order parameters
 ```
 Score_Diffusion/
 ├── Toy-models/
-│   ├── Toy-model_1/ou_diffusion_explainer.html     # 2D Gaussian mixture + OU animation
-│   ├── toy-model-2/toy-model-2.html                 # 1D trimodal joint p(x0,x1), score field
-│   ├── Toy-model_3/rotation_ou_score_lab.html       # 2D rotating AR(1), Jacobian eigenvalues
-│   ├── toy-model-4/bouncing_cube_score_lab.html     # 3D billiard, marginal vs conditional score
-│   ├── Toy-model_5/score_two_clocks_lab.html        # MAIN: (u,t) plane, 4 labs, full analytics
-  └── Toy-model_6/circle_score_lab.html           # NEW: circle model, order param SDE, prop. error
+│   ├── Toy-model_1/ou_diffusion_explainer.html     # 2D Gaussian mixture + OU (static)
+│   ├── toy-model-2/toy-model-2.html                # 1D 2-frame joint p(x0,x1) — uses correct 2-frame joint!
+│   ├── Toy-model_3/rotation_ou_score_lab.html      # 2D rotating AR(1), per-frame score [OLD]
+│   ├── toy-model-4/bouncing_cube_score_lab.html    # 3D billiard, marginal score [OLD]
+│   ├── Toy-model_5/score_two_clocks_lab.html       # (u,t) plane, 4 labs — per-frame score [OLD]
+│   └── Toy-model_6/circle_score_lab.html           # circle model — per-frame score [OLD]
 ├── reports/
-│   └── mezard_update.html                           # Email report for Prof. Mézard
+│   └── mezard_update.html                          # progress report for Prof. Mézard (March 2026)
 ├── README.md
-└── CLAUDE.md                                        # (this file)
+└── CLAUDE.md                                       # (this file)
 ```
 
 **Parent directory** (`Desktop/Diffusion/`):
 ```
-Notes/Problem_formulation.pdf    # thesis direction notes (circle model, propagator def.)
-Notes/2nd-meeting-notes.pdf      # board exercises: circle, 1D kernel, fixed-u slice
-Papers/dynamical-regimes_diff.pdf # Biroli-Bonnaire-de Bortoli-Mézard regimes paper
-Papers/Speciation-Transition.pdf  # speciation transition
-thesis_achilli_final.pdf          # Achilli thesis (relevant background)
+Notes/Problem_formulation.pdf    # thesis framing, propagator hypothesis, Q1–Q7
+Notes/2nd-meeting-notes.pdf      # board exercises: circle, 1D joint kernel, fixed-u slice
+Papers/dynamical-regimes_diff.pdf # Biroli–Bonnaire–de Bortoli–Mézard regimes
 Generative_diffusion_updated_notes_MM.pdf  # Mézard lecture notes
-iap-diffusion-labs/labs/          # MIT IAP 2026 Jupyter notebooks (OU, Langevin, diffusion)
+thesis_achilli_final.pdf          # Achilli thesis background
 ```
 
 ---
 
 ## How to Run
 
-**No build step.** All toy models are self-contained HTML files. Open directly:
+No build step — all toy models are self-contained HTML files:
 
 ```bash
-# Open any toy model in browser
 open Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html
-
-# Or serve locally (avoids CDN dependency)
-cd Score_Diffusion
-python3 -m http.server 8080
-# then visit http://localhost:8080/Toy-models/Toy-model_5/score_two_clocks_lab.html
+# or serve locally:
+cd Score_Diffusion && python3 -m http.server 8080
 ```
 
-**GitHub Pages** (live, no install):
-```
-https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_5/score_two_clocks_lab.html
-https://giovimanto.github.io/Score_Diffusion/Toy-models/Toy-model_3/rotation_ou_score_lab.html
-```
-
-**Python environment** (for notebooks in `iap-diffusion-labs/`):
-```bash
-cd Desktop/Diffusion
-source venv/bin/activate        # virtualenv present
-pip install numpy scipy matplotlib jupyter celluloid
-jupyter notebook iap-diffusion-labs/labs/lab_one.ipynb
-```
+GitHub Pages: `https://giovimanto.github.io/Score_Diffusion/`
 
 ---
 
-## Key Theory Pointers
+## Core Mathematics (Correct Formulation)
 
-| Document | What it contributes |
-|----------|---------------------|
-| `Notes/Problem_formulation.pdf` | Core thesis framing: circle toy model, propagator hypothesis `S_{:,u} ≈ P(S_{:,u−1})`, research questions Q1–Q7 |
-| `Notes/2nd-meeting-notes.pdf` | Board exercises: 2D rotation score (Exercise 1), 1D one-step kernel joint score (Exercise 2), radial/elliptic structure (Exercise 3) |
-| `Papers/dynamical-regimes_diff.pdf` | Biroli–Bonnaire–de Bortoli–Mézard: speciation transition `t_S`, collapse `t_C`, four regimes of reverse diffusion |
-| `Generative_diffusion_updated_notes_MM.pdf` | Mézard lecture notes: OU process, backward SDE, score formulas, speciation, collapse |
-| `thesis_achilli_final.pdf` | Achilli: background on score learning, intermediate-t optimality, phase transitions |
+### Joint distribution
+
+For a K-frame sequence with AR(1) dynamics (`a_{u+1} = α a_u + η_u`):
+
+```
+P_0(a_0,...,a_{K-1}) = N(a_0; μ_0, σ_0²) × ∏_{u=0}^{K-2} N(a_{u+1}; α a_u, σ_η²)
+```
+
+After independent OU diffusion of each frame at time `t` (with `Δ_t = 1 − e^{−2t}`):
+
+```
+P_t(x_0,...,x_{K-1}) = ∫ da P_0(a) × ∏_k N(x_k ; a_k e^{−t}, Δ_t)
+```
+
+This is a K-dim Gaussian with:
+```
+μ_t = e^{−t} μ_a
+Σ_t = e^{−2t} Σ_0 + Δ_t I_K
+```
+
+### Joint score (exact)
+
+```
+S(x, t) = −Σ_t^{−1}(x − μ_t)      ∈ ℝ^K
+```
+
+The k-th component couples x_k to ALL other frames through Σ_t^{−1}.
+
+### Sparsity / Markov structure
+
+- Σ_0^{−1} (precision of the clean AR(1) chain) is **tridiagonal**:
+  ```
+  (Σ_0^{−1})_{kk}   = (1 + α²)/σ_η²   for interior k
+  (Σ_0^{−1})_{k,k±1} = −α/σ_η²
+  ```
+- Σ_t^{−1} is **not** sparse in general, but at `t → 0` it approaches the
+  tridiagonal Σ_0^{−1}.
+- At `t → ∞`: `Σ_t → Δ_t I`, score → `−x/Δ_t` (all correlations erased).
+
+### Kalman smoother identity
+
+For the k-th score component:
+```
+S_k(x, t) = (e^{−t} ⟨a_k⟩_{a|x} − x_k) / Δ_t
+```
+where `⟨a_k⟩_{a|x}` is the Kalman-smoothed estimate of the k-th clean frame
+given the full noisy trajectory. This is linear: `⟨a_k⟩_{a|x} = C_k · x + d_k`
+for computable matrices `C_k` (functions of α, σ_η, t, K).
 
 ---
 
-## Research Questions & Metrics
+## Propagator — Correct Reformulation
 
-### Propagator hypotheses
+### What the propagator means now
 
-**H1 (Linear propagator):** For Gaussian dynamics, `s(x,u,t)` is linear in `x`.
-The propagator `P_t` maps linear score fields to linear score fields.
-Exact for all Gaussian models. ✓
+The propagator `P_t` maps the k-th block of the joint score at position `u` to
+the (k+1)-th block. More precisely, ask: how does adding frame `u+1` to the
+conditioned trajectory change the score at frame `u`?
 
-**H2 (Rotation propagator):** For rotating AR(1) with isotropic covariance,
-`[P · s_u](x) = R_{Δθ} · s(R_{−Δθ} x, u, t)`. Exact at stationarity; approximate for anisotropic Σ. ✓
+This is now **a question about the conditional precision structure** of Σ_t^{−1}.
 
-**H3 (Mean contraction):** The mean component of the score propagates as
-`μ_{u+1}(t) = α · μ_u(t)`, i.e. a pure α-contraction independent of `t`. Exact. ✓
+### Hypotheses (updated)
 
-**H4 (Score ODE):** The score coefficients (A(u,t), b(u,t)) satisfy closed ODEs in `u`:
-```
-dA/du = −A² · ∂σ²_u(t)/∂u           (Riccati-type)
-db/du = log(α) · b(u,t) + (noise correction)
-```
-*Direction being developed (post-Achilli call).*
+**H1 (Linear joint score):** `S(x,t) = A(t) x + b(t)` for `A = −Σ_t^{-1}`,
+`b = Σ_t^{-1} μ_t`. Exact for all Gaussian models. ✓
 
-### Evaluation metrics (to implement)
+**H2 (Tridiagonal precision at t=0):** For AR(1), `Σ_0^{-1}` is tridiagonal,
+so each score component depends only on its two neighbours. Exact. ✓
 
-- **Relative L2 error:** `‖s(·,u,t) − P·s(·,u−1,t)‖ / ‖s(·,u,t)‖`  vs. `t`
-- **Correlation:** Pearson correlation between consecutive score fields across ensemble
-- **Spectral gap:** `λ_1(J_s) − λ_2(J_s)` as function of `(u,t)` — measures anisotropy
-- **Regime boundaries:** values of `(u,t)` where spectral gap drops to 1/e of its max
+**H3 (Score propagation as row shift):** In the stationary regime,
+`−Σ_t^{−1}` is Toeplitz → the k-th row of the propagator is a shift of the
+(k−1)-th row. To be verified.
 
-### Spectral / Jacobian diagnostics
+**H4 (Mean contraction):** `μ_t^{(u+1)} = α μ_t^{(u)}` is t-independent. Exact. ✓
 
-- `J_s(u,t) = −Σ_u(t)^{−1}` (exact for Gaussians)
-- Triad identity: `I(u,t) = −J_s = 1/σ²_u(t)` (Fisher = −Jacobian = inverse variance)
-- Dimensional collapse: all `λ_k(J_s) → −1` as `t → ∞`
-
-### Four regimes on (u,t) plane
-
-| Phase | Region | Description |
-|-------|--------|-------------|
-| I — Sharp | small u, small t | High anisotropy, data-specific score |
-| II — Best window | any u, intermediate t | Near-stationary covariance; propagator clearest |
-| III — Stationary | large u, small t | σ²_u → σ²_∞; variance-part of P ≈ 1 |
-| IV — Universal noise | large t | s ≈ −x; all dynamical info erased |
+**H5 (Kalman propagator):** The Kalman filter/smoother provides the exact
+propagator: adding one new observed frame updates all smoothed estimates
+via the Kalman gain. This is the exact `P`.
 
 ---
 
-## Design System (all toy-model HTML files)
+## Next Milestones
+
+### Immediate (before meeting Wed 2026-03-18)
+
+- [ ] **TM7 — 1D 2-frame joint score (K=2, AR(1)):**
+  - Compute `P_t(x_0, x_1)` exactly as 2D Gaussian
+  - Plot the 2D joint score field `(S_0, S_1)` as a function of `(x_0, x_1)` at fixed `t`
+  - Show how `S_0` couples to `x_1` (new effect absent in old formulation)
+  - Slider for `t`: watch coupling appear at small `t`, vanish at large `t`
+  - Interactive lab showing Σ_t^{−1} entries vs `t`
+
+- [ ] **K-frame extension (K=3, 4, 5):**
+  - Implement exact Kalman smoother for AR(1) + OU
+  - Plot each score component `S_k(x, t)` vs all `x_j`
+  - Visualize the precision matrix Σ_t^{−1} as a heatmap (show tridiagonality at small t)
+
+- [ ] **Propagator metric:**
+  `ε(t) = ‖S_k(x,t) − P̂_t · S_{k−1}(x,t)‖ / ‖S_k(x,t)‖`
+  where `P̂_t` is learned/approximate vs exact Kalman
+
+### Medium term
+
+- [ ] **Non-Gaussian extension:** mixture prior → nonlinear score, test linear-P hypothesis
+- [ ] **Connect to speciation:** at what `t` does the coupling (off-diagonal Σ_t^{-1}) vanish?
+- [ ] **Circle model (TM6):** redo with correct joint score over sequence of K circle frames
+
+---
+
+## Design System (all HTML toy models)
 
 ```
 Fonts:  EB Garamond (body),  JetBrains Mono (code/labels)
@@ -149,27 +237,34 @@ Width:  max ~900–1050px, academic paper style
 
 ---
 
-## Open TODOs / Next Milestones
-
-- [ ] **Derive closed ODE for score coefficients** `(A(u,t), b(u,t))` in `u` for Gaussian AR(1)+OU
-- [ ] **Circle toy model (TM6):** stochastic circle dynamics `dr=(1−r)du+√(2T_r)dB_r`, `dθ=ωdu+√(2T_θ)dB_θ`; exact analytic score via radial×angular factorisation
-- [ ] **Quantitative propagator metrics:** Python script for L2 error ‖P·s_{u−1} − s_u‖ vs `t`
-- [ ] **Non-Gaussian extension:** 2-component rotating mixture; measure deviation from linear-P hypothesis
-- [ ] **Connect to speciation/collapse:** identify Phase II boundary sharpness in large-d limit
-- [ ] **Report update:** add quantitative propagator error plots to Mézard report
-
----
-
 ## Notation (use consistently)
 
 | Symbol | Meaning |
 |--------|---------|
-| `u` | Internal time (frame index, trajectory parameter) |
+| `u` or `k` | Internal time index (frame number) |
 | `t` | Diffusion time (OU noise level) |
-| `s(x,u,t)` | Per-frame score = ∇_x log p_t(x\|u) |
-| `P` or `P_t` | Propagator mapping s_{u−1} → s_u |
+| `a(u)` or `a_u` | Clean frame at internal time u |
+| `x(u)` or `x_u` | Noisy observation of frame u at diffusion time t |
+| `K` | Sequence length (number of frames) |
+| `S(x, t)` | **Joint** score = ∇_x log P_t(x_0,...,x_{K-1}) ∈ ℝ^{dK} |
+| `S_k(x, t)` | k-th block component of joint score |
+| `s(x_u, u, t)` | **Marginal** per-frame score [OLD, do not use for propagator] |
+| `P` or `P_t` | Propagator mapping S_{k−1} → S_k |
+| `Σ_0` | Joint covariance of clean chain (K×K) |
+| `Σ_t` | Joint covariance at diffusion time t: `e^{-2t}Σ_0 + Δ_t I` |
+| `Δ_t` | OU noise variance = `1 − e^{-2t}` |
 | `α` | AR(1) contraction coefficient |
-| `σ²_∞` | Stationary variance = σ²_η / (1−α²) |
-| `R_{Δθ}` | 2D rotation matrix, angle Δθ |
-| `J_s` | Jacobian ∂s/∂x = −Σ(u,t)^{−1} |
-| `I(u,t)` | Fisher information = 1/σ²_u(t) |
+| `σ_η²` | AR(1) noise variance |
+| `σ_∞²` | Stationary variance = `σ_η²/(1−α²)` |
+| `M(a'|a)` | Markov transition kernel |
+
+---
+
+## Workflow Rules
+
+- Always prefer **closed-form** over numerical approximation.
+- New toy models go in `Toy-models/Toy-model_N/`.
+- Label hypotheses explicitly with `[hypothesis]` or `[exact]` when unverified vs proven.
+- No neural networks. No black boxes. Analytical everything.
+- When computing the score, **always specify whether it is the joint or marginal score**.
+- Self-contained HTML with MathJax + Plotly, no build step.
