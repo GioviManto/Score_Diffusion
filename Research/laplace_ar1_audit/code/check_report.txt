@@ -1,0 +1,9 @@
+Corrected Gaussian and Laplace AR(1) checks
+======================================================
+Gaussian chain inverse check: 1.331883e-16
+Small-time Neumann expansion check: 8.881784e-16
+Deterministic control inverse check: 4.784448e-16
+Normal-Laplace convolution check: 1.110223e-16
+Laplace K=1 reduction vs direct double integral: 2.775558e-17
+Laplace K=1 score vs finite differences: 1.269704e-09
+Laplace K=1 Hessian vs finite differences: 1.909733e-08

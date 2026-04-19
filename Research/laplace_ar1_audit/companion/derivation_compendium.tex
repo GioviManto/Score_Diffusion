@@ -1,0 +1,1510 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{array}
+
+\geometry{margin=2.35cm}
+\graphicspath{{../figures/}}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.42em}
+
+\definecolor{accent}{RGB}{22,63,117}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\tr}{\mathrm{tr}}
+\newcommand{\Dt}{\Delta_t}
+\newcommand{\Ht}{\mathcal{H}_t}
+\newcommand{\pt}{p_t}
+\newcommand{\PhiN}{\Phi}
+\newcommand{\phiv}{\phi_v}
+\newcommand{\One}{\mathbf 1}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\title{\textbf{\color{accent}Derivation compendium and audit notes}\\[2mm]
+\Large corrected companion for the Laplace-focused presentation}
+\author{}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1.0em}
+
+\begin{center}
+\begin{minipage}{0.97\textwidth}
+\small
+This companion records the main corrections to the original draft and proves every formula used in the short presentation note. The emphasis is on explicit algebra: products of Gaussians are completed by hand, matrix identities are shown line by line, and every derivative used in the $K=1$ Laplace benchmark is written out.
+\end{minipage}
+\end{center}
+
+\tableofcontents
+\bigskip
+
+\section{Scope and main corrections}
+
+The clean benchmark retained in the final short note is the two-frame Laplace AR(1) model
+\begin{equation}
+A_0 \sim \mathcal N(\mu_0,\sigma_0^2),
+\qquad
+A_1 = \alpha A_0 + \varepsilon,
+\qquad
+\varepsilon \sim \mathrm{Laplace}(0,b),
+\qquad |\alpha|<1,
+\label{eq:setup-clean}
+\end{equation}
+followed by OU noising
+\begin{equation}
+X_k = e^{-t} A_k + \sqrt{\Dt} \, Z_k,
+\qquad
+\Dt = 1-e^{-2t},
+\qquad
+Z_0,Z_1 \stackrel{\mathrm{iid}}{\sim} \mathcal N(0,1).
+\label{eq:setup-ou}
+\end{equation}
+
+The original draft contained several mathematical issues. The final package corrects them as follows.
+\begin{enumerate}[leftmargin=1.45em,itemsep=0.25em]
+\item The notation $a_0 \sim \mathcal N(\mu_0,\Sigma_0)$ was inconsistent: for the scalar initial variable one needs $a_0 \sim \mathcal N(\mu_0,\sigma_0^2)$, while $\Sigma_0$ denotes the covariance of the full trajectory vector.
+\item The displayed finite-chain Gaussian AR(1) precision matrix was not exact at the boundaries. The first and last diagonal entries differ from the interior entries; the correct matrix is derived in Section \ref{sec:gaussian-precision}.
+\item The locality diagnostics based on the full Frobenius norm of $Q_t$ were misleading at large time, because $Q_t \to I$. The corrected diagnostics normalize only off-diagonal mass; see Section \ref{sec:locality-diagnostics}.
+\item The deterministic control was mathematically correct but conceptually overinterpreted. Its dense noised precision comes from a rank-one propagation mechanism, not from the same Markov fill-in mechanism as the stochastic AR(1) chain; see Section \ref{sec:det-control}.
+\item The old normal-Laplace convolution formula used in the code was wrong. The corrected formula is derived in Section \ref{sec:normal-laplace}.
+\item The old $K=2$ Laplace ``closed-form'' claim is not retained. What is justified is an exact nested integral representation, not an elementary closed form comparable to the $K=1$ formula; see Section \ref{sec:k2-statement}.
+\end{enumerate}
+
+The rest of the document proves the corrected statements explicitly.
+
+\section{Gaussian and deterministic audit}
+
+\subsection{Exact finite-chain Gaussian AR(1) precision}
+\label{sec:gaussian-precision}
+
+Consider the Gaussian AR(1) chain
+\begin{equation}
+A_{k+1} = \alpha A_k + \eta_k,
+\qquad
+\eta_k \sim \mathcal N(0,\sigma_\eta^2),
+\qquad
+k=0,\dots,K-1,
+\label{eq:gaussian-ar1}
+\end{equation}
+with
+\begin{equation}
+A_0 \sim \mathcal N(\mu_0,\sigma_0^2).
+\label{eq:a0-gaussian}
+\end{equation}
+Its joint density is
+\begin{equation}
+p(a_0,\dots,a_K)
+\propto
+\exp\!\left(
+-\frac{(a_0-\mu_0)^2}{2\sigma_0^2}
+-\sum_{k=0}^{K-1}\frac{(a_{k+1}-\alpha a_k)^2}{2\sigma_\eta^2}
+\right).
+\label{eq:joint-gaussian-chain}
+\end{equation}
+
+We expand the quadratic form in \eqref{eq:joint-gaussian-chain} exactly.
+
+\paragraph{Step 1: expand the initial term.}
+\begin{equation}
+\frac{(a_0-\mu_0)^2}{2\sigma_0^2}
+=
+\frac{a_0^2}{2\sigma_0^2}
+-\frac{\mu_0}{\sigma_0^2} a_0
++\frac{\mu_0^2}{2\sigma_0^2}.
+\label{eq:initial-expand}
+\end{equation}
+
+\paragraph{Step 2: expand each innovation term.}
+For each $k$,
+\begin{equation}
+\frac{(a_{k+1}-\alpha a_k)^2}{2\sigma_\eta^2}
+=
+\frac{a_{k+1}^2}{2\sigma_\eta^2}
+-\frac{\alpha}{\sigma_\eta^2} a_k a_{k+1}
++\frac{\alpha^2 a_k^2}{2\sigma_\eta^2}.
+\label{eq:innovation-expand}
+\end{equation}
+
+\paragraph{Step 3: collect the coefficients of each $a_j^2$.}
+\begin{itemize}[leftmargin=1.4em]
+\item The variable $a_0$ appears in \eqref{eq:initial-expand} and in the $k=0$ instance of \eqref{eq:innovation-expand}. Therefore its quadratic coefficient is
+\[
+\frac{1}{2\sigma_0^2} + \frac{\alpha^2}{2\sigma_\eta^2}.
+\]
+\item An interior variable $a_j$, with $1\le j\le K-1$, appears
+\begin{itemize}[leftmargin=1.2em]
+\item as $a_{k+1}$ when $k=j-1$, giving $a_j^2/(2\sigma_\eta^2)$,
+\item as $a_k$ when $k=j$, giving $\alpha^2 a_j^2/(2\sigma_\eta^2)$.
+\end{itemize}
+Therefore its quadratic coefficient is
+\[
+\frac{1+\alpha^2}{2\sigma_\eta^2}.
+\]
+\item The last variable $a_K$ appears only as $a_{k+1}$ when $k=K-1$. Therefore its quadratic coefficient is
+\[
+\frac{1}{2\sigma_\eta^2}.
+\]
+\end{itemize}
+
+\paragraph{Step 4: collect cross terms.}
+From \eqref{eq:innovation-expand}, the only cross term involving $a_k$ and $a_{k+1}$ is
+\begin{equation}
+-\frac{\alpha}{\sigma_\eta^2} a_k a_{k+1}.
+\label{eq:cross-term}
+\end{equation}
+No other cross terms appear. Hence the precision matrix is tridiagonal.
+
+Putting these pieces together,
+\begin{equation}
+p(a) \propto \exp\!\left(-\frac12 a^\top Q_0 a + h^\top a\right),
+\label{eq:gauss-quad-form}
+\end{equation}
+with precision
+\begin{equation}
+Q_0 =
+\begin{pmatrix}
+\sigma_0^{-2}+\alpha^2 \sigma_\eta^{-2} & -\alpha \sigma_\eta^{-2} & & & \\
+-\alpha \sigma_\eta^{-2} & (1+\alpha^2)\sigma_\eta^{-2} & -\alpha \sigma_\eta^{-2} & & \\
+& \ddots & \ddots & \ddots & \\
+& & -\alpha \sigma_\eta^{-2} & (1+\alpha^2)\sigma_\eta^{-2} & -\alpha \sigma_\eta^{-2}\\
+& & & -\alpha \sigma_\eta^{-2} & \sigma_\eta^{-2}
+\end{pmatrix}.
+\label{eq:Q0-general}
+\end{equation}
+
+\paragraph{Stationary specialization.}
+If $A_0$ is chosen with stationary variance
+\begin{equation}
+\sigma_0^2 = \frac{\sigma_\eta^2}{1-\alpha^2},
+\label{eq:stationary-variance}
+\end{equation}
+then
+\[
+\sigma_0^{-2}+\alpha^2 \sigma_\eta^{-2}
+=
+\frac{1-\alpha^2}{\sigma_\eta^2} + \frac{\alpha^2}{\sigma_\eta^2}
+=
+\frac{1}{\sigma_\eta^2}.
+\]
+Hence the first and last diagonal entries coincide, and
+\begin{equation}
+Q_0 =
+\frac{1}{\sigma_\eta^2}
+\begin{pmatrix}
+1 & -\alpha & & & \\
+-\alpha & 1+\alpha^2 & -\alpha & & \\
+& \ddots & \ddots & \ddots & \\
+& & -\alpha & 1+\alpha^2 & -\alpha\\
+& & & -\alpha & 1
+\end{pmatrix}.
+\label{eq:Q0-stationary}
+\end{equation}
+This is the correct finite-chain formula. The original short draft displayed the interior pattern on every diagonal entry, which is not exact at the boundaries.
+
+\subsection{OU noising and the exact Gaussian precision identities}
+\label{sec:ou-identities}
+
+Let $A\in\R^n$ be any random vector with mean $\mu_0$ and covariance $\Sigma_0$. Define
+\begin{equation}
+X_t = e^{-t} A + \sqrt{\Dt} \, Z,
+\qquad
+Z \sim \mathcal N(0,I_n),
+\qquad Z \perp A.
+\label{eq:generic-ou}
+\end{equation}
+Then
+\begin{align}
+\E[X_t]
+&= e^{-t}\E[A] + \sqrt{\Dt}\,\E[Z]
+= e^{-t}\mu_0,
+\label{eq:ou-mean-derivation}\\[0.4em]
+\Cov(X_t)
+&=
+\Cov\bigl(e^{-t}A + \sqrt{\Dt} Z\bigr)
+\notag\\
+&=
+ e^{-2t}\Cov(A)
+ + \Dt \Cov(Z)
+ + e^{-t}\sqrt{\Dt}\,\Cov(A,Z)
+ + e^{-t}\sqrt{\Dt}\,\Cov(Z,A).
+\label{eq:ou-cov-expand}
+\end{align}
+Because $A$ and $Z$ are independent, $\Cov(A,Z)=\Cov(Z,A)=0$, and because $\Cov(Z)=I_n$, \eqref{eq:ou-cov-expand} becomes
+\begin{equation}
+\Sigma_t := \Cov(X_t) = e^{-2t} \Sigma_0 + \Dt I_n.
+\label{eq:sigma-t}
+\end{equation}
+
+\paragraph{SNR form of the precision.}
+Let
+\begin{equation}
+\gamma_t := \frac{e^{-2t}}{\Dt}.
+\label{eq:gamma-t}
+\end{equation}
+Then
+\[
+\Sigma_t = \Dt \bigl(I_n + \gamma_t \Sigma_0\bigr),
+\]
+so
+\begin{equation}
+Q_t := \Sigma_t^{-1}
+=
+\Dt^{-1} \bigl(I_n + \gamma_t \Sigma_0\bigr)^{-1}.
+\label{eq:Qt-snr}
+\end{equation}
+
+\paragraph{Factorization through $Q_0=\Sigma_0^{-1}$.}
+Since $\Dt = 1-e^{-2t}$, one has
+\begin{equation}
+e^{2t}\Dt = e^{2t}-1 =: c_t.
+\label{eq:ct-def}
+\end{equation}
+Rewrite \eqref{eq:sigma-t} as
+\begin{equation}
+\Sigma_t = e^{-2t}\bigl(\Sigma_0 + c_t I_n\bigr).
+\label{eq:sigma-factor}
+\end{equation}
+Invert \eqref{eq:sigma-factor}:
+\begin{equation}
+Q_t = e^{2t} (\Sigma_0 + c_t I_n)^{-1}.
+\label{eq:Qt-first-factor}
+\end{equation}
+Now use $\Sigma_0 = Q_0^{-1}$:
+\[
+\Sigma_0 + c_t I_n
+=
+Q_0^{-1} + c_t I_n
+=
+Q_0^{-1}(I_n + c_t Q_0).
+\]
+Hence
+\[
+(\Sigma_0 + c_t I_n)^{-1}
+=
+(I_n + c_t Q_0)^{-1} Q_0.
+\]
+Substitute into \eqref{eq:Qt-first-factor}:
+\begin{equation}
+Q_t = e^{2t} (I_n + c_t Q_0)^{-1} Q_0.
+\label{eq:Qt-factor-right}
+\end{equation}
+Because $Q_0$ commutes with every polynomial in $Q_0$, it also commutes with $(I_n+c_tQ_0)^{-1}$. Therefore
+\begin{equation}
+Q_t = e^{2t} Q_0 (I_n + c_t Q_0)^{-1}.
+\label{eq:Qt-factor-left}
+\end{equation}
+
+\paragraph{Neumann expansion.}
+If $c_t \|Q_0\|<1$ in any submultiplicative operator norm, then
+\begin{equation}
+(I_n + c_t Q_0)^{-1}
+=
+\sum_{m=0}^{\infty} (-c_t)^m Q_0^m.
+\label{eq:neumann}
+\end{equation}
+Insert this into \eqref{eq:Qt-factor-left}:
+\begin{equation}
+Q_t = e^{2t} \sum_{m=0}^{\infty} (-c_t)^m Q_0^{m+1}.
+\label{eq:Qt-neumann}
+\end{equation}
+
+\paragraph{Why distance-$d$ couplings appear at order $t^{d-1}$.}
+If $Q_0$ is tridiagonal, then $Q_0$ has bandwidth $1$: $(Q_0)_{ij}=0$ whenever $|i-j|>1$.
+
+If $B$ has bandwidth $r$ and $C$ has bandwidth $s$, then $BC$ has bandwidth at most $r+s$. Indeed,
+\[
+(BC)_{ij} = \sum_k B_{ik} C_{kj}.
+\]
+For a term in the sum to be nonzero, one must have both $|i-k|\le r$ and $|k-j|\le s$. Therefore $|i-j|\le r+s$. Hence $Q_0^{m+1}$ has bandwidth at most $m+1$.
+
+In particular, an entry with $|i-j|=d$ cannot appear before the term $Q_0^d$, which corresponds to $m=d-1$ in \eqref{eq:Qt-neumann}. For small $t$,
+\[
+c_t = e^{2t}-1 = 2t + O(t^2),
+\]
+so the first nonzero contribution to a distance-$d$ entry is of order $t^{d-1}$.
+
+\paragraph{Large-time expansion.}
+Let $\varepsilon = e^{-2t}$. Then $\Dt = 1-\varepsilon$, and \eqref{eq:sigma-t} becomes
+\[
+\Sigma_t = I_n + \varepsilon (\Sigma_0-I_n).
+\]
+For small $\varepsilon$,
+\[
+(I_n + \varepsilon M)^{-1} = I_n - \varepsilon M + O(\varepsilon^2).
+\]
+Apply this with $M=\Sigma_0-I_n$:
+\begin{equation}
+Q_t = I_n - e^{-2t}(\Sigma_0-I_n) + O(e^{-4t}).
+\label{eq:Qt-large-time}
+\end{equation}
+
+\subsection{Gaussian score and posterior mean}
+
+If $X_t \sim \mathcal N(\mu_t,\Sigma_t)$ with precision $Q_t=\Sigma_t^{-1}$, then
+\begin{equation}
+p_t^{\mathrm G}(x)
+=
+\frac{1}{(2\pi)^{n/2} (\det \Sigma_t)^{1/2}}
+\exp\!\left(-\frac12 (x-\mu_t)^\top Q_t (x-\mu_t)\right).
+\label{eq:gaussian-density-general}
+\end{equation}
+Take logarithms:
+\[
+\log p_t^{\mathrm G}(x)
+=
+C_t - \frac12 (x-\mu_t)^\top Q_t (x-\mu_t),
+\]
+where $C_t$ does not depend on $x$. Expand the quadratic term:
+\[
+(x-\mu_t)^\top Q_t (x-\mu_t)
+=
+ x^\top Q_t x - 2 \mu_t^\top Q_t x + \mu_t^\top Q_t \mu_t.
+\]
+Therefore
+\[
+\log p_t^{\mathrm G}(x)
+=
+C_t' - \frac12 x^\top Q_t x + \mu_t^\top Q_t x.
+\]
+Differentiate with respect to $x$:
+\begin{equation}
+\nabla \log p_t^{\mathrm G}(x) = -Q_t(x-\mu_t),
+\qquad
+-\nabla^2 \log p_t^{\mathrm G}(x) \equiv Q_t.
+\label{eq:gaussian-score-hessian}
+\end{equation}
+
+The posterior mean of the clean state given $X_t=x$ is the standard Gaussian regression formula. Since
+\[
+\Cov(A,X_t) = \Cov\bigl(A,e^{-t}A+\sqrt{\Dt}Z\bigr) = e^{-t}\Sigma_0,
+\]
+and $\Cov(X_t)=\Sigma_t$, one gets
+\begin{equation}
+\E[A\mid X_t=x]
+=
+\mu_A + e^{-t}\Sigma_0 Q_t (x-\mu_t).
+\label{eq:posterior-mean-gaussian}
+\end{equation}
+
+\subsection{Corrected locality diagnostics}
+\label{sec:locality-diagnostics}
+
+The original short draft normalized band energies by $\|Q_t\|_F^2$ including the diagonal. This becomes misleading at large $t$, because $Q_t \to I$, so the diagonal dominates automatically.
+
+A more meaningful off-diagonal normalization is
+\begin{equation}
+E_d(t) := \sum_{|i-j|=d} Q_t[i,j]^2,
+\qquad
+E_{\mathrm{off}}(t) := \sum_{d\ge 1} E_d(t),
+\qquad
+p_d(t) := \frac{E_d(t)}{E_{\mathrm{off}}(t)}.
+\label{eq:offdiag-diagnostics}
+\end{equation}
+From these one can define
+\begin{equation}
+b_{0.95}(t) := \min\left\{r:\sum_{d=1}^r p_d(t)\ge 0.95\right\},
+\qquad
+\bar\xi(t) := \sum_{d\ge 1} d\, p_d(t).
+\label{eq:bandwidth-range}
+\end{equation}
+These observables measure the shape of the off-diagonal coupling profile rather than the trivial approach to the identity.
+
+\subsection{Deterministic control}
+\label{sec:det-control}
+
+The deterministic control is
+\begin{equation}
+A_k = \alpha^k A_0,
+\qquad
+A_0 \sim \mathcal N(0,\sigma_0^2),
+\qquad
+v := (1,\alpha,\dots,\alpha^K)^\top.
+\label{eq:det-control}
+\end{equation}
+Then the clean covariance is rank one:
+\begin{equation}
+\Sigma_0^{\mathrm{det}} = \sigma_0^2 v v^\top.
+\label{eq:det-cov-clean}
+\end{equation}
+After OU noising,
+\begin{equation}
+\Sigma_t^{\mathrm{det}} = \Dt I + \beta_t v v^\top,
+\qquad
+\beta_t := e^{-2t} \sigma_0^2.
+\label{eq:det-cov-noisy}
+\end{equation}
+We invert \eqref{eq:det-cov-noisy} by Sherman-Morrison. Write
+\[
+A = \Dt I,
+\qquad
+u = \sqrt{\beta_t}\,v,
+\qquad
+\Sigma_t^{\mathrm{det}} = A + u u^\top.
+\]
+The Sherman-Morrison formula gives
+\begin{equation}
+(A+u u^\top)^{-1}
+=
+A^{-1} - \frac{A^{-1} u u^\top A^{-1}}{1+u^\top A^{-1} u}.
+\label{eq:sherman-morrison}
+\end{equation}
+Because $A^{-1}=\Dt^{-1} I$,
+\[
+A^{-1}u = \Dt^{-1} \sqrt{\beta_t}\, v,
+\qquad
+u^\top A^{-1}u = \frac{\beta_t}{\Dt} \|v\|^2.
+\]
+Also,
+\[
+A^{-1}u u^\top A^{-1}
+=
+\frac{\beta_t}{\Dt^2} v v^\top.
+\]
+Substitute into \eqref{eq:sherman-morrison}:
+\[
+(\Sigma_t^{\mathrm{det}})^{-1}
+=
+\frac{1}{\Dt} I - \frac{(\beta_t/\Dt^2) v v^\top}{1+(\beta_t/\Dt)\|v\|^2}.
+\]
+Multiply numerator and denominator of the fraction by $\Dt$:
+\begin{equation}
+Q_t^{\mathrm{det}}
+=
+\frac{1}{\Dt} I - \frac{\beta_t}{\Dt(\Dt+\beta_t\|v\|^2)} v v^\top.
+\label{eq:det-precision}
+\end{equation}
+This matrix is dense for every $t>0$, because $v v^\top$ is dense. The corrected interpretation is:
+\begin{quote}
+The deterministic control shows that a dense noised precision can arise from a rank-one propagation mechanism. This is different from the specific Gaussian-Markov band fill-in mechanism of the stochastic AR(1) chain.
+\end{quote}
+
+\section[Laplace K=1: exact characteristic function]{Laplace $K=1$: exact characteristic function}
+\label{sec:cf-laplace}
+
+\subsection{Clean characteristic function}
+
+Let $\xi=(\xi_0,\xi_1)\in\R^2$. By definition,
+\[
+\Phi_0(\xi_0,\xi_1) = \E\!\left[e^{i(\xi_0 A_0 + \xi_1 A_1)}\right].
+\]
+Since $A_1 = \alpha A_0 + \varepsilon$,
+\[
+\xi_0 A_0 + \xi_1 A_1 = (\xi_0+\alpha\xi_1) A_0 + \xi_1 \varepsilon.
+\]
+Because $A_0$ and $\varepsilon$ are independent,
+\begin{equation}
+\Phi_0(\xi_0,\xi_1)
+=
+\E\!\left[e^{i(\xi_0+\alpha\xi_1)A_0}\right]
+\cdot
+\E\!\left[e^{i\xi_1 \varepsilon}\right].
+\label{eq:cf-factor-clean}
+\end{equation}
+
+\paragraph{Gaussian factor.}
+If $Y\sim\mathcal N(\mu,\sigma^2)$, then
+\[
+\E[e^{isY}] = \exp\!\left(is\mu - \frac12 \sigma^2 s^2\right).
+\]
+Apply this with $Y=A_0$ and $s=\xi_0+\alpha\xi_1$:
+\begin{equation}
+\E\!\left[e^{i(\xi_0+\alpha\xi_1)A_0}\right]
+=
+\exp\!\left(
+ i\mu_0(\xi_0+\alpha\xi_1)
+ - \frac12 \sigma_0^2 (\xi_0+\alpha\xi_1)^2
+\right).
+\label{eq:cf-a0}
+\end{equation}
+
+\paragraph{Laplace factor.}
+We compute the characteristic function of $\varepsilon\sim\mathrm{Laplace}(0,b)$:
+\begin{align}
+\E[e^{is\varepsilon}]
+&=
+\int_{-\infty}^{\infty} e^{isu} \frac{e^{-|u|/b}}{2b}\,du
+\notag\\
+&=
+\frac{1}{2b}\int_{-\infty}^{0} e^{isu} e^{u/b}\,du
++
+\frac{1}{2b}\int_{0}^{\infty} e^{isu} e^{-u/b}\,du.
+\label{eq:laplace-cf-split}
+\end{align}
+The first integral is
+\[
+\int_{-\infty}^{0} e^{(is+1/b)u}\,du
+=
+\left[\frac{e^{(is+1/b)u}}{is+1/b}\right]_{u=-\infty}^{u=0}
+=
+\frac{1}{is+1/b},
+\]
+because $\Re(is+1/b)=1/b>0$, so the exponential vanishes at $-\infty$.
+
+The second integral is
+\[
+\int_{0}^{\infty} e^{(is-1/b)u}\,du
+=
+\left[\frac{e^{(is-1/b)u}}{is-1/b}\right]_{u=0}^{u=\infty}
+=
+-\frac{1}{is-1/b}
+=
+\frac{1}{1/b-is}.
+\]
+Hence
+\[
+\E[e^{is\varepsilon}]
+=
+\frac{1}{2b}
+\left(
+\frac{1}{is+1/b}
++
+\frac{1}{1/b-is}
+\right).
+\]
+Put the two fractions over a common denominator:
+\[
+\frac{1}{is+1/b} + \frac{1}{1/b-is}
+=
+\frac{(1/b-is)+(is+1/b)}{(is+1/b)(1/b-is)}
+=
+\frac{2/b}{1/b^2+s^2}.
+\]
+Therefore
+\begin{equation}
+\E[e^{is\varepsilon}] = \frac{1}{1+b^2 s^2}.
+\label{eq:laplace-cf}
+\end{equation}
+
+Combining \eqref{eq:cf-factor-clean}, \eqref{eq:cf-a0}, and \eqref{eq:laplace-cf},
+\begin{equation}
+\Phi_0(\xi_0,\xi_1)
+=
+\exp\!\left(
+ i\mu_0(\xi_0+\alpha\xi_1)
+ - \frac12 \sigma_0^2 (\xi_0+\alpha\xi_1)^2
+\right)
+\frac{1}{1+b^2 \xi_1^2}.
+\label{eq:cf-clean-final}
+\end{equation}
+
+\subsection{Characteristic function after OU noising}
+
+Conditionally on $A=(A_0,A_1)$, one has
+\[
+X_t = e^{-t} A + \sqrt{\Dt} Z.
+\]
+Hence
+\begin{align}
+\E[e^{i\xi^\top X_t}\mid A]
+&=
+\E[e^{i\xi^\top(e^{-t}A+\sqrt{\Dt}Z)}\mid A]
+\notag\\
+&=
+ e^{i e^{-t}\xi^\top A}
+\, \E[e^{i\sqrt{\Dt}\,\xi^\top Z}]
+\notag\\
+&=
+ e^{i e^{-t}\xi^\top A}
+\, e^{-\Dt \|\xi\|^2/2}.
+\label{eq:cf-conditional-noise}
+\end{align}
+Taking expectation in $A$,
+\begin{equation}
+\Phi_t(\xi) = e^{-\Dt\|\xi\|^2/2} \, \Phi_0(e^{-t}\xi).
+\label{eq:cf-ou-rule}
+\end{equation}
+Insert \eqref{eq:cf-clean-final}:
+\begin{equation}
+\Phi_t(\xi_0,\xi_1)
+=
+\exp\!\Bigl(
+ i e^{-t}\mu_0(\xi_0+\alpha\xi_1)
+ -\frac12 \Dt (\xi_0^2+\xi_1^2)
+ -\frac12 e^{-2t}\sigma_0^2 (\xi_0+\alpha\xi_1)^2
+\Bigr)
+\frac{1}{1+b^2 e^{-2t} \xi_1^2}.
+\label{eq:cf-final}
+\end{equation}
+
+A centered Gaussian characteristic function is always of the form $\exp(-\xi^\top \Sigma \xi /2)$, possibly multiplied by a pure phase $e^{i m^\top \xi}$ if the mean is not zero. The extra factor
+\[
+\frac{1}{1+b^2 e^{-2t} \xi_1^2}
+\]
+in \eqref{eq:cf-final} is rational, not exponential-quadratic. Therefore the diffused Laplace law is not Gaussian for any finite $t$.
+
+\section{Derivation of the normal-Laplace convolution}
+\label{sec:normal-laplace}
+
+Fix $\beta>0$ and $\sigma^2>0$. Define
+\begin{equation}
+h(y;\beta,\sigma^2)
+=
+\int_{-\infty}^{\infty}
+\frac{e^{-|u|/\beta}}{2\beta}
+\cdot
+\frac{1}{\sqrt{2\pi\sigma^2}}
+\exp\!\left(-\frac{(y-u)^2}{2\sigma^2}\right)du.
+\label{eq:h-start}
+\end{equation}
+This is the density of $L+G$ with $L\sim\mathrm{Laplace}(0,\beta)$ and $G\sim\mathcal N(0,\sigma^2)$ independent.
+
+\subsection[Split the integral at u=0]{Split the integral at $u=0$}
+
+Write
+\begin{equation}
+h(y;\beta,\sigma^2)
+=
+\frac{1}{2\beta\sqrt{2\pi\sigma^2}} \Bigl(I_+(y)+I_-(y)\Bigr),
+\label{eq:h-split}
+\end{equation}
+where
+\begin{align}
+I_+(y)
+&=
+\int_0^{\infty}
+\exp\!\left(-\frac{u}{\beta} - \frac{(y-u)^2}{2\sigma^2}\right)du,
+\label{eq:Iplus-def}\\[0.3em]
+I_-(y)
+&=
+\int_{-\infty}^{0}
+\exp\!\left(\frac{u}{\beta} - \frac{(y-u)^2}{2\sigma^2}\right)du.
+\label{eq:Iminus-def}
+\end{align}
+
+\subsection[Complete the square in I+]{Complete the square in $I_+$}
+
+Start with the exponent:
+\begin{align}
+-\frac{u}{\beta} - \frac{(y-u)^2}{2\sigma^2}
+&=
+-\frac{u}{\beta} - \frac{u^2-2yu+y^2}{2\sigma^2}
+\notag\\
+&=
+-\frac{1}{2\sigma^2}
+\left(
+ u^2 - 2yu + y^2 + \frac{2\sigma^2}{\beta}u
+\right)
+\notag\\
+&=
+-\frac{1}{2\sigma^2}
+\left(
+ u^2 - 2\left(y-\frac{\sigma^2}{\beta}\right)u + y^2
+\right).
+\label{eq:Iplus-square1}
+\end{align}
+Now insert and subtract $\bigl(y-\sigma^2/\beta\bigr)^2$:
+\begin{align}
+u^2 - 2\left(y-\frac{\sigma^2}{\beta}\right)u + y^2
+&=
+\left(u-\left(y-\frac{\sigma^2}{\beta}\right)\right)^2
++
+y^2 - \left(y-\frac{\sigma^2}{\beta}\right)^2
+\notag\\
+&=
+\left(u-\left(y-\frac{\sigma^2}{\beta}\right)\right)^2
++
+\left(y^2 - y^2 + \frac{2y\sigma^2}{\beta} - \frac{\sigma^4}{\beta^2}\right)
+\notag\\
+&=
+\left(u-\left(y-\frac{\sigma^2}{\beta}\right)\right)^2
++
+\frac{2y\sigma^2}{\beta} - \frac{\sigma^4}{\beta^2}.
+\label{eq:Iplus-square2}
+\end{align}
+Substitute \eqref{eq:Iplus-square2} into \eqref{eq:Iplus-square1}:
+\begin{equation}
+-\frac{u}{\beta} - \frac{(y-u)^2}{2\sigma^2}
+=
+-\frac{\left(u-(y-\sigma^2/\beta)\right)^2}{2\sigma^2}
+-\frac{y}{\beta} + \frac{\sigma^2}{2\beta^2}.
+\label{eq:Iplus-square3}
+\end{equation}
+Therefore
+\begin{equation}
+I_+(y)
+=
+ e^{-y/\beta+\sigma^2/(2\beta^2)}
+\int_0^{\infty}
+\exp\!\left(-\frac{(u-(y-\sigma^2/\beta))^2}{2\sigma^2}\right)du.
+\label{eq:Iplus-after-square}
+\end{equation}
+Set
+\[
+z = \frac{u-(y-\sigma^2/\beta)}{\sigma},
+\qquad du = \sigma dz.
+\]
+When $u=0$,
+\[
+z = -\frac{y}{\sigma} + \frac{\sigma}{\beta},
+\]
+and when $u\to\infty$, $z\to\infty$. Hence
+\begin{align}
+I_+(y)
+&=
+ e^{-y/\beta+\sigma^2/(2\beta^2)}
+\sigma \int_{-y/\sigma+\sigma/\beta}^{\infty} e^{-z^2/2} dz
+\notag\\
+&=
+ e^{-y/\beta+\sigma^2/(2\beta^2)}
+\sigma\sqrt{2\pi}\,\PhiN\!\left(\frac{y}{\sigma}-\frac{\sigma}{\beta}\right).
+\label{eq:Iplus-final}
+\end{align}
+
+\subsection[Complete the square in I-]{Complete the square in $I_-$}
+
+Now start from
+\begin{align}
+\frac{u}{\beta} - \frac{(y-u)^2}{2\sigma^2}
+&=
+\frac{u}{\beta} - \frac{u^2-2yu+y^2}{2\sigma^2}
+\notag\\
+&=
+-\frac{1}{2\sigma^2}
+\left(
+ u^2 - 2yu + y^2 - \frac{2\sigma^2}{\beta}u
+\right)
+\notag\\
+&=
+-\frac{1}{2\sigma^2}
+\left(
+ u^2 - 2\left(y+\frac{\sigma^2}{\beta}\right)u + y^2
+\right).
+\label{eq:Iminus-square1}
+\end{align}
+Insert and subtract $\bigl(y+\sigma^2/\beta\bigr)^2$:
+\begin{align}
+u^2 - 2\left(y+\frac{\sigma^2}{\beta}\right)u + y^2
+&=
+\left(u-\left(y+\frac{\sigma^2}{\beta}\right)\right)^2
++
+y^2 - \left(y+\frac{\sigma^2}{\beta}\right)^2
+\notag\\
+&=
+\left(u-\left(y+\frac{\sigma^2}{\beta}\right)\right)^2
+-
+\frac{2y\sigma^2}{\beta} - \frac{\sigma^4}{\beta^2}.
+\label{eq:Iminus-square2}
+\end{align}
+Substitute into \eqref{eq:Iminus-square1}:
+\begin{equation}
+\frac{u}{\beta} - \frac{(y-u)^2}{2\sigma^2}
+=
+-\frac{\left(u-(y+\sigma^2/\beta)\right)^2}{2\sigma^2}
++\frac{y}{\beta} + \frac{\sigma^2}{2\beta^2}.
+\label{eq:Iminus-square3}
+\end{equation}
+Hence
+\begin{equation}
+I_-(y)
+=
+ e^{y/\beta+\sigma^2/(2\beta^2)}
+\int_{-\infty}^{0}
+\exp\!\left(-\frac{(u-(y+\sigma^2/\beta))^2}{2\sigma^2}\right)du.
+\label{eq:Iminus-after-square}
+\end{equation}
+Set
+\[
+z = \frac{u-(y+\sigma^2/\beta)}{\sigma},
+\qquad du = \sigma dz.
+\]
+When $u=0$,
+\[
+z = -\frac{y}{\sigma} - \frac{\sigma}{\beta},
+\]
+and when $u\to-\infty$, $z\to-\infty$. Therefore
+\begin{align}
+I_-(y)
+&=
+ e^{y/\beta+\sigma^2/(2\beta^2)}
+\sigma \int_{-\infty}^{-y/\sigma-\sigma/\beta} e^{-z^2/2} dz
+\notag\\
+&=
+ e^{y/\beta+\sigma^2/(2\beta^2)}
+\sigma\sqrt{2\pi}\,\PhiN\!\left(-\frac{y}{\sigma}-\frac{\sigma}{\beta}\right).
+\label{eq:Iminus-final}
+\end{align}
+
+\subsection{Final formula and an equivalent erfc form}
+
+Insert \eqref{eq:Iplus-final} and \eqref{eq:Iminus-final} into \eqref{eq:h-split}:
+\begin{equation}
+h(y;\beta,\sigma^2)
+=
+\frac{e^{\sigma^2/(2\beta^2)}}{2\beta}
+\left[
+ e^{-y/\beta}\PhiN\!\left(\frac{y}{\sigma}-\frac{\sigma}{\beta}\right)
+ +
+ e^{y/\beta}\PhiN\!\left(-\frac{y}{\sigma}-\frac{\sigma}{\beta}\right)
+\right].
+\label{eq:h-final}
+\end{equation}
+Using $\PhiN(z)=\frac12 \operatorname{erfc}(-z/\sqrt{2})$, one also gets
+\begin{equation}
+h(y;\beta,\sigma^2)
+=
+\frac{e^{\sigma^2/(2\beta^2)}}{4\beta}
+\left[
+ e^{-y/\beta}\operatorname{erfc}\!\left(\frac{\sigma^2/\beta-y}{\sqrt{2}\sigma}\right)
+ +
+ e^{y/\beta}\operatorname{erfc}\!\left(\frac{\sigma^2/\beta+y}{\sqrt{2}\sigma}\right)
+\right].
+\label{eq:h-erfc}
+\end{equation}
+This is the corrected formula used in the new code.
+
+\subsection[Derivative formulas for h]{Derivative formulas for $h$}
+
+Set
+\[
+u = \frac{y}{\sigma} - \frac{\sigma}{\beta},
+\qquad
+v = -\frac{y}{\sigma} - \frac{\sigma}{\beta},
+\qquad
+C = \frac{e^{\sigma^2/(2\beta^2)}}{2\beta}.
+\]
+Then \eqref{eq:h-final} reads
+\[
+h(y) = C \bigl(e^{-y/\beta}\PhiN(u) + e^{y/\beta}\PhiN(v)\bigr).
+\]
+Differentiate the first term:
+\begin{align}
+\frac{d}{dy}\left[e^{-y/\beta}\PhiN(u)\right]
+&=
+-\frac{1}{\beta} e^{-y/\beta}\PhiN(u)
++
+ e^{-y/\beta} \phi(u) \frac{du}{dy}
+\notag\\
+&=
+-\frac{1}{\beta} e^{-y/\beta}\PhiN(u)
++
+\frac{1}{\sigma} e^{-y/\beta} \phi(u),
+\label{eq:hprime-term1}
+\end{align}
+where $\phi(z)=\frac{1}{\sqrt{2\pi}} e^{-z^2/2}$.
+Differentiate the second term:
+\begin{align}
+\frac{d}{dy}\left[e^{y/\beta}\PhiN(v)\right]
+&=
+\frac{1}{\beta} e^{y/\beta}\PhiN(v)
++
+ e^{y/\beta} \phi(v) \frac{dv}{dy}
+\notag\\
+&=
+\frac{1}{\beta} e^{y/\beta}\PhiN(v)
+-
+\frac{1}{\sigma} e^{y/\beta} \phi(v).
+\label{eq:hprime-term2}
+\end{align}
+We now show that the Gaussian-density pieces cancel. Compute
+\begin{align}
+e^{-y/\beta} \phi(u)
+&=
+\frac{1}{\sqrt{2\pi}}
+\exp\!\left(
+-\frac{y}{\beta}
+-\frac12 \left(\frac{y}{\sigma}-\frac{\sigma}{\beta}\right)^2
+\right)
+\notag\\
+&=
+\frac{1}{\sqrt{2\pi}}
+\exp\!\left(
+-\frac{y}{\beta}
+-\frac{y^2}{2\sigma^2}
++\frac{y}{\beta}
+-\frac{\sigma^2}{2\beta^2}
+\right)
+\notag\\
+&=
+\frac{1}{\sqrt{2\pi}}
+\exp\!\left(-\frac{y^2}{2\sigma^2} - \frac{\sigma^2}{2\beta^2}\right).
+\label{eq:phi-cancel-1}
+\end{align}
+Similarly,
+\begin{align}
+e^{y/\beta} \phi(v)
+&=
+\frac{1}{\sqrt{2\pi}}
+\exp\!\left(
+\frac{y}{\beta}
+-\frac12 \left(-\frac{y}{\sigma}-\frac{\sigma}{\beta}\right)^2
+\right)
+\notag\\
+&=
+\frac{1}{\sqrt{2\pi}}
+\exp\!\left(
+\frac{y}{\beta}
+-\frac{y^2}{2\sigma^2}
+-\frac{y}{\beta}
+-\frac{\sigma^2}{2\beta^2}
+\right)
+\notag\\
+&=
+\frac{1}{\sqrt{2\pi}}
+\exp\!\left(-\frac{y^2}{2\sigma^2} - \frac{\sigma^2}{2\beta^2}\right).
+\label{eq:phi-cancel-2}
+\end{align}
+Therefore the $\sigma^{-1}$ terms in \eqref{eq:hprime-term1} and \eqref{eq:hprime-term2} cancel. What remains is
+\begin{equation}
+h'(y;\beta,\sigma^2)
+=
+\frac{e^{\sigma^2/(2\beta^2)}}{2\beta^2}
+\left[
+ e^{y/\beta}\PhiN(v)
+ -
+ e^{-y/\beta}\PhiN(u)
+\right].
+\label{eq:hprime-final}
+\end{equation}
+
+\paragraph{Second derivative from an ODE identity.}
+The centered Laplace density $\ell_\beta(y)=\frac{1}{2\beta}e^{-|y|/\beta}$ has Fourier transform
+\[
+\widehat{\ell_\beta}(\xi)=\frac{1}{1+\beta^2 \xi^2}.
+\]
+Therefore
+\[
+(1+\beta^2 \xi^2) \widehat{\ell_\beta}(\xi) = 1.
+\]
+Under the Fourier transform, multiplication by $1+\beta^2\xi^2$ corresponds to the operator $1-\beta^2 d^2/dy^2$. Hence, in the distributional sense,
+\begin{equation}
+\left(1-\beta^2 \frac{d^2}{dy^2}\right) \ell_\beta = \delta_0.
+\label{eq:laplace-green}
+\end{equation}
+Now $h = \ell_\beta * \phi_{\sigma^2}$. Convolving \eqref{eq:laplace-green} with $\phi_{\sigma^2}$,
+\[
+\left(1-\beta^2 \frac{d^2}{dy^2}\right) h = \phi_{\sigma^2}.
+\]
+Therefore
+\begin{equation}
+h''(y;\beta,\sigma^2)
+=
+\frac{h(y;\beta,\sigma^2) - \phi_{\sigma^2}(y)}{\beta^2}.
+\label{eq:hsecond-final}
+\end{equation}
+
+\section[Posterior of A0 given X0=x0 and exact density reduction]{Posterior of $A_0$ given $X_0=x_0$ and exact density reduction}
+\label{sec:posterior-reduction}
+
+From \eqref{eq:setup-ou},
+\[
+X_0 = e^{-t} A_0 + \sqrt{\Dt} Z_0.
+\]
+Hence
+\[
+X_0 \mid A_0=a_0 \sim \mathcal N(e^{-t} a_0, \Dt).
+\]
+The posterior density is proportional to prior times likelihood:
+\begin{equation}
+p(a_0\mid x_0)
+\propto
+\exp\!\left(
+-\frac{(a_0-\mu_0)^2}{2\sigma_0^2}
+-\frac{(x_0-e^{-t}a_0)^2}{2\Dt}
+\right).
+\label{eq:posterior-start}
+\end{equation}
+
+\subsection{Complete the square explicitly}
+
+Expand both squares:
+\begin{align}
+-\frac{(a_0-\mu_0)^2}{2\sigma_0^2}
+&=
+-\frac{a_0^2}{2\sigma_0^2}
++\frac{\mu_0}{\sigma_0^2} a_0
+-\frac{\mu_0^2}{2\sigma_0^2},
+\label{eq:posterior-expand1}\\[0.25em]
+-\frac{(x_0-e^{-t}a_0)^2}{2\Dt}
+&=
+-\frac{x_0^2}{2\Dt}
++\frac{e^{-t} x_0}{\Dt} a_0
+-\frac{e^{-2t}}{2\Dt} a_0^2.
+\label{eq:posterior-expand2}
+\end{align}
+Add \eqref{eq:posterior-expand1} and \eqref{eq:posterior-expand2}:
+\begin{align}
+&-\frac{(a_0-\mu_0)^2}{2\sigma_0^2} - \frac{(x_0-e^{-t}a_0)^2}{2\Dt}
+\notag\\
+&=
+-\frac12 \left(\sigma_0^{-2} + e^{-2t}\Dt^{-1}\right) a_0^2
++
+\left(\mu_0\sigma_0^{-2} + e^{-t} x_0 \Dt^{-1}\right) a_0
++
+\text{constant in } a_0.
+\label{eq:posterior-combined}
+\end{align}
+Define
+\begin{equation}
+v_t^{-1} := \sigma_0^{-2} + e^{-2t}\Dt^{-1},
+\qquad
+m_t(x_0) := v_t\left(\frac{\mu_0}{\sigma_0^2} + \frac{e^{-t} x_0}{\Dt}\right).
+\label{eq:vt-mt-def}
+\end{equation}
+Then \eqref{eq:posterior-combined} becomes
+\[
+-\frac{1}{2v_t} a_0^2 + \frac{m_t(x_0)}{v_t} a_0 + \text{constant}.
+\]
+Complete the square:
+\begin{align}
+-\frac{1}{2v_t} a_0^2 + \frac{m_t}{v_t} a_0
+&=
+-\frac{1}{2v_t} \left(a_0^2 - 2m_t a_0\right)
+\notag\\
+&=
+-\frac{1}{2v_t} \left((a_0-m_t)^2 - m_t^2\right)
+\notag\\
+&=
+-\frac{(a_0-m_t)^2}{2v_t} + \frac{m_t^2}{2v_t}.
+\label{eq:posterior-square}
+\end{align}
+Hence
+\begin{equation}
+A_0 \mid X_0=x_0 \sim \mathcal N(m_t(x_0),v_t).
+\label{eq:posterior-final}
+\end{equation}
+Since $v_t$ depends only on $t$, not on $x_0$,
+\begin{equation}
+m_t'(x_0) = \frac{v_t e^{-t}}{\Dt}.
+\label{eq:mt-prime}
+\end{equation}
+
+\paragraph{Marginal law of $X_0$.}
+Directly from \eqref{eq:setup-ou},
+\[
+X_0 = e^{-t} A_0 + \sqrt{\Dt} Z_0
+\]
+is a sum of independent Gaussian variables, so
+\begin{equation}
+X_0 \sim \mathcal N(e^{-t}\mu_0, v_x),
+\qquad
+v_x := e^{-2t} \sigma_0^2 + \Dt.
+\label{eq:x0-marginal-final}
+\end{equation}
+
+\subsection{Exact density reduction}
+
+Start from the full joint integral over $a_0$ and $\varepsilon$:
+\begin{align}
+\pt(x_0,x_1)
+&=
+\int_{\R} \int_{\R}
+\phi_{\sigma_0^2}(a_0-\mu_0)
+\cdot
+\frac{e^{-|\varepsilon|/b}}{2b}
+\cdot
+\phi_{\Dt}(x_0-e^{-t}a_0)
+\cdot
+\phi_{\Dt}(x_1-e^{-t}(\alpha a_0+\varepsilon))
+\, d\varepsilon \, da_0.
+\label{eq:pt-start}
+\end{align}
+Fix $a_0$ and define
+\[
+y = x_1 - e^{-t} \alpha a_0.
+\]
+Then
+\[
+x_1 - e^{-t}(\alpha a_0 + \varepsilon) = y - e^{-t} \varepsilon.
+\]
+The random variable $e^{-t}\varepsilon$ has Laplace law with scale $\beta_t=e^{-t}b$, so the $\varepsilon$-integral in \eqref{eq:pt-start} is exactly
+\begin{equation}
+h(y;\beta_t,\Dt) = h(x_1-e^{-t}\alpha a_0;\beta_t,\Dt).
+\label{eq:innovation-integrated}
+\end{equation}
+Therefore \eqref{eq:pt-start} becomes
+\begin{equation}
+\pt(x_0,x_1)
+=
+\int_{\R}
+\phi_{\sigma_0^2}(a_0-\mu_0)
+\, \phi_{\Dt}(x_0-e^{-t}a_0)
+\, h(x_1-c_t a_0;\beta_t,\Dt)
+\, da_0,
+\qquad c_t=e^{-t}\alpha.
+\label{eq:pt-after-eps}
+\end{equation}
+By Bayes' rule,
+\[
+\phi_{\sigma_0^2}(a_0-\mu_0)\, \phi_{\Dt}(x_0-e^{-t}a_0)
+=
+p(x_0)\, p(a_0\mid x_0).
+\]
+We already computed both factors:
+\[
+p(x_0)=\phi_{v_x}(x_0-e^{-t}\mu_0),
+\qquad
+p(a_0\mid x_0)=\phi_{v_t}(a_0-m_t(x_0)).
+\]
+Substitute these into \eqref{eq:pt-after-eps}:
+\begin{align}
+\pt(x_0,x_1)
+&=
+\phi_{v_x}(x_0-e^{-t}\mu_0)
+\int_{\R}
+\phi_{v_t}(a_0-m_t(x_0))
+\, h(x_1-c_t a_0;\beta_t,\Dt)
+\, da_0
+\notag\\
+&=
+\phi_{v_x}(x_0-e^{-t}\mu_0)
+\; \E\!\left[h(x_1-c_t A_0;\beta_t,\Dt)\,\middle|\, X_0=x_0\right].
+\label{eq:pt-exact}
+\end{align}
+This is the exact one-dimensional reduction used in the short note.
+
+\section{Exact score and exact effective precision}
+\label{sec:score-hessian}
+
+Define, for $r=0,1,2$,
+\begin{equation}
+I_r(x_0,x_1;t)
+:=
+\E\!\left[h^{(r)}(x_1-c_t A_0;\beta_t,\Dt)\,\middle|\, X_0=x_0\right].
+\label{eq:Ir-def-companion}
+\end{equation}
+Then \eqref{eq:pt-exact} reads
+\begin{equation}
+\pt(x_0,x_1) = \phi_{v_x}(x_0-e^{-t}\mu_0) I_0(x_0,x_1;t).
+\label{eq:pt-I0}
+\end{equation}
+
+\subsection[Derivative rule for Ir with respect to x0]{Derivative rule for $I_r$ with respect to $x_0$}
+
+Write the posterior variable as
+\[
+A_0 = m_t(x_0) + \sqrt{v_t} Z,
+\qquad Z \sim \mathcal N(0,1).
+\]
+Then
+\[
+I_r(x_0,x_1;t)
+=
+\E\!\left[h^{(r)}\bigl(x_1-c_t(m_t(x_0)+\sqrt{v_t}Z)\bigr)\right].
+\]
+Because $v_t$ is independent of $x_0$, differentiation gives
+\begin{align}
+\partial_{x_0} I_r
+&=
+\E\!\left[
+ h^{(r+1)}\bigl(x_1-c_t(m_t+\sqrt{v_t}Z)\bigr)
+ \cdot
+ (-c_t m_t'(x_0))
+\right]
+\notag\\
+&=
+-c_t m_t'(x_0) I_{r+1}(x_0,x_1;t).
+\label{eq:Ir-x0-rule}
+\end{align}
+This identity is the key input for all score and Hessian calculations.
+
+\subsection{Exact score formulas}
+
+Take logarithms in \eqref{eq:pt-I0}:
+\begin{equation}
+\log \pt(x_0,x_1)
+=
+\log \phi_{v_x}(x_0-e^{-t}\mu_0)
++
+\log I_0(x_0,x_1;t).
+\label{eq:logp-split}
+\end{equation}
+
+\paragraph{Derivative with respect to $x_1$.}
+Since the Gaussian prefactor depends only on $x_0$,
+\begin{equation}
+\partial_{x_1} \log \pt(x_0,x_1)
+=
+\frac{\partial_{x_1} I_0}{I_0}
+=
+\frac{I_1}{I_0}.
+\label{eq:score-x1-final}
+\end{equation}
+
+\paragraph{Derivative with respect to $x_0$.}
+First,
+\[
+\log \phi_{v_x}(x_0-e^{-t}\mu_0)
+=
+-\frac12 \log(2\pi v_x) - \frac{(x_0-e^{-t}\mu_0)^2}{2v_x}.
+\]
+Differentiate:
+\begin{equation}
+\partial_{x_0} \log \phi_{v_x}(x_0-e^{-t}\mu_0)
+=
+-\frac{x_0-e^{-t}\mu_0}{v_x}.
+\label{eq:gaussian-prefactor-deriv}
+\end{equation}
+Also, by \eqref{eq:Ir-x0-rule} with $r=0$,
+\[
+\partial_{x_0} I_0 = -c_t m_t'(x_0) I_1.
+\]
+Hence
+\begin{equation}
+\partial_{x_0} \log \pt(x_0,x_1)
+=
+-\frac{x_0-e^{-t}\mu_0}{v_x}
+-c_t m_t'(x_0) \frac{I_1}{I_0}.
+\label{eq:score-x0-final}
+\end{equation}
+Equations \eqref{eq:score-x1-final} and \eqref{eq:score-x0-final} are the exact score formulas used in the short note.
+
+\subsection{Exact Hessian formulas}
+
+Define the effective precision
+\begin{equation}
+\Ht(x) := -\nabla_x^2 \log \pt(x).
+\label{eq:H-def}
+\end{equation}
+We now compute its entries explicitly.
+
+\paragraph{The $(1,1)$ entry.}
+Differentiate \eqref{eq:score-x1-final} with respect to $x_1$:
+\begin{align}
+\partial_{x_1 x_1} \log \pt
+&=
+\partial_{x_1}\left(\frac{I_1}{I_0}\right)
+\notag\\
+&=
+\frac{(\partial_{x_1} I_1) I_0 - I_1 (\partial_{x_1} I_0)}{I_0^2}
+\notag\\
+&=
+\frac{I_2 I_0 - I_1^2}{I_0^2}.
+\label{eq:L11}
+\end{align}
+Therefore
+\begin{equation}
+(\Ht(x))_{11}
+=
+-\partial_{x_1 x_1} \log \pt(x)
+=
+\frac{I_1^2 - I_0 I_2}{I_0^2}.
+\label{eq:H11-final}
+\end{equation}
+
+\paragraph{The mixed entry.}
+Differentiate \eqref{eq:score-x1-final} with respect to $x_0$ and use \eqref{eq:Ir-x0-rule} twice:
+\begin{align}
+\partial_{x_0 x_1} \log \pt
+&=
+\partial_{x_0}\left(\frac{I_1}{I_0}\right)
+\notag\\
+&=
+\frac{(\partial_{x_0} I_1) I_0 - I_1 (\partial_{x_0} I_0)}{I_0^2}
+\notag\\
+&=
+\frac{\bigl(-c_t m_t' I_2\bigr) I_0 - I_1 \bigl(-c_t m_t' I_1\bigr)}{I_0^2}
+\notag\\
+&=
+-c_t m_t'(x_0) \frac{I_2 I_0 - I_1^2}{I_0^2}
+\notag\\
+&=
+ c_t m_t'(x_0) (\Ht(x))_{11}.
+\label{eq:L01}
+\end{align}
+Therefore
+\begin{equation}
+(\Ht(x))_{01}
+=
+-\partial_{x_0 x_1} \log \pt(x)
+=
+-c_t m_t'(x_0) (\Ht(x))_{11}.
+\label{eq:H01-final}
+\end{equation}
+
+\paragraph{The $(0,0)$ entry.}
+Differentiate \eqref{eq:score-x0-final} with respect to $x_0$:
+\begin{align}
+\partial_{x_0 x_0} \log \pt
+&=
+-\frac{1}{v_x}
+-c_t m_t'(x_0) \partial_{x_0}\left(\frac{I_1}{I_0}\right)
+\label{eq:L00-step1}
+\end{align}
+because $m_t'(x_0)$ is constant in $x_0$. Using \eqref{eq:L01},
+\[
+\partial_{x_0}\left(\frac{I_1}{I_0}\right) = c_t m_t'(x_0) (\Ht(x))_{11}.
+\]
+Substitute into \eqref{eq:L00-step1}:
+\begin{equation}
+\partial_{x_0 x_0} \log \pt
+=
+-\frac{1}{v_x} - c_t^2 \bigl(m_t'(x_0)\bigr)^2 (\Ht(x))_{11}.
+\label{eq:L00-final}
+\end{equation}
+Therefore
+\begin{equation}
+(\Ht(x))_{00}
+=
+\frac{1}{v_x} + c_t^2 \bigl(m_t'(x_0)\bigr)^2 (\Ht(x))_{11}.
+\label{eq:H00-final}
+\end{equation}
+This completes the derivation of the exact curvature matrix.
+
+\subsection{Why constant Hessian would force Gaussianity}
+
+The next statement is the clean logical bridge from the formulas above to the presentation claim.
+
+\begin{proposition}
+Let $p$ be a strictly positive $C^2$ density on $\R^n$. If $-\nabla^2 \log p(x) \equiv H$ is constant, then $p$ is Gaussian.
+\end{proposition}
+
+\begin{proof}
+If $-\nabla^2 \log p(x) \equiv H$, then
+\[
+\nabla^2 \log p(x) = -H
+\qquad \text{for all } x.
+\]
+Integrating once, there exists a vector $b\in\R^n$ such that
+\[
+\nabla \log p(x) = -H x + b.
+\]
+Now integrate along the straight segment $s \mapsto s x$ from $0$ to $x$:
+\begin{align}
+\log p(x) - \log p(0)
+&=
+\int_0^1 \frac{d}{ds} \log p(sx)\, ds
+\notag\\
+&=
+\int_0^1 \langle \nabla \log p(sx), x \rangle \, ds
+\notag\\
+&=
+\int_0^1 \langle -H(sx)+b, x \rangle \, ds
+\notag\\
+&=
+-\int_0^1 s \, x^\top H x \, ds + \int_0^1 b^\top x \, ds
+\notag\\
+&=
+-\frac12 x^\top H x + b^\top x.
+\label{eq:gaussianity-proof}
+\end{align}
+Hence
+\[
+p(x) = C \exp\!\left(-\frac12 x^\top H x + b^\top x\right)
+\]
+for some constant $C>0$. Completing the square shows that this is a Gaussian density.\qedhere
+\end{proof}
+
+Apply the proposition to $p=\pt$. Since the characteristic function in \eqref{eq:cf-final} is not Gaussian for finite $t$, the Hessian cannot be constant. Therefore the exact formulas \eqref{eq:H11-final}--\eqref{eq:H00-final} are not merely decorative: they encode a genuinely non-Gaussian effect.
+
+\section[What can be stated exactly for K=2]{What can be stated exactly for $K=2$}
+\label{sec:k2-statement}
+
+Let
+\[
+A_0 \sim \mathcal N(\mu_0,\sigma_0^2),
+\qquad
+A_1 = \alpha A_0 + \varepsilon_1,
+\qquad
+A_2 = \alpha A_1 + \varepsilon_2,
+\]
+with $\varepsilon_1,\varepsilon_2 \stackrel{\mathrm{iid}}{\sim} \mathrm{Laplace}(0,b)$, followed by the same OU noising on each coordinate. Then the exact noisy density is
+\begin{align}
+\pt(x_0,x_1,x_2)
+&=
+\int_{\R} \phi_{\sigma_0^2}(a_0-\mu_0) \phi_{\Dt}(x_0-e^{-t}a_0)
+\; J_t(a_0;x_1,x_2)\, da_0,
+\label{eq:k2-outer}
+\end{align}
+where
+\begin{align}
+J_t(a_0;x_1,x_2)
+&=
+\int_{\R} \frac{e^{-|a_1-\alpha a_0|/b}}{2b}
+\, \phi_{\Dt}(x_1-e^{-t}a_1)
+\, h(x_2-e^{-t}\alpha a_1;\beta_t,\Dt)
+\, da_1.
+\label{eq:k2-inner}
+\end{align}
+Formulas \eqref{eq:k2-outer}--\eqref{eq:k2-inner} are exact. However, this is still a nested two-layer integral representation. The current project does \emph{not} claim an elementary closed form comparable to the $K=1$ formula \eqref{eq:pt-exact}. That stronger claim would require additional work.
+
+\section{Numerical realization used in the figures}
+\label{sec:numerics}
+
+The final figures do not use Monte Carlo. They evaluate the exact formulas above by Gauss-Hermite quadrature.
+
+If $A\sim\mathcal N(m,v)$ and $f$ is integrable, then
+\begin{align}
+\E[f(A)]
+&=
+\int_{\R} f(a) \frac{1}{\sqrt{2\pi v}} e^{-(a-m)^2/(2v)} da.
+\label{eq:gh-start}
+\end{align}
+Set
+\[
+a = m + \sqrt{2v}\, z,
+\qquad da = \sqrt{2v} \, dz.
+\]
+Then
+\begin{align}
+\E[f(A)]
+&=
+\int_{\R} f(m+\sqrt{2v}z) \frac{1}{\sqrt{2\pi v}} e^{-z^2} \sqrt{2v} \, dz
+\notag\\
+&=
+\frac{1}{\sqrt{\pi}} \int_{\R} f(m+\sqrt{2v}z) e^{-z^2} dz.
+\label{eq:gh-transform}
+\end{align}
+If $(z_i,w_i)_{i=1}^M$ are Hermite nodes and weights for $\int e^{-z^2} g(z) dz$, then
+\begin{equation}
+\E[f(A)] \approx \frac{1}{\sqrt{\pi}} \sum_{i=1}^M w_i f(m+\sqrt{2v}z_i).
+\label{eq:gh-quadrature}
+\end{equation}
+This is exactly the formula used in the code to compute $I_0$, $I_1$, and $I_2$.
+
+The code also includes independent checks:
+\begin{enumerate}[leftmargin=1.45em,itemsep=0.25em]
+\item direct inversion checks for the Gaussian finite-chain precision and for the deterministic control;
+\item a direct convolution integral confirming the corrected normal-Laplace formula;
+\item an independent double integral confirming the $K=1$ reduction formula;
+\item finite-difference checks confirming the exact score and Hessian formulas.
+\end{enumerate}
+The script \texttt{code/run\_checks.py} writes the resulting errors to \texttt{code/check\_report.txt}.
+
+\section{Audit summary}
+
+The final short note keeps only the claims that are either exact or clearly marked.
+\begin{enumerate}[leftmargin=1.45em,itemsep=0.28em]
+\item \textbf{Kept exactly:}
+\begin{itemize}[leftmargin=1.2em]
+\item the Gaussian OU identities $\Sigma_t=e^{-2t}\Sigma_0+\Dt I$ and $Q_t=\Sigma_t^{-1}$;
+\item the small-time expansion $Q_t=e^{2t}\sum_{m\ge 0}(-c_t)^m Q_0^{m+1}$ under the convergence condition $c_t\|Q_0\|<1$;
+\item the large-time expansion $Q_t=I-e^{-2t}(\Sigma_0-I)+O(e^{-4t})$;
+\item the deterministic-control inverse formula \eqref{eq:det-precision};
+\item the exact Laplace $K=1$ characteristic function, density reduction, score, and effective-precision formulas.
+\end{itemize}
+\item \textbf{Removed or weakened:}
+\begin{itemize}[leftmargin=1.2em]
+\item the inaccurate boundary form of the finite-chain Gaussian precision;
+\item the claim that the original locality observables ``fully characterize locality'';
+\item the interpretation that deterministic dense precision and stochastic Markov fill-in are the same mechanism;
+\item the old $K=2$ elementary closed-form claim.
+\end{itemize}
+\item \textbf{Main message now supported rigorously:}
+\[
+\begin{aligned}
+\text{Gaussian benchmark} &\Longrightarrow -\nabla^2 \log p_t \equiv Q_t,\\
+\text{Laplace benchmark} &\Longrightarrow -\nabla^2 \log p_t(x) = \Ht(x) \text{ depends on } x.
+\end{aligned}
+\]
+This is the central statement that the final short presentation is built to communicate.
+\end{enumerate}
+
+\end{document}

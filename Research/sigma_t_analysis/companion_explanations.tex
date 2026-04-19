@@ -1,0 +1,1127 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{observation}[theorem]{Observation}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Dt}{\Delta_t}
+\newcommand{\sigeta}{\sigma_\eta^2}
+\newcommand{\sigzero}{\sigma_0^2}
+\newcommand{\siginf}{\sigma_\infty^2}
+\newcommand{\ie}{\textit{i.e.}}
+
+\newtcolorbox{keybox}[1][]{%
+  colback=blue!5!white, colframe=blue!60!black,
+  fonttitle=\bfseries, title={#1}, sharp corners, boxrule=0.6pt}
+
+\newtcolorbox{intuitionbox}[1][]{%
+  colback=green!5!white, colframe=green!50!black,
+  fonttitle=\bfseries, title={#1}, sharp corners, boxrule=0.6pt}
+
+\newtcolorbox{warningbox}[1][]{%
+  colback=red!5!white, colframe=red!50!black,
+  fonttitle=\bfseries, title={#1}, sharp corners, boxrule=0.6pt}
+
+\title{\bfseries Mathematical Companion:\\[4pt]
+Deep-Dive Explanations for the $\Sigma_t$ Analysis\\[6pt]
+\large 30 Questions Answered in Full Detail}
+\author{Giovanni Mantovani \& Marco Lomel\'e\\[2pt]
+\small MSc Thesis, Bocconi University, 2025--2026\\
+\small Supervisors: Prof.\ Marc M\'ezard \quad Tutor: J\'er\^ome Garnier-Brun}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ======================================================================
+% Q1
+% ======================================================================
+\section{Why is $|\alpha| < 1$?}
+\label{sec:q1}
+
+\subsection{The formal reason: stability}
+
+The AR(1) recursion $a_{k+1} = \alpha a_k + \eta_k$ is a \emph{linear dynamical system} with driving noise.  If we unroll it:
+\begin{equation}\label{eq:unroll}
+  a_k = \alpha^k a_0 + \sum_{j=0}^{k-1} \alpha^{k-1-j}\,\eta_j.
+\end{equation}
+The variance of $a_k$ is:
+\begin{equation}
+  \Var(a_k) = \alpha^{2k}\sigzero + \sigeta \sum_{j=0}^{k-1}\alpha^{2j} = \alpha^{2k}\sigzero + \sigeta\,\frac{1 - \alpha^{2k}}{1 - \alpha^2}.
+\end{equation}
+Three regimes:
+\begin{itemize}[nosep]
+  \item $|\alpha| < 1$: the geometric series converges.  As $k \to \infty$, $\alpha^{2k} \to 0$ and $\Var(a_k) \to \sigeta/(1-\alpha^2) = \siginf < \infty$.  The chain is \textbf{stable}: it settles into a stationary distribution $\mathcal{N}(0, \siginf)$.
+  \item $|\alpha| = 1$: random walk.  $\Var(a_k) = \sigzero + k\,\sigeta \to \infty$.  The chain \textbf{drifts away} without bound.  No stationary distribution exists.
+  \item $|\alpha| > 1$: the variance grows exponentially as $\alpha^{2k}$.  The chain \textbf{explodes}.
+\end{itemize}
+
+\subsection{The intuitive reason: contraction}
+
+Think of $\alpha$ as a \emph{spring constant} pulling the chain toward zero.  Each step, the chain does two things:
+\begin{enumerate}[nosep]
+  \item \textbf{Contract} the current value by $\alpha$ (shrink toward 0),
+  \item \textbf{Perturb} by a random kick $\eta_k$.
+\end{enumerate}
+If $|\alpha| < 1$, the contraction wins on average: the system has a ``home base'' at zero and the random kicks cannot push it away permanently.  If $|\alpha| \geq 1$, the chain either fails to pull back or actively amplifies, and the fluctuations accumulate without bound.
+
+\subsection{Why it matters for our model}
+
+We need $|\alpha| < 1$ so that:
+\begin{enumerate}[nosep]
+  \item The covariance matrix $\Sigma_0$ is well-defined and positive definite.
+  \item The joint density $P_0(\mathbf{a})$ is a proper (normalisable) Gaussian.
+  \item The stationary regime $\sigzero = \siginf$ exists and is meaningful.
+\end{enumerate}
+
+\begin{example}
+With $\alpha = 0.9$: starting from $a_0 = 10$, the means are $m_k = (0.9)^k \cdot 10$. After 20 steps, $m_{20} = (0.9)^{20} \cdot 10 \approx 1.22$.  After 50 steps, $m_{50} \approx 0.05$.  The chain ``forgets'' its initial condition exponentially fast.  The time scale of forgetting is the \emph{correlation length} $\xi = -1/\ln|\alpha|$.  For $\alpha = 0.9$, $\xi \approx 9.5$ steps.
+\end{example}
+
+
+% ======================================================================
+% Q2
+% ======================================================================
+\section{Why do we work in the stationary regime?}
+\label{sec:q2}
+
+\subsection{What is stationarity?}
+
+\begin{definition}[Stationary AR(1)]
+The AR(1) chain is \emph{stationary} if the marginal distribution of $a_k$ is the same for all $k$.  For the Gaussian AR(1), this requires:
+\begin{equation}
+  \sigzero = \siginf = \frac{\sigeta}{1-\alpha^2}.
+\end{equation}
+\end{definition}
+
+In the stationary regime, $\Var(a_k) = \siginf$ for all $k$, and $\Cov(a_j, a_k) = \siginf\,\alpha^{|j-k|}$---a function of the \textbf{lag} $|j-k|$ only, not of the absolute position.
+
+\subsection{Why it simplifies}
+
+In the stationary case:
+\begin{itemize}[nosep]
+  \item $\Sigma_0$ becomes a \textbf{symmetric Toeplitz matrix} (constant along each diagonal---see Q3).
+  \item $\Sigma_0^{-1}$ has constant interior entries: all diagonal entries are $(1+\alpha^2)/\sigeta$ (except the corners) and all off-diagonal entries are $-\alpha/\sigeta$.  This uniformity makes the spectral analysis much cleaner.
+  \item The eigenvalues and eigenvectors have explicit (approximate) formulas related to Fourier modes.
+\end{itemize}
+
+\subsection{What if $\sigzero \neq \siginf$?}
+
+If the chain starts out of stationarity (say $\sigzero < \siginf$), then:
+\begin{enumerate}[nosep]
+  \item $\Var(a_k)$ grows from $\sigzero$ toward $\siginf$ as $k$ increases.  The chain is non-stationary at the beginning and approximately stationary in the middle.
+  \item The covariance $\Cov(a_j, a_k) = \alpha^{|j-k|}\sigma^2_{\min(j,k)}$ depends on \emph{both} the lag $|j-k|$ and the position $\min(j,k)$.  The matrix $\Sigma_0$ is no longer Toeplitz.
+  \item The precision matrix $\Sigma_0^{-1}$ is still tridiagonal (Markovianity is unaffected), but the $(0,0)$ entry $1/\sigzero + \alpha^2/\sigeta$ differs from the interior entries $(1+\alpha^2)/\sigeta$.  This is the ``boundary correction.''
+  \item The eigenvalues and eigenvectors of $\Sigma_0$ no longer have clean Fourier-like formulas.
+\end{enumerate}
+
+\begin{intuitionbox}[Bottom line]
+Stationarity is a convenience, not a necessity.  The core results (score linearity, spectral decoupling, tridiagonal structure of $\Sigma_0^{-1}$) hold regardless.  But stationarity gives us Toeplitz structure, which unlocks explicit spectral formulas and makes the numerics easier to interpret.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q3
+% ======================================================================
+\section{What is a Toeplitz matrix?}
+\label{sec:q3}
+
+\begin{definition}[Toeplitz matrix]
+A matrix $T \in \R^{n \times n}$ is \emph{Toeplitz} if its entries are constant along each diagonal:
+\begin{equation}
+  T_{jk} = t_{j-k}, \qquad \text{for some sequence } t_{-(n-1)}, \dots, t_0, \dots, t_{n-1}.
+\end{equation}
+Equivalently, $T_{jk}$ depends only on the difference $j - k$, not on $j$ and $k$ individually.
+\end{definition}
+
+\begin{example}[A $4 \times 4$ Toeplitz matrix]
+\begin{equation}
+T = \begin{pmatrix}
+t_0 & t_{-1} & t_{-2} & t_{-3} \\
+t_1 & t_0 & t_{-1} & t_{-2} \\
+t_2 & t_1 & t_0 & t_{-1} \\
+t_3 & t_2 & t_1 & t_0
+\end{pmatrix}.
+\end{equation}
+If $T$ is also symmetric ($t_{-k} = t_k$), it becomes:
+\begin{equation}
+T = \begin{pmatrix}
+t_0 & t_1 & t_2 & t_3 \\
+t_1 & t_0 & t_1 & t_2 \\
+t_2 & t_1 & t_0 & t_1 \\
+t_3 & t_2 & t_1 & t_0
+\end{pmatrix}.
+\end{equation}
+\end{example}
+
+Our stationary $\Sigma_0$ is symmetric Toeplitz with $t_k = \siginf \alpha^{|k|}$.
+
+\begin{intuitionbox}[Why Toeplitz matters]
+Toeplitz structure means \textbf{translation invariance}: the relationship between positions $j$ and $k$ depends only on how far apart they are, not where they are.  This is the matrix analogue of a time-invariant system.  It is intimately connected to Fourier analysis: symmetric Toeplitz matrices are approximately diagonalised by the discrete Fourier transform (exactly so for circulant matrices---see Q16).
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q4
+% ======================================================================
+\section{Why is the matrix symmetric?}
+\label{sec:q4}
+
+A covariance matrix $\Sigma$ with entries $\Sigma_{jk} = \Cov(a_j, a_k)$ is \emph{always} symmetric because covariance is symmetric:
+\begin{equation}
+  \Cov(a_j, a_k) = \E[(a_j - \mu_j)(a_k - \mu_k)] = \E[(a_k - \mu_k)(a_j - \mu_j)] = \Cov(a_k, a_j).
+\end{equation}
+The product $(a_j - \mu_j)(a_k - \mu_k)$ is a scalar, and multiplication of real numbers is commutative.  Hence $\Sigma_{jk} = \Sigma_{kj}$, which is the definition of a symmetric matrix: $\Sigma = \Sigma^\top$.
+
+Moreover, any covariance matrix is \emph{positive semi-definite}: for any vector $\mathbf{v}$,
+\begin{equation}
+  \mathbf{v}^\top \Sigma \mathbf{v} = \Var\!\Bigl(\sum_k v_k a_k\Bigr) \geq 0.
+\end{equation}
+It is strictly positive definite (all eigenvalues $> 0$) if no non-trivial linear combination of the $a_k$'s is deterministic.
+
+
+% ======================================================================
+% Q5
+% ======================================================================
+\section{What are boundary corrections?}
+\label{sec:q5}
+
+In the non-stationary AR(1), the precision matrix $\Sigma_0^{-1}$ has entries:
+\begin{equation}
+  (\Sigma_0^{-1})_{00} = \frac{1}{\sigzero} + \frac{\alpha^2}{\sigeta}, \qquad
+  (\Sigma_0^{-1})_{kk} = \frac{1+\alpha^2}{\sigeta}\; (1 \leq k \leq K-1), \qquad
+  (\Sigma_0^{-1})_{KK} = \frac{1}{\sigeta}.
+\end{equation}
+
+The ``interior'' entries $(1+\alpha^2)/\sigeta$ arise because an interior frame $a_k$ appears in \emph{two} transition terms: $(a_k - \alpha a_{k-1})^2/\sigeta$ (transition \emph{into} $k$) and $(a_{k+1} - \alpha a_k)^2/\sigeta$ (transition \emph{out of} $k$).
+
+The ``boundary corrections'' are:
+\begin{itemize}[nosep]
+  \item \textbf{At $k = 0$}: the first frame $a_0$ appears in the initial distribution $(a_0 - \mu_0)^2/\sigzero$ \emph{and} in the first transition $\alpha^2 a_0^2/\sigeta$.  If $\sigzero \neq \sigeta/(1+\alpha^2 - 1) = \sigeta/(1-\alpha^2) \cdot (1-\alpha^2)/(1+\alpha^2)$\ldots well, more simply: in the stationary case $1/\sigzero = (1-\alpha^2)/\sigeta$, so $1/\sigzero + \alpha^2/\sigeta = (1-\alpha^2+\alpha^2)/\sigeta = 1/\sigeta \cdot (1+\alpha^2 - \alpha^2 + \alpha^2)$---let's just say it works out to $(1+\alpha^2)/\sigeta$ in the stationary case.  Out of stationarity, $1/\sigzero + \alpha^2/\sigeta$ is different.
+  \item \textbf{At $k = K$}: the last frame $a_K$ appears only in the \emph{last} transition $(a_K - \alpha a_{K-1})^2/\sigeta$, contributing $a_K^2/\sigeta$ and nothing else (no transition \emph{out} of $K$ exists).  So $(\Sigma_0^{-1})_{KK} = 1/\sigeta$ instead of $(1+\alpha^2)/\sigeta$.
+\end{itemize}
+
+\begin{intuitionbox}[Analogy: a chain of springs]
+Imagine $K+1$ beads connected by springs on a rail.  Interior beads are pulled by springs on both sides.  The first bead is additionally anchored to a wall (the prior $p_0(a_0)$).  The last bead has a spring only on its left side---there is nothing to its right.  The ``boundary correction'' is the fact that the first and last beads feel different total forces than the interior ones.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q6
+% ======================================================================
+\section{The $(K,K)$ asymmetry and interpreting $\Sigma_0^{-1}$}
+\label{sec:q6}
+
+\subsection{Why $(\Sigma_0^{-1})_{KK} = 1/\sigeta$ instead of $(1+\alpha^2)/\sigeta$}
+
+In the log-density $\log P_0(\mathbf{a})$, expand all the squared terms:
+\begin{equation}
+  -\frac{(a_0 - \mu_0)^2}{2\sigzero} - \sum_{k=0}^{K-1}\frac{(a_{k+1} - \alpha a_k)^2}{2\sigeta}.
+\end{equation}
+Focus on $a_K$.  It appears only in the \emph{last} term of the sum (when $k = K-1$):
+\begin{equation}
+  -\frac{(a_K - \alpha a_{K-1})^2}{2\sigeta} = -\frac{a_K^2}{2\sigeta} + \frac{\alpha\, a_K a_{K-1}}{\sigeta} - \frac{\alpha^2 a_{K-1}^2}{2\sigeta}.
+\end{equation}
+The coefficient of $a_K^2$ is $1/(2\sigeta)$, which gives $(\Sigma_0^{-1})_{KK} = 1/\sigeta$.
+
+Now compare with an interior frame $a_k$ ($1 \leq k \leq K-1$).  It appears in \emph{two} terms of the sum: $k-1$ and $k$.  From term $k-1$: $a_k^2/\sigeta$ (from expanding $(a_k - \alpha a_{k-1})^2$).  From term $k$: $\alpha^2 a_k^2/\sigeta$ (from expanding $(a_{k+1} - \alpha a_k)^2$).  Total coefficient of $a_k^2$: $(1+\alpha^2)/(2\sigeta)$, giving $(\Sigma_0^{-1})_{kk} = (1+\alpha^2)/\sigeta$.
+
+\subsection{How to read $\Sigma_0^{-1}$: the conditional distribution}
+
+\begin{proposition}[Reading $\Sigma_0^{-1}$]
+For a Gaussian $\mathbf{a} \sim \mathcal{N}(\bm{\mu}, \Sigma)$, the conditional distribution of $a_k$ given all other components $\mathbf{a}_{\setminus k}$ is:
+\begin{equation}\label{eq:conditional-from-precision}
+  a_k \mid \mathbf{a}_{\setminus k} \;\sim\; \mathcal{N}\!\left(\mu_k - \frac{1}{(\Sigma^{-1})_{kk}}\sum_{j \neq k} (\Sigma^{-1})_{kj}(a_j - \mu_j),\;\; \frac{1}{(\Sigma^{-1})_{kk}}\right).
+\end{equation}
+\end{proposition}
+
+This means:
+\begin{itemize}[nosep]
+  \item \textbf{Diagonal entry} $(\Sigma^{-1})_{kk}$: the \emph{conditional precision} (inverse conditional variance) of $a_k$ given everything else.  Larger diagonal $\Rightarrow$ $a_k$ is more tightly constrained.
+  \item \textbf{Off-diagonal entry} $(\Sigma^{-1})_{kj}$: if non-zero, $a_j$ \emph{directly influences} the conditional mean of $a_k$.  If zero, $a_j$ provides no additional information about $a_k$ beyond what the other variables already tell you.
+\end{itemize}
+
+\begin{example}[Interior frame $a_5$ with $K = 10$, $\alpha = 0.9$]
+Using \eqref{eq:conditional-from-precision} and the tridiagonal precision:
+\begin{align}
+  \E[a_5 \mid \mathbf{a}_{\setminus 5}] &= \mu_5 + \frac{\alpha/\sigeta}{(1+\alpha^2)/\sigeta}\,(a_4 - \mu_4) + \frac{\alpha/\sigeta}{(1+\alpha^2)/\sigeta}\,(a_6 - \mu_6) \\
+  &= \mu_5 + \frac{\alpha}{1+\alpha^2}\,(a_4 - \mu_4 + a_6 - \mu_6).
+\end{align}
+For $\alpha = 0.9$: $\alpha/(1+\alpha^2) = 0.9/1.81 \approx 0.497$.  So the best prediction of $a_5$ given everything else is a weighted average of its neighbours $a_4$ and $a_6$, each with weight $\approx 0.5$.  No other frame contributes---$a_3, a_7, \dots$ are irrelevant once $a_4$ and $a_6$ are known.
+
+Now the last frame $a_K$:
+\begin{equation}
+  \E[a_K \mid \mathbf{a}_{\setminus K}] = \mu_K + \frac{\alpha/\sigeta}{1/\sigeta}(a_{K-1} - \mu_{K-1}) = \mu_K + \alpha(a_{K-1} - \mu_{K-1}).
+\end{equation}
+The last frame is predicted from $a_{K-1}$ alone, with coefficient $\alpha = 0.9$.  Its conditional variance is $\sigeta$ (larger than the interior conditional variance $\sigeta/(1+\alpha^2) \approx 0.105$).  The last frame is \emph{less constrained} because there is no ``future'' frame to anchor it from the right.
+\end{example}
+
+
+% ======================================================================
+% Q7
+% ======================================================================
+\section{The role of diagonals in matrices and the meaning of decoupling}
+\label{sec:q7}
+
+\subsection{What are diagonals?}
+
+A matrix $A \in \R^{n \times n}$ has $2n - 1$ diagonals.  The $d$-th diagonal (for $d = -(n-1), \dots, 0, \dots, n-1$) consists of all entries $A_{j,j+d}$ where both $j$ and $j+d$ are valid indices.
+\begin{itemize}[nosep]
+  \item $d = 0$: the \textbf{main diagonal}, entries $A_{00}, A_{11}, \dots, A_{nn}$.
+  \item $d = 1$: the first \textbf{super-diagonal}, entries $A_{01}, A_{12}, \dots$
+  \item $d = -1$: the first \textbf{sub-diagonal}, entries $A_{10}, A_{21}, \dots$
+\end{itemize}
+
+\subsection{Diagonal matrices and decoupling}
+
+\begin{definition}[Diagonal matrix]
+$D = \diag(d_0, d_1, \dots, d_n)$ has $D_{jk} = 0$ for $j \neq k$ and $D_{jj} = d_j$.
+\end{definition}
+
+\textbf{Why diagonal $=$ decoupled:}  Consider the system $\mathbf{y} = D\mathbf{x}$.  Since $D$ is diagonal:
+\begin{equation}
+  y_j = d_j\,x_j \qquad \text{(no sum over other indices)}.
+\end{equation}
+Each output $y_j$ depends only on the corresponding input $x_j$.  The $n$-dimensional problem splits into $n$ independent 1-dimensional problems.
+
+In the covariance context: if $\Sigma = \diag(d_0, \dots, d_K)$, the Gaussian $\mathcal{N}(\bm{\mu}, \Sigma)$ factorises as:
+\begin{equation}
+  p(\mathbf{x}) = \prod_{k=0}^{K} \frac{1}{\sqrt{2\pi d_k}}\exp\!\left(-\frac{(x_k - \mu_k)^2}{2d_k}\right).
+\end{equation}
+The components are \textbf{statistically independent}.  This is the deepest connection: \emph{a diagonal covariance (or precision) matrix is the algebraic encoding of independence}.
+
+\subsection{Tridiagonal and banded matrices}
+
+A \textbf{tridiagonal} matrix has non-zero entries only on the main diagonal and the two adjacent diagonals.  This means each variable couples to \emph{at most} its two nearest neighbours---a ``local'' coupling, the algebraic encoding of Markovianity (cf.\ Remark~\ref{rem:tridiag-origin} in the main document).
+
+A \textbf{banded} matrix with bandwidth $b$ has $A_{jk} = 0$ for $|j-k| > b$.  Tridiagonal corresponds to $b = 1$; diagonal to $b = 0$.
+
+\subsection{Diagonals in matrix operations}
+
+\begin{itemize}[nosep]
+  \item \textbf{Trace}: $\tr(A) = \sum_j A_{jj}$ sums only the main diagonal.  
+  \item \textbf{Determinant}: for diagonal $D$, $\det(D) = \prod_j d_j$.  For triangular matrices, also the product of diagonal entries.
+  \item \textbf{Matrix-vector product}: $(\mathbf{y})_j = \sum_k A_{jk} x_k$.  If $A$ is banded with bandwidth $b$, only the entries $x_{j-b}, \dots, x_{j+b}$ contribute.  This makes banded matrix-vector products $O(nb)$ instead of $O(n^2)$.
+  \item \textbf{Matrix inversion}: critically, the inverse of a banded matrix is \emph{not} generally banded (see Q10).  Inversion ``fills in'' the zeros.
+\end{itemize}
+
+
+% ======================================================================
+% Q8
+% ======================================================================
+\section{Commutativity and the zoo of products}
+\label{sec:q8}
+
+\subsection{Commutativity}
+
+Two matrices $A$ and $B$ \emph{commute} if $AB = BA$.  In general, matrix multiplication is \textbf{not commutative}: $AB \neq BA$.
+
+\begin{example}
+$A = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}$, $B = \begin{pmatrix} 1 & 0 \\ 1 & 1 \end{pmatrix}$.  Then $AB = \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix}$ but $BA = \begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix}$.  Different!
+\end{example}
+
+\textbf{When do matrices commute?}
+\begin{itemize}[nosep]
+  \item $A$ and $B$ are simultaneously diagonalisable (they share the same eigenvectors).
+  \item $B$ is a polynomial in $A$: if $B = c_0 I + c_1 A + c_2 A^2 + \cdots$, then $AB = BA$.
+  \item Either $A$ or $B$ is a scalar multiple of the identity.
+\end{itemize}
+
+In our document, we used the fact that $B = e^{-2t}I + \Dt\Sigma_0^{-1}$ is a degree-1 polynomial in $\Sigma_0^{-1}$, so $B$ commutes with $\Sigma_0^{-1}$ (and hence $B^{-1}$ commutes with $\Sigma_0^{-1}$).
+
+\subsection{Left vs.\ right multiplication}
+
+Given $A \in \R^{m \times n}$ and $B \in \R^{n \times p}$:
+\begin{itemize}[nosep]
+  \item \textbf{Left multiplication} by $A$: $C = AB$, with $C_{ij} = \sum_k A_{ik}B_{kj}$.  Each row of $C$ is a linear combination of the rows of $B$, with coefficients from the rows of $A$.
+  \item \textbf{Right multiplication} by $B$: same product $C = AB$, but now each column of $C$ is a linear combination of the columns of $A$, with coefficients from the columns of $B$.
+\end{itemize}
+
+\textbf{Conceptually}: left multiplication transforms rows; right multiplication transforms columns.
+
+\subsection{The product zoo}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lp{4cm}p{5.5cm}@{}}
+\toprule
+\textbf{Product} & \textbf{Operands $\to$ Result} & \textbf{Definition} \\
+\midrule
+\textbf{Dot product} & $\mathbf{u}, \mathbf{v} \in \R^n \to$ scalar & $\mathbf{u} \cdot \mathbf{v} = \sum_i u_i v_i$ \\
+\textbf{Inner product} & $\mathbf{u}, \mathbf{v} \in V \to$ scalar & General: $\langle \mathbf{u}, \mathbf{v} \rangle$ satisfying linearity, symmetry, positivity.  Dot product is the standard inner product on $\R^n$. \\
+\textbf{Matrix product} & $A \in \R^{m \times n}$, $B \in \R^{n \times p} \to \R^{m \times p}$ & $(AB)_{ij} = \sum_k A_{ik}B_{kj}$ \\
+\textbf{Outer product} & $\mathbf{u} \in \R^m$, $\mathbf{v} \in \R^n \to \R^{m \times n}$ & $(\mathbf{u}\mathbf{v}^\top)_{ij} = u_i v_j$.  A rank-1 matrix. \\
+\textbf{Tensor product} (Kronecker) & $A \in \R^{m \times n}$, $B \in \R^{p \times q} \to \R^{mp \times nq}$ & $A \otimes B$: replace each $A_{ij}$ with the block $A_{ij}B$.  \\
+\textbf{Hadamard product} & $A, B \in \R^{m \times n} \to \R^{m \times n}$ & $(A \circ B)_{ij} = A_{ij} B_{ij}$.  Entry-wise. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{intuitionbox}[Key conceptual distinctions]
+\begin{itemize}[nosep]
+  \item \textbf{Inner product} measures \emph{similarity} (projects one vector onto another).
+  \item \textbf{Outer product} builds a \emph{relationship matrix} between two vectors (every entry of one paired with every entry of the other).
+  \item \textbf{Matrix product} composes \emph{linear transformations}: if $A$ rotates and $B$ scales, then $AB$ does both.
+  \item \textbf{Tensor product} creates a \emph{joint space}: it combines two independent systems into one big system.
+\end{itemize}
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q9
+% ======================================================================
+\section{How does matrix inversion work?}
+\label{sec:q9}
+
+\subsection{What is the inverse?}
+
+\begin{definition}
+Given a square matrix $A \in \R^{n \times n}$, the \emph{inverse} $A^{-1}$ is the unique matrix such that $A\,A^{-1} = A^{-1}A = I$.  It exists if and only if $\det(A) \neq 0$ (equivalently, all eigenvalues are non-zero).
+\end{definition}
+
+\textbf{Conceptually}: if $A$ represents a linear transformation (rotation, scaling, shearing), then $A^{-1}$ is the transformation that \emph{undoes} it.  If $A$ stretches space by a factor of 3 along some axis, $A^{-1}$ compresses by $1/3$ along that axis.
+
+\subsection{Operational methods}
+
+\textbf{(a) Gaussian elimination} (the standard algorithm):  Augment $[A \mid I]$ and row-reduce to $[I \mid A^{-1}]$.  Cost: $O(n^3)$.
+
+\textbf{(b) Adjugate formula} (theoretical):
+\begin{equation}
+  (A^{-1})_{ij} = \frac{(-1)^{i+j}\,M_{ji}}{\det(A)},
+\end{equation}
+where $M_{ji}$ is the minor of $A$ obtained by deleting row $j$ and column $i$.  This shows that each entry of $A^{-1}$ involves $\det(A)$ in the denominator and a cofactor in the numerator---hence generically, every entry of $A^{-1}$ is non-zero even if $A$ is sparse.
+
+\textbf{(c) Eigendecomposition}: if $A = UDU^\top$ (symmetric), then $A^{-1} = UD^{-1}U^\top$ where $D^{-1} = \diag(1/d_1, \dots, 1/d_n)$.  Each eigenvalue is simply reciprocated; eigenvectors are unchanged.
+
+\textbf{(d) Neumann series}: if $\|B\| < 1$, then $(I - B)^{-1} = \sum_{k=0}^{\infty} B^k$ (geometric series for matrices).
+
+\subsection{Conceptual picture}
+
+Think of $A$ as defining an ellipsoid in $\R^n$ (the set $\{\mathbf{x} : \mathbf{x}^\top A^{-1} \mathbf{x} = 1\}$ for positive definite $A$).  The eigenvalues of $A$ are the \emph{squared semi-axis lengths}.  Inversion reciprocates these: long axes become short, short become long.  The \emph{orientation} (eigenvectors) is preserved.
+
+This is why inversion of a covariance matrix ``flips'' the geometry: directions of large variance (long axes of the covariance ellipsoid) become directions of large precision (tight constraint), and vice versa.
+
+
+% ======================================================================
+% Q10
+% ======================================================================
+\section{Why is the product of a full and a tridiagonal matrix generally full?}
+\label{sec:q10}
+
+Consider $C = F \cdot T$ where $F$ is a full (dense) $n \times n$ matrix and $T$ is tridiagonal.  The entry $C_{ij} = \sum_k F_{ik}\,T_{kj}$.  Since $T$ is tridiagonal, $T_{kj} = 0$ unless $|k - j| \leq 1$, so:
+\begin{equation}
+  C_{ij} = F_{i,j-1}\,T_{j-1,j} + F_{i,j}\,T_{j,j} + F_{i,j+1}\,T_{j+1,j}.
+\end{equation}
+This is a linear combination of three entries $F_{i,j-1}$, $F_{i,j}$, $F_{i,j+1}$ of the full matrix.  Since $F$ is full (generically all entries non-zero), this sum is generically non-zero \emph{for all} $i, j$.  Hence $C$ is generically full.
+
+\begin{intuitionbox}[Why inversion fills zeros]
+When we write $\Sigma_t^{-1} = \Sigma_0^{-1} \cdot B^{-1}$ where $\Sigma_0^{-1}$ is tridiagonal and $B^{-1}$ is full (since $B$ is tridiagonal), the product is full.  The mechanism: $B^{-1}$ ``spreads'' the information from every entry of $\Sigma_0^{-1}$ across all positions.  Each row of $B^{-1}$ mixes contributions from all columns, and the tridiagonal $\Sigma_0^{-1}$ merely selects three terms from each column---but those three terms already carry information from everywhere.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q11
+% ======================================================================
+\section{The Woodbury matrix identity}
+\label{sec:q11}
+
+\begin{theorem}[Woodbury / Sherman--Morrison--Woodbury identity]
+For invertible $A \in \R^{n \times n}$, $C \in \R^{k \times k}$, and $U \in \R^{n \times k}$, $V \in \R^{k \times n}$:
+\begin{equation}\label{eq:woodbury-general}
+  (A + UCV)^{-1} = A^{-1} - A^{-1}U\,(C^{-1} + VA^{-1}U)^{-1}\,VA^{-1}.
+\end{equation}
+\end{theorem}
+
+\textbf{Why it is useful}: it converts the inversion of a large $n \times n$ matrix $(A + UCV)$ into the inversion of a small $k \times k$ matrix $(C^{-1} + VA^{-1}U)$, provided $A^{-1}$ is already known.
+
+\textbf{Special case (Sherman--Morrison)}: when $U = \mathbf{u}$, $V = \mathbf{v}^\top$, $C = 1$ (rank-1 update):
+\begin{equation}
+  (A + \mathbf{u}\mathbf{v}^\top)^{-1} = A^{-1} - \frac{A^{-1}\mathbf{u}\,\mathbf{v}^\top A^{-1}}{1 + \mathbf{v}^\top A^{-1}\mathbf{u}}.
+\end{equation}
+
+\subsection{How we used it: series-like expansion}
+
+In our case, $\Sigma_t = \Dt I + e^{-2t}\Sigma_0$.  Setting $A = \Dt I$ (easy to invert: $A^{-1} = I/\Dt$), $U = V^\top = I$, $C = e^{-2t}\Sigma_0$:
+\begin{equation}
+  \Sigma_t^{-1} = \frac{1}{\Dt}I - \frac{e^{-2t}}{\Dt^2}\,\Sigma_0\!\left(\Sigma_0^{-1} + \frac{e^{-2t}}{\Dt}I\right)^{-1}.
+\end{equation}
+This splits into a ``base'' term $I/\Dt$ (the noise-only inverse) plus a ``correction'' that carries the signal structure.  When $e^{-2t}/\Dt$ is small (large $t$), the correction is small and $\Sigma_t^{-1} \approx I/\Dt$---decoupled.
+
+For a true series expansion, if $\gamma_t = e^{-2t}/\Dt$ is small enough that $\|\gamma_t \Sigma_0\| < 1$, we can expand $(I + \gamma_t \Sigma_0)^{-1} = \sum_{n=0}^{\infty}(-\gamma_t)^n \Sigma_0^n$ (Neumann series), giving:
+\begin{equation}
+  \Sigma_t^{-1} = \frac{1}{\Dt}\sum_{n=0}^{\infty}(-\gamma_t)^n\,\Sigma_0^n = \frac{1}{\Dt}\left(I - \gamma_t\Sigma_0 + \gamma_t^2\Sigma_0^2 - \cdots\right).
+\end{equation}
+The $n$-th term involves $\Sigma_0^n$, which has bandwidth $n$ (i.e.\ the $n$-th power of a tridiagonal matrix has entries up to $n$ diagonals away from the main diagonal, but not further).  So the Neumann series is literally a ``band-by-band'' expansion: the zeroth term is diagonal, the first adds the tridiagonal band, the second adds the pentadiagonal band, etc.
+
+
+% ======================================================================
+% Q12
+% ======================================================================
+\section{What is spectral decomposition?}
+\label{sec:q12}
+
+\subsection{What is a ``spectrum''?}
+
+The word \textbf{spectrum} comes from optics: white light decomposed into its component colours (frequencies).  In mathematics, the \emph{spectrum of a matrix} (or an operator) is the set of its eigenvalues.  Just as a light beam is a superposition of frequencies, a matrix is a ``superposition'' of its eigenmodes.
+
+\subsection{What is a ``decomposition''?}
+
+A \textbf{decomposition} is a way of writing a complex object as a combination of simpler pieces.  For matrices:
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Decomposition} & \textbf{Form} & \textbf{What the pieces are} \\
+\midrule
+Spectral (eigendecomposition) & $A = UDU^\top$ & Eigenvectors $U$, eigenvalues $D$ \\
+SVD & $A = U\Sigma V^\top$ & Left/right singular vectors, singular values \\
+Cholesky & $A = LL^\top$ & Lower triangular ``square root'' \\
+LU & $A = LU$ & Lower + upper triangular \\
+QR & $A = QR$ & Orthogonal $Q$ + upper triangular $R$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Spectral decomposition specifically}
+
+\begin{theorem}[Spectral theorem for symmetric matrices]
+Every real symmetric matrix $A \in \R^{n \times n}$ can be written as:
+\begin{equation}
+  A = U D U^\top = \sum_{m=1}^{n} d_m\,\mathbf{u}_m\,\mathbf{u}_m^\top,
+\end{equation}
+where $U = [\mathbf{u}_1 | \cdots | \mathbf{u}_n]$ is orthogonal ($U^\top U = I$), $D = \diag(d_1, \dots, d_n)$, and $d_m$ are real.
+\end{theorem}
+
+Each term $d_m\,\mathbf{u}_m\,\mathbf{u}_m^\top$ is a rank-1 matrix that ``projects onto $\mathbf{u}_m$ and scales by $d_m$.'' The full matrix $A$ is a weighted sum of these rank-1 projections.
+
+
+% ======================================================================
+% Q13
+% ======================================================================
+\section{Deep dive: eigen-analysis}
+\label{sec:q13}
+
+\subsection{Etymology}
+
+``Eigen'' is German for ``own'' or ``characteristic.''  An eigenvector of $A$ is a vector that $A$ treats as its ``own''---it only stretches the vector, without changing its direction.
+
+\subsection{Formal definitions}
+
+\begin{definition}[Eigenvalue, eigenvector]
+A scalar $\lambda \in \C$ and a non-zero vector $\mathbf{v} \in \C^n$ are an \emph{eigenvalue} and \emph{eigenvector} of $A \in \R^{n \times n}$ if:
+\begin{equation}
+  A\mathbf{v} = \lambda\,\mathbf{v}.
+\end{equation}
+The set of all eigenvalues is the \emph{spectrum} $\sigma(A) = \{\lambda_1, \dots, \lambda_n\}$.  The space spanned by all eigenvectors with eigenvalue $\lambda$ is the \emph{eigenspace} $E_\lambda = \ker(A - \lambda I)$.
+\end{definition}
+
+\begin{definition}[Eigenbasis]
+An \emph{eigenbasis} is a basis for $\R^n$ (or $\C^n$) consisting entirely of eigenvectors of $A$.  If such a basis exists, $A$ is \emph{diagonalisable}: $A = PDP^{-1}$ where $P$ has the eigenvectors as columns and $D = \diag(\lambda_1, \dots, \lambda_n)$.
+\end{definition}
+
+\begin{definition}[Eigenfunction]
+For a linear operator $\mathcal{L}$ acting on a function space (e.g.\ $\mathcal{L} = d^2/dx^2$), an \emph{eigenfunction} $f$ satisfies $\mathcal{L}f = \lambda f$.  Example: $\frac{d^2}{dx^2}e^{ikx} = -k^2\,e^{ikx}$, so $e^{ikx}$ is an eigenfunction of $d^2/dx^2$ with eigenvalue $-k^2$.  This connects to Fourier analysis (Q17).
+\end{definition}
+
+\subsection{Geometric intuition}
+
+When $A$ acts on an arbitrary vector $\mathbf{x}$, it stretches, rotates, and shears it in a complicated way.  But when $A$ acts on an eigenvector $\mathbf{v}$, the output $A\mathbf{v} = \lambda\mathbf{v}$ points in the \emph{same direction}---only the length changes (by factor $|\lambda|$; direction flips if $\lambda < 0$).
+
+The eigendecomposition $A = UDU^\top$ (for symmetric $A$) says: to compute $A\mathbf{x}$, we can:
+\begin{enumerate}[nosep]
+  \item \textbf{Rotate} to the eigenbasis: $\tilde{\mathbf{x}} = U^\top\mathbf{x}$.
+  \item \textbf{Scale} each coordinate independently: $\tilde{\mathbf{y}}_m = d_m\,\tilde{x}_m$.
+  \item \textbf{Rotate back}: $\mathbf{y} = U\tilde{\mathbf{y}}$.
+\end{enumerate}
+In the eigenbasis, $A$ is just a diagonal scaling.  All the complexity of $A$ is captured by the rotation $U$ that takes you to the ``natural'' coordinate system.
+
+\subsection{Computing eigenvalues: the characteristic polynomial}
+
+The eigenvalues satisfy $\det(A - \lambda I) = 0$.  This is a degree-$n$ polynomial in $\lambda$, called the \emph{characteristic polynomial}.  For a $2 \times 2$ matrix:
+\begin{equation}
+  A = \begin{pmatrix} a & b \\ c & d \end{pmatrix} \Rightarrow \det(A - \lambda I) = \lambda^2 - (a+d)\lambda + (ad - bc) = 0.
+\end{equation}
+
+\subsection{Key properties for symmetric matrices}
+
+\begin{enumerate}[nosep]
+  \item All eigenvalues are \textbf{real} (not complex).
+  \item Eigenvectors corresponding to \textbf{distinct eigenvalues are orthogonal}.
+  \item A symmetric matrix is \textbf{always diagonalisable} (even with repeated eigenvalues).
+  \item A symmetric matrix is positive definite $\iff$ all eigenvalues are positive.
+\end{enumerate}
+
+
+% ======================================================================
+% Q14
+% ======================================================================
+\section{Why do we need $U$ orthogonal in Theorem 3.7?}
+\label{sec:q14}
+
+In Theorem 3.7 (spectral form of $\Sigma_t^{-1}$), we write $\Sigma_0 = UDU^\top$ with $U$ orthogonal ($U^\top U = UU^\top = I$).  Orthogonality is guaranteed by the spectral theorem because $\Sigma_0$ is symmetric.
+
+\textbf{Why is orthogonality important?}
+\begin{enumerate}[nosep]
+  \item \textbf{Inversion is trivial}: $U^{-1} = U^\top$ (no need to compute a matrix inverse).
+  \item \textbf{Lengths are preserved}: $\|U\mathbf{x}\| = \|\mathbf{x}\|$ (the rotation doesn't stretch or compress).
+  \item \textbf{Noise invariance}: if $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, I)$, then $U^\top\mathbf{z} \sim \mathcal{N}(\mathbf{0}, U^\top I\, U) = \mathcal{N}(\mathbf{0}, I)$.  Orthogonal transformations preserve the distribution of i.i.d.\ Gaussian noise.  This is essential for the decoupling in Theorem 5.1.
+  \item \textbf{The identity plays nicely}: $\Sigma_t = e^{-2t}UDU^\top + \Dt I = U(e^{-2t}D + \Dt I)U^\top$ because $I = UU^\top = UIU^\top$.  This factorisation works only if $U$ is orthogonal.
+\end{enumerate}
+
+If $U$ were not orthogonal (as happens for non-symmetric matrices), we would write $A = PDP^{-1}$, and then $P^{-1}IP = P^{-1}P = I$, which is fine---but $\Sigma_t$ would become $P(e^{-2t}D + \Dt P^{-1}P)P^{-1}$, and the $\Dt I$ term would not simplify to $\Dt I$ inside the parentheses unless $P$ is orthogonal.  So orthogonality is the ingredient that makes the identity matrix ``invisible'' under the change of basis.
+
+
+% ======================================================================
+% Q15
+% ======================================================================
+\section{Why a Gaussian $P_0$ preserves the eigenbasis}
+\label{sec:q15}
+
+The key identity is $\Sigma_t = e^{-2t}\Sigma_0 + \Dt I$.  This is a sum of two matrices: a scaled version of $\Sigma_0$ and a scaled identity.  The identity matrix $I$ commutes with \emph{everything} and has every vector as an eigenvector.  Therefore:
+
+If $\Sigma_0\,\mathbf{u} = d\,\mathbf{u}$, then $\Sigma_t\,\mathbf{u} = (e^{-2t}\Sigma_0 + \Dt I)\mathbf{u} = e^{-2t}d\,\mathbf{u} + \Dt\,\mathbf{u} = (e^{-2t}d + \Dt)\,\mathbf{u}$.
+
+So $\mathbf{u}$ is also an eigenvector of $\Sigma_t$, with eigenvalue $e^{-2t}d + \Dt$.
+
+\begin{warningbox}[This requires the noise to be $\Dt I$ (isotropic)]
+If the noise covariance were $\Dt\,C$ for some $C \neq I$, then $\Sigma_t = e^{-2t}\Sigma_0 + \Dt C$.  Unless $C$ and $\Sigma_0$ commute (share eigenvectors), $\Sigma_t$ would have \emph{different} eigenvectors from $\Sigma_0$.  The decoupling would fail.  This is why the i.i.d.\ OU noise (isotropic, $C = I$) is special.
+\end{warningbox}
+
+\begin{warningbox}[This requires $P_0$ to be Gaussian]
+For a Gaussian $P_0$, the entire distribution is characterised by $\bm{\mu}_a$ and $\Sigma_0$.  The noisy distribution is $P_t = \mathcal{N}(\bm{\mu}_t, \Sigma_t)$, still fully characterised by two moments.  If $P_0$ is non-Gaussian (e.g.\ a mixture), the noisy distribution $P_t$ is not determined by $\Sigma_t$ alone---higher-order correlations matter, and they do \emph{not} diagonalise in the eigenbasis of $\Sigma_0$.
+\end{warningbox}
+
+
+% ======================================================================
+% Q16
+% ======================================================================
+\section{Circulant matrices}
+\label{sec:q16}
+
+\begin{definition}[Circulant matrix]
+A \emph{circulant} matrix $C \in \R^{n \times n}$ is a special Toeplitz matrix where each row is a cyclic shift of the previous one:
+\begin{equation}
+  C = \begin{pmatrix}
+    c_0 & c_{n-1} & c_{n-2} & \cdots & c_1 \\
+    c_1 & c_0 & c_{n-1} & \cdots & c_2 \\
+    c_2 & c_1 & c_0 & \cdots & c_3 \\
+    \vdots & & & \ddots & \vdots \\
+    c_{n-1} & c_{n-2} & c_{n-3} & \cdots & c_0
+  \end{pmatrix}.
+\end{equation}
+\end{definition}
+
+The key property: \textbf{every circulant matrix is exactly diagonalised by the discrete Fourier transform (DFT)}.  Specifically, $C = F\,\diag(\hat{c}_0, \dots, \hat{c}_{n-1})\,F^*$, where $F$ is the DFT matrix with $F_{jk} = \frac{1}{\sqrt{n}}e^{2\pi i jk/n}$ and $\hat{c}_m = \sum_k c_k\,e^{-2\pi i mk/n}$ are the DFT of the first row.
+
+A Toeplitz matrix (like our $\Sigma_0$) is \emph{almost} circulant---it would be exactly circulant if the AR(1) chain were periodic (the last frame wrapping around to the first).  The non-circulant boundary effects are precisely the ``boundary corrections'' discussed in Q5.  For large $K$, the Toeplitz matrix is well-approximated by a circulant, and its eigenvectors are approximately Fourier modes.
+
+
+% ======================================================================
+% Q17
+% ======================================================================
+\section{Deep dive: Fourier analysis}
+\label{sec:q17}
+
+\subsection{The core idea}
+
+Fourier analysis decomposes a function (or signal) into a sum of oscillations at different frequencies.  Every ``complicated'' function is secretly a weighted sum of sines and cosines (or complex exponentials).
+
+\subsection{Continuous Fourier transform}
+
+For a function $f : \R \to \C$:
+\begin{equation}
+  \hat{f}(\omega) = \int_{-\infty}^{\infty} f(x)\,e^{-i\omega x}\,dx \qquad \text{(analysis: decompose into frequencies)},
+\end{equation}
+\begin{equation}
+  f(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{f}(\omega)\,e^{i\omega x}\,d\omega \qquad \text{(synthesis: reconstruct from frequencies)}.
+\end{equation}
+Here $\hat{f}(\omega)$ tells you ``how much'' of frequency $\omega$ is present in $f$.
+
+\subsection{Discrete Fourier transform (DFT)}
+
+For a vector $\mathbf{x} = (x_0, \dots, x_{N-1}) \in \C^N$:
+\begin{equation}
+  \hat{x}_m = \sum_{k=0}^{N-1} x_k\,e^{-2\pi i mk/N}, \qquad m = 0, 1, \dots, N-1.
+\end{equation}
+The basis vectors are $\mathbf{e}_m$ with $(\mathbf{e}_m)_k = e^{2\pi imk/N}$: oscillations at frequency $m/N$ cycles per sample.
+
+\subsection{Connection to our model}
+
+The eigenvectors of a circulant approximation of our $\Sigma_0$ are the DFT basis vectors $\mathbf{e}_m$.  For the Toeplitz $\Sigma_0$ with free boundaries, the eigenvectors are instead \emph{real} sinusoids $u_m(k) \propto \sin(k\theta_m + \phi_m)$ (discrete sine transform basis), which are the real-valued analogue of complex exponentials.
+
+The eigenvalue $d_m = \sigeta/(1 + \alpha^2 - 2\alpha\cos\theta_m)$ is the \emph{spectral density} of the AR(1) process evaluated at frequency $\theta_m$ (see Q19).  Low-frequency modes ($\theta_m \approx 0$) have large eigenvalues: the AR(1) process has strong low-frequency content because consecutive frames are positively correlated.
+
+
+% ======================================================================
+% Q18
+% ======================================================================
+\section{Deep dive: diagonalisation}
+\label{sec:q18}
+
+\subsection{What it is}
+
+\begin{definition}
+A matrix $A$ is \emph{diagonalisable} if there exists an invertible matrix $P$ and a diagonal matrix $D$ such that $A = PDP^{-1}$, or equivalently $P^{-1}AP = D$.
+\end{definition}
+
+\subsection{What it means operationally}
+
+The relation $A = PDP^{-1}$ says: to apply $A$, you can instead (1) change basis via $P^{-1}$, (2) apply the diagonal $D$ (just scale each coordinate), (3) change back via $P$.
+
+\textbf{Powers become trivial}: $A^n = PD^nP^{-1}$, where $D^n = \diag(d_1^n, \dots, d_k^n)$.
+
+\textbf{Functions become trivial}: for any analytic function $f$, $f(A) = Pf(D)P^{-1} = P\diag(f(d_1), \dots, f(d_k))P^{-1}$.  This is how we compute $e^A$, $\log A$, $A^{1/2}$, and (most relevant for us) $A^{-1}$.
+
+\subsection{When is a matrix diagonalisable?}
+
+\begin{itemize}[nosep]
+  \item All symmetric real matrices: always (spectral theorem).
+  \item Matrices with $n$ distinct eigenvalues: always.
+  \item Defective matrices (algebraic multiplicity $>$ geometric multiplicity for some eigenvalue): never.
+  \item Non-symmetric but ``nice'' matrices (normal: $A^\top A = AA^\top$): always, but the eigenvectors are complex in general.
+\end{itemize}
+
+\subsection{Conceptual picture: change of coordinates}
+
+Diagonalisation is a \textbf{choice of coordinate system} in which the matrix becomes as simple as possible.  In the eigenbasis, the matrix does nothing more than scale each axis independently.  All the ``coupling'' between coordinates (off-diagonal entries) is revealed to be an artefact of the original coordinate system.
+
+This is exactly what happens in our problem: in the frame basis $\{a_0, \dots, a_K\}$, the frames are coupled.  In the eigenbasis $\{\tilde{x}_0, \dots, \tilde{x}_K\}$, they are independent.  The ``coupling'' was a coordinate artefact.
+
+\begin{intuitionbox}[Real-world analogy]
+Imagine two pendulums connected by a spring.  In the ``pendulum coordinates'' $(x_1, x_2)$, the equations of motion are coupled.  But there exist ``normal mode coordinates'' (e.g.\ $x_1 + x_2$ and $x_1 - x_2$) in which the equations decouple into two independent oscillators.  Diagonalisation finds these normal modes.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q19
+% ======================================================================
+\section{What is a spectral density?}
+\label{sec:q19}
+
+\begin{definition}[Power spectral density]
+For a stationary stochastic process $\{a_k\}$ with autocovariance $\gamma(h) = \Cov(a_k, a_{k+h})$, the \emph{power spectral density} (PSD) is the Fourier transform of the autocovariance:
+\begin{equation}
+  S(\theta) = \sum_{h=-\infty}^{\infty} \gamma(h)\,e^{-i\theta h}, \qquad \theta \in [-\pi, \pi].
+\end{equation}
+\end{definition}
+
+For the stationary AR(1) process, $\gamma(h) = \siginf\,\alpha^{|h|}$:
+\begin{equation}
+  S(\theta) = \siginf \sum_{h=-\infty}^{\infty}\alpha^{|h|}e^{-i\theta h} = \frac{\sigeta}{1 + \alpha^2 - 2\alpha\cos\theta} = \frac{\sigeta}{|1 - \alpha e^{-i\theta}|^2}.
+\end{equation}
+
+This is a continuous function of $\theta$.  The eigenvalues $d_m$ of $\Sigma_0$ are \emph{samples} of $S(\theta)$ at the discrete frequencies $\theta_m = m\pi/(K+1)$ (approximately, for large $K$).
+
+\begin{intuitionbox}[Why ``spectral density'']
+$S(\theta)\,d\theta$ tells you how much variance (``power'') lies in the frequency band $[\theta, \theta + d\theta]$.  For the AR(1) with $\alpha > 0$: $S(\theta)$ peaks at $\theta = 0$ (low frequencies dominate) and is smallest at $\theta = \pi$ (high frequencies are suppressed).  This is because positive $\alpha$ means consecutive frames are positively correlated---a ``smooth'' process, rich in low frequencies.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q20
+% ======================================================================
+\section{What does anisotropic covariance mean?}
+\label{sec:q20}
+
+\begin{definition}
+A covariance matrix $\Sigma$ is \emph{isotropic} if $\Sigma = \sigma^2 I$ (all directions are equivalent).  It is \emph{anisotropic} if its eigenvalues are not all equal.
+\end{definition}
+
+\textbf{Geometrically}: the level sets $\{\mathbf{x} : \mathbf{x}^\top\Sigma^{-1}\mathbf{x} = c\}$ of the Gaussian density are ellipsoids.  If $\Sigma$ is isotropic, these are spheres (all axes equal).  If anisotropic, the ellipsoids are elongated: long along the directions of large eigenvalues (high variance), compressed along directions of small eigenvalues (low variance).
+
+For our $\Sigma_0$ with $\alpha = 0.9$: the condition number $d_0/d_K \approx 361$.  The Gaussian ``cloud'' of AR(1) trajectories is extremely elongated: it extends far in the slow-mode direction (all frames moving together) and is very narrow in the fast-mode direction (alternating frames).
+
+At $t \to \infty$, $\Sigma_t \to I$: pure noise is isotropic, with spherical level sets.  The diffusion progressively ``spherifies'' the anisotropic signal ellipsoid.
+
+
+% ======================================================================
+% Q21
+% ======================================================================
+\section{From feature space to frequency space in Fourier analysis}
+\label{sec:q21}
+
+\textbf{Feature space} (or ``time domain'' or ``frame domain''): the vector $\mathbf{x} = (x_0, x_1, \dots, x_K)^\top$ where each component corresponds to a frame at position $k$.
+
+\textbf{Frequency space}: the vector $\hat{\mathbf{x}} = (\hat{x}_0, \hat{x}_1, \dots, \hat{x}_K)^\top$ where each component corresponds to a frequency mode $m$.
+
+The map between them:
+\begin{equation}
+  \hat{x}_m = \sum_{k=0}^{K} x_k\,u_m(k) \qquad \text{(analysis)}, \qquad
+  x_k = \sum_{m=0}^{K} \hat{x}_m\,u_m(k) \qquad \text{(synthesis)},
+\end{equation}
+where $u_m(k)$ are the eigenvectors of $\Sigma_0$ (approximately sinusoidal).
+
+In our notation: $\hat{\mathbf{x}} = U^\top\mathbf{x}$ and $\mathbf{x} = U\hat{\mathbf{x}}$.  The matrix $U$ is the ``dictionary'' that translates between the two languages.
+
+\begin{intuitionbox}[How to read it]
+\begin{itemize}[nosep]
+  \item $\hat{x}_0$ (the $m=0$ mode): the ``overall level'' of the trajectory---how much is the trajectory shifted up or down as a whole.
+  \item $\hat{x}_1$ (the $m=1$ mode): the ``trend''---does the trajectory go up or down over time?
+  \item $\hat{x}_K$ (the $m=K$ mode): the highest-frequency fluctuation---does the trajectory alternate rapidly between consecutive frames?
+  \item In between: progressively finer-scale oscillations.
+\end{itemize}
+The eigenvalue $d_m$ tells you how much variance the AR(1) process puts into mode $m$.  The AR(1) with positive $\alpha$ concentrates variance in the low-$m$ (smooth) modes.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q22
+% ======================================================================
+\section{Rotation, independence, and the deep connections}
+\label{sec:q22}
+
+\subsection{How rotation gives independence}
+
+Consider two correlated Gaussian variables $(x_1, x_2) \sim \mathcal{N}(\mathbf{0}, \Sigma)$ with
+$\Sigma = \begin{pmatrix} \sigma_1^2 & \rho\sigma_1\sigma_2 \\ \rho\sigma_1\sigma_2 & \sigma_2^2 \end{pmatrix}$.
+The level curves of their joint density are \emph{tilted ellipses}.
+
+The eigendecomposition $\Sigma = U\Lambda U^\top$ finds a rotation $U$ that aligns the coordinate axes with the ellipse's principal axes.  In the rotated coordinates $\tilde{\mathbf{x}} = U^\top\mathbf{x}$, the covariance is diagonal: the components are independent.
+
+\textbf{Physically}: the correlation between $x_1$ and $x_2$ was an artefact of looking at the ellipse from the wrong angle.  A rotation finds the ``natural'' axes along which the fluctuations are decoupled.
+
+\subsection{Translation, differentiation, and Fourier exponentials}
+
+There is a deep chain of connections:
+\begin{enumerate}[nosep]
+  \item \textbf{Translation operator} $T_a$: shifts a function by $a$, i.e.\ $(T_a f)(x) = f(x - a)$.
+  \item \textbf{Differentiation} $D = d/dx$: the generator of translations, since $T_a = e^{-aD}$ (Taylor's theorem).
+  \item \textbf{Complex exponentials} $e^{ikx}$: the \emph{eigenfunctions} of $D$.  Indeed $\frac{d}{dx}e^{ikx} = ik\,e^{ikx}$.  They are also eigenfunctions of $T_a$: $(T_a e^{ikx}) = e^{ik(x-a)} = e^{-ika}\,e^{ikx}$.
+  \item \textbf{Fourier transform}: decomposes a function into these eigenfunctions.  Since $D$ and $T_a$ are diagonalised by the Fourier basis, any translation-invariant system (convolution, differential equation with constant coefficients) becomes a \emph{multiplication} in Fourier space.
+\end{enumerate}
+
+\textbf{The thread}: complex exponentials are the natural basis for translation-invariant systems because they are simultaneously eigenfunctions of translation and differentiation.  Fourier analysis diagonalises any operator that commutes with translation.  Our Toeplitz covariance matrix is the discrete analogue of a translation-invariant operator, which is why it is (approximately) diagonalised by Fourier modes.
+
+\subsection{Complex numbers: the bridge}
+
+Complex exponentials $e^{i\theta} = \cos\theta + i\sin\theta$ unify rotations, oscillations, and exponential growth:
+\begin{itemize}[nosep]
+  \item $e^{i\theta}$ is a rotation by angle $\theta$ in the complex plane.
+  \item $\cos$ and $\sin$ are the real and imaginary parts of this rotation.
+  \item Differentiation of $e^{ikx}$ gives $ik\,e^{ikx}$: a 90-degree rotation (multiplication by $i$) in the complex plane plus a scaling by $k$.
+\end{itemize}
+This is why complex numbers are the natural language for Fourier analysis: they encode rotation and oscillation simultaneously.
+
+
+% ======================================================================
+% Q23
+% ======================================================================
+\section{Is there a missing transpose in Theorem 5.1?}
+\label{sec:q23}
+
+The formula in question:
+\begin{equation}
+  \tilde{S}(\tilde{\mathbf{x}}, t) = U^\top\,S(U\tilde{\mathbf{x}}, t).
+\end{equation}
+
+\textbf{No, it is correct.}  Here is why:
+
+The original score is $S(\mathbf{x}, t) = -\Sigma_t^{-1}(\mathbf{x} - \bm{\mu}_t)$.  We defined $\tilde{\mathbf{x}} = U^\top\mathbf{x}$, which means $\mathbf{x} = U\tilde{\mathbf{x}}$ (since $U$ is orthogonal, $U^{-1} = U^\top$, so applying $U$ recovers the original coordinates).
+
+The score in the original coordinates at the point $\mathbf{x} = U\tilde{\mathbf{x}}$ is:
+\begin{equation}
+  S(U\tilde{\mathbf{x}}, t) = -\Sigma_t^{-1}(U\tilde{\mathbf{x}} - \bm{\mu}_t).
+\end{equation}
+
+Now, the score is a \emph{gradient}: $S = \nabla_{\mathbf{x}}\log P_t$.  Under the change of variables $\tilde{\mathbf{x}} = U^\top\mathbf{x}$, the chain rule gives:
+\begin{equation}
+  \nabla_{\tilde{\mathbf{x}}}\log P_t = \frac{\partial \mathbf{x}}{\partial \tilde{\mathbf{x}}}\,\nabla_{\mathbf{x}}\log P_t = U^\top\,\nabla_{\mathbf{x}}\log P_t,
+\end{equation}
+because $\mathbf{x} = U\tilde{\mathbf{x}}$ implies $\partial \mathbf{x}/\partial\tilde{\mathbf{x}} = U$, and the Jacobian matrix of the transformation enters as $U^\top$ (the transpose of the mapping from $\tilde{\mathbf{x}}$ to $\mathbf{x}$, which for gradients gives the left-multiplication by $U^\top$).
+
+So $\tilde{S}(\tilde{\mathbf{x}}, t) = U^\top S(U\tilde{\mathbf{x}}, t)$.  The $U$ inside the argument of $S$ converts $\tilde{\mathbf{x}}$ back to the original frame coordinates.  The $U^\top$ outside converts the resulting gradient vector to the rotated coordinates.  No transpose is missing.
+
+
+% ======================================================================
+% Q24
+% ======================================================================
+\section{How a diagonal matrix encodes independence}
+\label{sec:q24}
+
+For a Gaussian $\mathbf{x} \sim \mathcal{N}(\bm{\mu}, \Sigma)$, write the density:
+\begin{equation}
+  p(\mathbf{x}) \propto \exp\!\left(-\frac{1}{2}(\mathbf{x}-\bm{\mu})^\top\Sigma^{-1}(\mathbf{x}-\bm{\mu})\right).
+\end{equation}
+
+If $\Sigma^{-1}$ is diagonal, say $\Sigma^{-1} = \diag(\lambda_0, \dots, \lambda_K)$, then the quadratic form splits:
+\begin{equation}
+  (\mathbf{x}-\bm{\mu})^\top\Sigma^{-1}(\mathbf{x}-\bm{\mu}) = \sum_{k=0}^{K}\lambda_k(x_k - \mu_k)^2.
+\end{equation}
+There are \textbf{no cross-terms} $x_j x_k$ with $j \neq k$.  The exponential of a sum is a product:
+\begin{equation}
+  p(\mathbf{x}) = \prod_{k=0}^{K}\frac{1}{\sqrt{2\pi/\lambda_k}}\exp\!\left(-\frac{\lambda_k}{2}(x_k - \mu_k)^2\right).
+\end{equation}
+A joint density that factorises as a product of marginals is the \emph{definition} of statistical independence.
+
+\begin{keybox}[Summary]
+Diagonal $\Sigma^{-1}$ $\iff$ no cross-terms in the exponent $\iff$ density factorises $\iff$ components are independent.
+
+Off-diagonal entries $(\Sigma^{-1})_{jk} \neq 0$ create cross-terms $\lambda_{jk}\,x_j\,x_k$ in the exponent, coupling components $j$ and $k$.
+\end{keybox}
+
+
+% ======================================================================
+% Q25
+% ======================================================================
+\section{Isometric invariance of the Wiener process}
+\label{sec:q25}
+
+\begin{definition}[Wiener process / Brownian motion]
+A standard $n$-dimensional Wiener process $\mathbf{W}(t) = (W_1(t), \dots, W_n(t))$ is a collection of $n$ independent standard Brownian motions: $W_k(0) = 0$, increments $W_k(t) - W_k(s) \sim \mathcal{N}(0, t - s)$, all independent.
+\end{definition}
+
+\begin{proposition}[Isometric invariance]
+If $U \in \R^{n \times n}$ is orthogonal ($U^\top U = I$) and $\mathbf{W}(t)$ is a standard $n$-dimensional Wiener process, then $\tilde{\mathbf{W}}(t) = U^\top\mathbf{W}(t)$ is also a standard $n$-dimensional Wiener process.
+\end{proposition}
+
+\begin{proof}
+Check the defining properties:
+\begin{enumerate}[nosep]
+  \item $\tilde{\mathbf{W}}(0) = U^\top\mathbf{0} = \mathbf{0}$.  \checkmark
+  \item Increments: $\tilde{\mathbf{W}}(t) - \tilde{\mathbf{W}}(s) = U^\top(\mathbf{W}(t) - \mathbf{W}(s))$.  The increment $\mathbf{W}(t) - \mathbf{W}(s) \sim \mathcal{N}(\mathbf{0}, (t-s)I)$.  A linear transformation of a Gaussian is Gaussian:
+  \begin{equation}
+    U^\top\mathcal{N}(\mathbf{0}, (t-s)I) = \mathcal{N}(\mathbf{0}, (t-s)U^\top I\, U) = \mathcal{N}(\mathbf{0}, (t-s)I).
+  \end{equation}
+  Same distribution!  \checkmark
+  \item Independence of non-overlapping increments: inherited from the original process.  \checkmark
+\end{enumerate}
+\end{proof}
+
+\textbf{Intuition}: a Gaussian cloud with covariance $\sigma^2 I$ is a sphere.  Rotating a sphere gives the same sphere.  So rotating i.i.d.\ Gaussian noise gives i.i.d.\ Gaussian noise.  This is why the noise term in the reverse SDE remains ``nice'' after rotation---and hence the decoupling in the eigenbasis works.
+
+
+% ======================================================================
+% Q26
+% ======================================================================
+\section{Markovianity vs.\ Gaussianity: who does what}
+\label{sec:q26}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}p{6.5cm}cc@{}}
+\toprule
+\textbf{Property} & \textbf{Markov?} & \textbf{Gaussian?} \\
+\midrule
+$\Sigma_0^{-1}$ is tridiagonal (sparse) & \checkmark & -- \\
+$P_0(\mathbf{a})$ factorises as $p_0(a_0)\prod_k M(a_{k+1}|a_k)$ & \checkmark & -- \\
+Eigenvectors of $\Sigma_0$ are spatially localised / sine-like & \checkmark & -- \\
+Eigenvalue spectrum follows $d_m = \sigeta/(1+\alpha^2-2\alpha\cos\theta_m)$ & \checkmark & -- \\
+$P_t(\mathbf{x})$ is Gaussian for all $t$ & -- & \checkmark \\
+Score $S(\mathbf{x},t)$ is linear in $\mathbf{x}$ & -- & \checkmark \\
+$\Sigma_t$ and $\Sigma_0$ share eigenvectors & -- & \checkmark$^*$ \\
+Score decouples in eigenbasis & -- & \checkmark \\
+Reverse SDE decouples into independent scalar processes & -- & \checkmark \\
+Kalman smoother provides exact posterior mean & -- & \checkmark \\
+$|(\Sigma_t^{-1})_{jk}|$ decays with $|j-k|$ at fixed $t > 0$ & \checkmark & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+\smallskip
+$^*$Also requires isotropic noise ($C = I$).
+
+\begin{intuitionbox}[The fundamental distinction]
+\textbf{Gaussianity} tells you that a basis exists in which everything decouples.  \textbf{Markovianity} tells you what that basis looks like and how the eigenvalues are distributed.
+
+If $P_0$ were Gaussian but \emph{not} Markov (say, a Gaussian with a dense precision matrix), the eigenbasis decoupling would still work---but the eigenvectors would be different (not spatially localised) and the eigenvalue spectrum would follow a different formula.
+
+If $P_0$ were Markov but \emph{not} Gaussian (say, a Markov chain with non-Gaussian transitions), the precision matrix at $t = 0$ would still be sparse (if the conditional distributions have a graphical model interpretation), but the score at $t > 0$ would be \emph{nonlinear} in $\mathbf{x}$ and no eigenbasis decoupling would exist.
+\end{intuitionbox}
+
+
+% ======================================================================
+% Q27
+% ======================================================================
+\section{Signal-to-noise ratio (SNR)}
+\label{sec:q27}
+
+\subsection{General definition}
+
+\begin{definition}[Signal-to-noise ratio]
+The SNR is the ratio of the ``useful'' signal power to the ``unwanted'' noise power:
+\begin{equation}
+  \text{SNR} = \frac{\text{signal power}}{\text{noise power}}.
+\end{equation}
+\end{definition}
+
+\subsection{In our model}
+
+The noisy observation is $\mathbf{x} = e^{-t}\mathbf{a} + \sqrt{\Dt}\,\mathbf{z}$.  The ``signal'' part has covariance $e^{-2t}\Sigma_0$; the ``noise'' part has covariance $\Dt I$.  In the eigenbasis, the $m$-th mode has:
+\begin{equation}
+  \text{SNR}_m(t) = \frac{e^{-2t}\,d_m}{\Dt} = \gamma_t\,d_m.
+\end{equation}
+
+\begin{itemize}[nosep]
+  \item $\text{SNR}_m \gg 1$: mode $m$ is mostly signal.  The score for this mode is informative---it tells you which direction to denoise.
+  \item $\text{SNR}_m \ll 1$: mode $m$ is mostly noise.  The score for this mode just pushes $\tilde{x}_m$ back toward the prior mean---no useful denoising information.
+  \item $\text{SNR}_m = 1$: the ``crossover'' point (half signal, half noise), occurring at $t_m^* = \frac{1}{2}\ln(1 + d_m)$.
+\end{itemize}
+
+The global signal-to-noise ratio $\gamma_t = e^{-2t}/\Dt$ is the mode-independent part.  Modes with large $d_m$ (slow modes) have high SNR even at large $t$; modes with small $d_m$ (fast modes) lose their signal quickly.
+
+
+% ======================================================================
+% Q28
+% ======================================================================
+\section{Condition number}
+\label{sec:q28}
+
+\begin{definition}[Condition number]
+For a symmetric positive definite matrix $A$ with eigenvalues $\lambda_{\max} \geq \cdots \geq \lambda_{\min} > 0$:
+\begin{equation}
+  \kappa(A) = \frac{\lambda_{\max}}{\lambda_{\min}}.
+\end{equation}
+\end{definition}
+
+\textbf{What it measures}: how ``stretched'' or anisotropic the matrix is.  $\kappa = 1$ means isotropic (a sphere); $\kappa \gg 1$ means highly elongated (a very thin ellipsoid).
+
+\textbf{Numerical significance}: $\kappa(A)$ controls how sensitive the solution of $A\mathbf{x} = \mathbf{b}$ is to perturbations in $\mathbf{b}$.  If $\kappa = 10^k$, you lose roughly $k$ digits of accuracy when solving the system.  Ill-conditioned systems ($\kappa \gg 1$) are numerically unstable.
+
+\textbf{In our model}: $\kappa(\Sigma_0) = d_0/d_K \approx (1+\alpha)^2/(1-\alpha)^2$.  For $\alpha = 0.9$: $\kappa \approx 361$.  This means the AR(1) covariance is moderately ill-conditioned.  As $t$ increases, $\kappa(\Sigma_t) \to 1$: diffusion noise regularises the problem.
+
+\textbf{Connection to the score}: a large condition number means the score $S(\mathbf{x},t) = -\Sigma_t^{-1}(\mathbf{x} - \bm{\mu}_t)$ is very sensitive to perturbations along the direction of the smallest eigenvalue.  This has implications for numerical stability of score-based samplers.
+
+
+% ======================================================================
+% Q29
+% ======================================================================
+\section{The fluctuation-dissipation theorem}
+\label{sec:q29}
+
+\subsection{Statement (classical)}
+
+\begin{theorem}[Fluctuation-dissipation theorem (FDT)]
+For a system in thermal equilibrium at temperature $T$, perturbed slightly away from equilibrium, the linear response of the system to a small external perturbation is related to the equilibrium fluctuations by:
+\begin{equation}
+  \text{Response function} = \frac{1}{k_B T}\times \text{Autocorrelation of equilibrium fluctuations}.
+\end{equation}
+\end{theorem}
+
+In other words: the same physics that causes random fluctuations at equilibrium also governs how the system responds to perturbation and relaxes back.  Fluctuation (randomness) and dissipation (damping) are two sides of the same coin.
+
+\subsection{The OU process as an FDT example}
+
+The Ornstein--Uhlenbeck process $dx = -x\,dt + \sqrt{2}\,dW$ has:
+\begin{itemize}[nosep]
+  \item \textbf{Dissipation}: the drift $-x$ pulls the system back to zero (damping rate = 1).
+  \item \textbf{Fluctuation}: the noise $\sqrt{2}\,dW$ kicks the system (noise intensity = 2).
+  \item \textbf{Equilibrium}: the stationary distribution is $\mathcal{N}(0, 1)$, with variance $= \text{noise}/(2 \times \text{damping}) = 2/2 = 1$.
+\end{itemize}
+
+The FDT relation: the equilibrium variance equals (noise intensity) / (2 $\times$ damping rate).  If you double the noise, the variance doubles---but if you also double the damping, the variance stays the same.  The balance between fluctuation and dissipation determines the equilibrium.
+
+\subsection{Application to our model}
+
+The forward OU process $dx_k = -x_k\,dt + \sqrt{2}\,dW_k$ applied per frame is an FDT-balanced process: it converges to $\mathcal{N}(0, 1)$ regardless of initial conditions.  The energy conservation $e^{-2t} + \Dt = 1$ is a manifestation of FDT: the signal energy lost to damping equals the noise energy injected.
+
+The \textbf{reverse} process $dx = (x + 2S(x,t))\,dt + \sqrt{2}\,dW$ is also FDT-balanced, but with a modified drift that incorporates the score.  The score $S$ can be interpreted as a ``force field'' that counteracts the natural dissipation and reconstructs the signal from noise.
+
+\subsection{Deeper connection: detailed balance}
+
+The FDT is equivalent to \emph{detailed balance}: in equilibrium, the probability current between any two states is zero (the process is reversible).  The OU process satisfies detailed balance with respect to $\mathcal{N}(0, I)$.  This is why the forward and reverse processes are related by time reversal, and why the score appears in the reverse SDE.
+
+
+% ======================================================================
+% Q30
+% ======================================================================
+\section{The Kalman filter and smoother}
+\label{sec:q30}
+
+\subsection{The problem}
+
+You have a hidden Markov model:
+\begin{align}
+  \text{State:} &\quad a_{k+1} = \alpha\,a_k + \eta_k, \quad \eta_k \sim \mathcal{N}(0, \sigeta), \\
+  \text{Observation:} &\quad x_k = e^{-t}a_k + \sqrt{\Dt}\,z_k, \quad z_k \sim \mathcal{N}(0, 1).
+\end{align}
+You observe $\mathbf{x} = (x_0, \dots, x_K)$ and want to estimate the hidden states $\mathbf{a} = (a_0, \dots, a_K)$.
+
+\subsection{The Kalman filter (forward pass)}
+
+The filter processes observations \textbf{sequentially} from $k = 0$ to $K$, maintaining a belief $p(a_k \mid x_0, \dots, x_k) = \mathcal{N}(\hat{a}_{k|k}, P_{k|k})$.
+
+\textbf{Step 1: Predict.}  Before seeing $x_{k+1}$, predict the next state using the dynamics:
+\begin{equation}
+  \hat{a}_{k+1|k} = \alpha\,\hat{a}_{k|k}, \qquad P_{k+1|k} = \alpha^2 P_{k|k} + \sigeta.
+\end{equation}
+The variance \emph{increases}: prediction is less certain than the current estimate.
+
+\textbf{Step 2: Update.}  After observing $x_{k+1}$, compute the Kalman gain:
+\begin{equation}
+  K_{k+1} = \frac{e^{-t}\,P_{k+1|k}}{e^{-2t}\,P_{k+1|k} + \Dt}.
+\end{equation}
+The gain $K_{k+1} \in [0, 1]$ weights how much to trust the observation vs.\ the prediction.  Then update:
+\begin{equation}
+  \hat{a}_{k+1|k+1} = \hat{a}_{k+1|k} + K_{k+1}\bigl(x_{k+1} - e^{-t}\hat{a}_{k+1|k}\bigr), \qquad
+  P_{k+1|k+1} = (1 - e^{-t}K_{k+1})\,P_{k+1|k}.
+\end{equation}
+The ``innovation'' $x_{k+1} - e^{-t}\hat{a}_{k+1|k}$ is the surprise in the new observation.
+
+\subsection{The Kalman smoother (backward pass)}
+
+The filter gives $\hat{a}_{k|k}$: the best estimate using observations up to time $k$.  The smoother improves this by incorporating \emph{future} observations as well:
+\begin{equation}
+  \hat{a}^s_{k|K} = \hat{a}_{k|k} + L_k\bigl(\hat{a}^s_{k+1|K} - \hat{a}_{k+1|k}\bigr), \qquad L_k = \alpha\,P_{k|k}\,P_{k+1|k}^{-1}.
+\end{equation}
+This runs backward from $k = K$ to $k = 0$.  The smoother gain $L_k$ controls how much the estimate at $k$ is adjusted based on the smoothed estimate at $k+1$.
+
+The output $\hat{a}^s_{k|K} = \langle a_k \rangle_{\mathbf{a}|\mathbf{x}}$ is the exact posterior mean we need for M\'ezard's formula.
+
+\subsection{Connection to the score}
+
+The M\'ezard formula says:
+\begin{equation}
+  S_k(\mathbf{x}, t) = \frac{e^{-t}\langle a_k \rangle_{\mathbf{a}|\mathbf{x}} - x_k}{\Dt}.
+\end{equation}
+The Kalman smoother computes $\langle a_k \rangle_{\mathbf{a}|\mathbf{x}}$ for all $k$ in $O(K)$ operations (one forward pass + one backward pass).  Direct computation of $\Sigma_t^{-1}(\mathbf{x} - \bm{\mu}_t)$ requires $O(K^3)$ for general $\Sigma_t^{-1}$, or $O(K)$ if one exploits the banded structure (e.g.\ Thomas algorithm for near-tridiagonal systems).
+
+\subsection{Why the Kalman smoother is the exact propagator}
+
+The backward recursion:
+\begin{equation}
+  \hat{a}^s_{k|K} = \hat{a}_{k|k} + L_k\bigl(\hat{a}^s_{k+1|K} - \hat{a}_{k+1|k}\bigr)
+\end{equation}
+has the structure: the smoothed estimate at frame $k$ depends on the smoothed estimate at frame $k+1$.  This is a \emph{propagator}: it maps the score information at frame $k+1$ to frame $k$.  In our AR(1) model, this propagator is exact and linear, and its gain $L_k$ is the precise coefficient that implements the backward flow of information through the Markov chain.
+
+\begin{keybox}[The complete picture]
+\begin{enumerate}[nosep]
+  \item The \textbf{forward filter} propagates information from past to present: each $\hat{a}_{k|k}$ incorporates all observations $x_0, \dots, x_k$.
+  \item The \textbf{backward smoother} propagates information from future to past: each $\hat{a}^s_{k|K}$ additionally incorporates $x_{k+1}, \dots, x_K$.
+  \item Together, $\hat{a}^s_{k|K}$ is the posterior mean conditioned on \emph{all} observations---exactly the quantity in the M\'ezard formula for the joint score.
+  \item The total cost is $O(K)$: \textbf{linear in the sequence length}, exploiting the Markov structure.
+\end{enumerate}
+\end{keybox}
+
+\end{document}

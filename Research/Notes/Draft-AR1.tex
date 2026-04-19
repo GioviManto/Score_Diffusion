@@ -1,0 +1,1417 @@
+\documentclass[12pt, a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{thmtools}
+\usepackage{mdframed}
+
+\geometry{margin=2.8cm}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black}
+\pdfstringdefDisableCommands{%
+  \def\ba{a}%
+  \def\bx{x}%
+  \def\bmu{mu}%
+  \def\bm#1{#1}%
+}
+
+% ── Theorem environments ───────────────────────────────────────────────────────
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{lemma}{Lemma}[section]
+\renewcommand*{\theHremark}{\thesection.\arabic{remark}}
+\renewcommand*{\theHdefinition}{\thesection.\arabic{definition}}
+\renewcommand*{\theHproposition}{\thesection.\arabic{proposition}}
+\renewcommand*{\theHtheorem}{\thesection.\arabic{theorem}}
+\renewcommand*{\theHcorollary}{\thesection.\arabic{corollary}}
+\renewcommand*{\theHlemma}{\thesection.\arabic{lemma}}
+
+% ── Custom commands ────────────────────────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\ba}{\bm{a}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bz}{\bm{z}}
+\newcommand{\Sig}{\Sigma}
+\newcommand{\dt}{\Delta_t}
+\newcommand{\bc}{\bm{c}}
+\newcommand{\bv}{\bm{v}}
+
+% ── Coloured boxes ─────────────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=blue!5,
+  linecolor=blue!40,
+  linewidth=0.8pt,
+  roundcorner=4pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  nobreak=true
+]{resultbox}
+
+\newmdenv[
+  backgroundcolor=orange!8,
+  linecolor=orange!50,
+  linewidth=0.8pt,
+  roundcorner=4pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  nobreak=true
+ ]{remarkbox}
+
+\hfuzz=100pt
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{center}
+  {\LARGE\bfseries Joint Score of a Diffusion Model\\[4pt]
+  Applied to an AR(1) Sequence}\\[12pt]
+  {\large A Self-Contained Derivation}\\[6pt]
+  {\normalsize Giovanni Mantovani \& Marco Lomele\quad—\quad
+  MSc Thesis, Bocconi University, 2025--2026}\\[4pt]
+  {\small Supervisors: Prof.\ Marc M\'ezard \quad Tutor: J\'er\^ome Garnier}
+\end{center}
+
+\vspace{0.5cm}
+\tableofcontents
+\vspace{0.8cm}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Motivation and Problem Statement}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Standard score-based diffusion models generate \emph{static} objects
+(single images). This work studies the \emph{dynamic} setting: a
+\textbf{dynamic object} is a sequence of $K+1$ frames
+\[
+  a_0,\; a_1,\; \ldots,\; a_K \;\in\; \R
+\]
+indexed by \emph{internal time} $k = 0, 1, \ldots, K$, where consecutive
+frames are correlated through a known Markov dynamics.
+
+The naive approach embeds the full trajectory in $\R^{K+1}$ and learns a
+single score function — wasteful, because consecutive frames are highly
+correlated. Our goal is to understand and exploit the \textbf{temporal
+structure of the joint score field}
+\[
+  \bm{S}(\bx, t)
+  \;=\;
+  \nabla_{\bx}\log P_t(x_0, x_1, \ldots, x_K),
+\]
+where $t$ is the diffusion (OU noise) time applied \emph{independently} per
+frame, and $\bx = (x_0, \ldots, x_K)$ are the noisy observations.
+
+We pursue this within the \textbf{AR(1) Gaussian toy model}, which is
+fully solvable in closed form: every distribution is Gaussian, every
+expectation is computable, and the Kalman smoother provides the exact
+posterior.
+
+\begin{remarkbox}
+\textbf{Critical distinction.} Previous work computed the per-frame
+\emph{marginal} score $s(x_u, u, t) = \nabla_{x_u}\log p_t(x_u \mid u)$,
+which marginalises over all other frames and therefore discards all
+inter-frame correlations. The correct object is the \emph{joint} score
+$\bm{S}(\bx, t) \in \R^{K+1}$, whose $k$-th component couples $x_k$ to
+all other frames through $\Sigma_t^{-1}$.
+\end{remarkbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The AR(1) Gaussian Model}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Model specification}
+
+\begin{definition}[AR(1) Gaussian sequence]
+The \textbf{clean frames} $\ba = (a_0, a_1, \ldots, a_K) \in \R^{K+1}$
+are defined by the following three ingredients, all independent of one
+another.
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Initial distribution:}
+  \[
+    a_0 \;\sim\; \N(\mu_0,\; \sigma_0^2).
+  \]
+  \item \textbf{Transition rule (AR(1)):} for $k = 0, 1, \ldots, K-1$, where $\alpha \in \R$ is the autoregressive coefficient, where $\alpha \in \R$ is the autoregressive coefficient,
+  \[
+    a_{k+1} \;=\; \alpha\, a_k \;+\; \eta_k,
+    \qquad
+    \eta_k \;\overset{\mathrm{i.i.d.}}{\sim}\; \N(0,\; \sigma_\eta^2),
+    \qquad
+    \eta_k \perp a_0,\; \eta_k \perp \eta_j\; (j \neq k).
+  \]
+  \item \textbf{Transition kernel:} the above implies
+  \[
+    M(a_{k+1} \mid a_k) \;=\; \N\!\left(a_{k+1};\; \alpha\,a_k,\;
+    \sigma_\eta^2\right).
+  \]
+\end{enumerate}
+\end{definition}
+
+\begin{remark}[Modelling choices]
+The zero-mean Gaussian noise $\eta_k$ is the \emph{maximum-entropy}
+distribution consistent with a given energy scale $\sigma_\eta^2$,
+and it guarantees analytical tractability throughout: sums of Gaussians
+are Gaussian, and the entire trajectory $\ba$ remains jointly Gaussian.
+The parameter $|\alpha| < 1$ ensures the chain does not explode, with
+stationary variance $\sigma_\infty^2 = \sigma_\eta^2/(1-\alpha^2)$.
+The i.i.d.\ assumption is on the \emph{noise inputs} $\eta_k$, not on the
+frames $a_k$ themselves, which are correlated through the recurrence.
+\end{remark}
+
+\subsection{Moments of the chain}
+
+\begin{proposition}[Mean and variance recursions]\label{prop:moments}
+The mean $m_k = \E[a_k]$ and variance $\sigma_k^2 = \Var(a_k)$ satisfy
+the closed-form recursions:
+\[
+  m_k \;=\; \alpha^k\,\mu_0,
+  \qquad\qquad
+  \sigma_k^2 \;=\; \alpha^{2k}\,\sigma_0^2
+  \;+\; \sigma_\eta^2\,\frac{1 - \alpha^{2k}}{1 - \alpha^2}.
+\]
+\end{proposition}
+
+\begin{proof}
+\textbf{Mean.} Apply $\E[\cdot]$ to $a_{k+1} = \alpha a_k + \eta_k$.
+By linearity and $\E[\eta_k]=0$:
+\[
+  m_{k+1} = \alpha\,m_k.
+\]
+Unrolling from $m_0 = \mu_0$ gives $m_k = \alpha^k\mu_0$.
+
+\textbf{Variance.} Since $a_k \perp \eta_k$:
+\[
+  \sigma_{k+1}^2
+  = \Var(\alpha a_k + \eta_k)
+  = \alpha^2\,\sigma_k^2 + \sigma_\eta^2.
+\]
+This is a first-order linear recursion with constant forcing.
+Unrolling $k$ times from $\sigma_0^2$:
+\[
+  \sigma_k^2
+  = \alpha^{2k}\sigma_0^2
+  + \sigma_\eta^2\sum_{j=0}^{k-1}\alpha^{2j}
+  = \alpha^{2k}\sigma_0^2
+  + \sigma_\eta^2\,\frac{1-\alpha^{2k}}{1-\alpha^2}. \qquad\square
+\]
+\end{proof}
+
+\begin{proposition}[Covariance between frames]\label{prop:cov}
+For $j \leq k$:
+\[
+  \Cov(a_j, a_k) \;=\; \alpha^{k-j}\,\sigma_j^2.
+\]
+Hence the covariance matrix $\Sigma_0 \in \R^{(K+1)\times(K+1)}$ has
+entries
+\[
+  (\Sigma_0)_{jk} \;=\; \alpha^{|j-k|}\,\sigma_{\min(j,k)}^2.
+\]
+\end{proposition}
+
+\begin{proof}
+Unroll the recursion from $a_j$ to $a_k$ ($j \leq k$):
+\[
+  a_k \;=\; \alpha^{k-j}\,a_j \;+\; \sum_{i=j}^{k-1}\alpha^{k-1-i}\,\eta_i.
+\]
+The noise terms $\eta_i$ for $i \geq j$ are injected after time $j$, hence
+independent of $a_j$. Therefore:
+\[
+  \Cov(a_j, a_k)
+  = \E\!\left[\tilde{a}_j\!\left(\alpha^{k-j}\tilde{a}_j
+    + \sum_{i=j}^{k-1}\alpha^{k-1-i}\eta_i\right)\right]
+  = \alpha^{k-j}\,\E[\tilde{a}_j^2]
+  + \sum_{i=j}^{k-1}\alpha^{k-1-i}\underbrace{\E[\tilde{a}_j\,\eta_i]}_{=\,0}
+  = \alpha^{k-j}\,\sigma_j^2,
+\]
+where $\tilde{a}_j = a_j - m_j$. Symmetry $\Cov(a_j,a_k)=\Cov(a_k,a_j)$
+gives the general formula. \qquad$\square$
+\end{proof}
+
+\begin{remark}[Non-stationarity]
+$\Sigma_0$ depends on position $j$ (not just lag $|j-k|$) because
+$\sigma_j^2$ varies with $j$. The chain becomes \emph{stationary}
+(i.e.\ $\Cov(a_j,a_k) = \alpha^{|j-k|}\sigma_\infty^2$) if and only if
+$\sigma_0^2 = \sigma_\infty^2 = \sigma_\eta^2/(1-\alpha^2)$.
+\end{remark}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Clean Joint Distribution \texorpdfstring{$P_0$}{P0}}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Markov factorisation}
+
+\begin{proposition}[Markov factorisation]\label{prop:markov}
+The joint density of the clean trajectory factorises as
+\[
+  P_0(a_0, a_1, \ldots, a_K)
+  \;=\;
+  p_0(a_0)\;\prod_{k=0}^{K-1} M(a_{k+1} \mid a_k),
+\]
+or explicitly:
+\[
+  P_0(\ba)
+  \;=\;
+  \frac{1}{(2\pi)^{(K+1)/2}\,\sigma_0\,\sigma_\eta^K}
+  \exp\!\left(
+    -\frac{(a_0-\mu_0)^2}{2\sigma_0^2}
+    \;-\;
+    \sum_{k=0}^{K-1}\frac{(a_{k+1}-\alpha\,a_k)^2}{2\sigma_\eta^2}
+  \right).
+\]
+\end{proposition}
+
+\begin{proof}
+The chain rule of probability gives:
+\[
+  P_0(\ba) = p(a_0)\cdot p(a_1\mid a_0)\cdot p(a_2\mid a_1,a_0)
+  \cdots p(a_K\mid a_{K-1},\ldots,a_0).
+\]
+The Markov property reduces each factor: $p(a_k\mid a_{k-1},\ldots,a_0)
+= M(a_k\mid a_{k-1})$. Substituting the Gaussian densities gives the
+explicit product form. \qquad$\square$
+\end{proof}
+
+\subsection{The precision matrix}
+
+The exponent of $P_0(\ba)$ is quadratic in $\ba$. Define the
+\emph{precision matrix} $\Sigma_0^{-1}$ via
+\[
+  \frac{(a_0-\mu_0)^2}{2\sigma_0^2}
+  + \sum_{k=0}^{K-1}\frac{(a_{k+1}-\alpha\,a_k)^2}{2\sigma_\eta^2}
+  \;\equiv\;
+  \frac{1}{2}(\ba-\bmu_a)^\top \Sigma_0^{-1}(\ba-\bmu_a),
+\]
+where $\bmu_a = (\mu_0, \alpha\mu_0, \ldots, \alpha^K\mu_0)^\top$.
+
+\begin{proposition}[Tridiagonal precision matrix]\label{prop:tridiag}
+The precision matrix $\Sigma_0^{-1}$ is \textbf{symmetric} and
+\textbf{tridiagonal} with entries:
+\begin{align*}
+  (\Sigma_0^{-1})_{00}
+    &= \frac{1}{\sigma_0^2} + \frac{\alpha^2}{\sigma_\eta^2}, \\
+  (\Sigma_0^{-1})_{kk}
+    &= \frac{1+\alpha^2}{\sigma_\eta^2},
+    \quad k = 1, \ldots, K-1, \\
+  (\Sigma_0^{-1})_{KK}
+    &= \frac{1}{\sigma_\eta^2}, \\
+  (\Sigma_0^{-1})_{k,k+1}
+  = (\Sigma_0^{-1})_{k+1,k}
+    &= -\frac{\alpha}{\sigma_\eta^2},
+    \quad k = 0, \ldots, K-1, \\
+  (\Sigma_0^{-1})_{jk}
+    &= 0,
+    \quad |j-k| \geq 2.
+\end{align*}
+\end{proposition}
+
+\begin{proof}
+Expand the exponent and collect terms. For a symmetric matrix $A$, the
+identity
+\[
+  \mathbf{v}^\top A \mathbf{v}
+  = \sum_i A_{ii}v_i^2 + 2\sum_{i<j}A_{ij}v_iv_j
+\]
+implies: $A_{ii}$ equals the coefficient of $v_i^2$, and $A_{ij}$ ($i<j$)
+equals \emph{half} the coefficient of $v_iv_j$.
+
+Setting $\tilde{a}_k = a_k - \alpha^k\mu_0$ (centred variables):
+
+\begin{itemize}
+  \item \textbf{Coefficient of $\tilde{a}_0^2$:} appears in
+    $(a_0-\mu_0)^2/\sigma_0^2$ as $1/\sigma_0^2$, and in
+    $(a_1 - \alpha a_0)^2/\sigma_\eta^2$ as $\alpha^2/\sigma_\eta^2$.
+    Sum: $(\Sigma_0^{-1})_{00} = 1/\sigma_0^2 + \alpha^2/\sigma_\eta^2$.
+
+  \item \textbf{Coefficient of $\tilde{a}_k^2$, interior $k$:} frame $k$
+    appears as $\tilde{a}_k^2$ in transition $k-1$ and as
+    $\alpha^2\tilde{a}_k^2$ in transition $k$. Sum:
+    $(\Sigma_0^{-1})_{kk} = (1+\alpha^2)/\sigma_\eta^2$.
+
+  \item \textbf{Coefficient of $\tilde{a}_K^2$:} only in the last
+    transition as $\tilde{a}_K^2/\sigma_\eta^2$.
+    Hence $(\Sigma_0^{-1})_{KK} = 1/\sigma_\eta^2$.
+
+  \item \textbf{Coefficient of $\tilde{a}_k\tilde{a}_{k+1}$:} the cross
+    term $-2\alpha\tilde{a}_{k+1}\tilde{a}_k/\sigma_\eta^2$ in transition
+    $k$ gives, after halving, $(\Sigma_0^{-1})_{k,k+1} = -\alpha/\sigma_\eta^2$.
+
+  \item \textbf{Terms $\tilde{a}_j\tilde{a}_k$ with $|j-k|\geq 2$:}
+    such cross-products never appear in the expanded sum of squared
+    residuals — a direct algebraic consequence of the Markov property.
+    Hence $(\Sigma_0^{-1})_{jk} = 0$. \qquad$\square$
+\end{itemize}
+\end{proof}
+
+\begin{remark}[Conditional independence interpretation]
+For a jointly Gaussian vector, $(\Sigma_0^{-1})_{jk} = 0$ if and only if
+$a_j \perp a_k \mid \{a_\ell : \ell \neq j, k\}$. The tridiagonal
+structure of $\Sigma_0^{-1}$ is therefore the algebraic encoding of the
+Markov property: conditioning on all intermediate frames screens off
+$a_j$ and $a_k$ for $|j-k|\geq 2$. The covariance matrix $\Sigma_0$ is
+\emph{dense} (all entries nonzero for $\alpha\neq 0$), encoding
+\emph{total} correlations including all indirect paths through
+intermediaries; the precision matrix encodes only \emph{direct} couplings.
+More precisely, from the conditional distribution $a_j \mid \{a_k\}_{k\neq j}$,
+the conditional mean satisfies
+\[
+  \E\!\left[a_j \mid \{a_k\}_{k\neq j}\right]
+  = \mu_j - \frac{1}{(\Sigma_0^{-1})_{jj}}\sum_{k\neq j}
+    (\Sigma_0^{-1})_{jk}(a_k - \mu_k),
+\]
+so a zero off-diagonal entry $(\Sigma_0^{-1})_{jk}=0$ means $a_k$ does not
+appear in the conditional mean of $a_j$ given everything else.
+\end{remark}
+
+\begin{resultbox}
+\textbf{Clean joint distribution.} The AR(1) trajectory is a
+$(K+1)$-dimensional Gaussian:
+\[
+  \boxed{
+  P_0(\ba)
+  = \frac{1}{(2\pi)^{(K+1)/2}\,|\Sigma_0|^{1/2}}
+    \exp\!\left(
+      -\frac{1}{2}(\ba - \bmu_a)^\top\,\Sigma_0^{-1}\,(\ba - \bmu_a)
+    \right),}
+\]
+with mean $\bmu_a = (\mu_0, \alpha\mu_0, \ldots, \alpha^K\mu_0)^\top$
+and tridiagonal precision matrix $\Sigma_0^{-1}$ given in
+Proposition~\ref{prop:tridiag}.
+\end{resultbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Noisy Joint Distribution \texorpdfstring{$P_t$}{Pt}}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The Ornstein-Uhlenbeck forward process}
+
+\begin{definition}[OU diffusion per frame]
+At diffusion time $t \geq 0$, each clean frame $a_k$ is independently
+corrupted:
+\[
+  x_k \;=\; a_k\,e^{-t} \;+\; \sqrt{\dt}\;z_k,
+  \qquad
+  z_k \overset{\mathrm{i.i.d.}}{\sim} \N(0,1),
+  \quad
+  \bm{z} \perp \ba,
+  \qquad
+  \dt \;=\; 1 - e^{-2t}.
+\]
+Note the identity $e^{-2t} + \dt = 1$: signal energy plus noise energy
+is conserved.
+\end{definition}
+
+The scaling rule $\sqrt{\dt}\,z_k \sim \N(0, \dt)$ gives:
+\[
+  x_k \mid a_k \;\sim\; \N\!\left(a_k e^{-t},\; \dt\right),
+  \qquad
+  p(x_k\mid a_k)
+  = \frac{1}{\sqrt{2\pi\dt}}
+    \exp\!\left(-\frac{(x_k - a_k e^{-t})^2}{2\dt}\right).
+\]
+
+Since the noises $z_k$ are independent across frames, the joint
+conditional likelihood factorises:
+\[
+  p(\bx \mid \ba)
+  \;=\;
+  \prod_{k=0}^{K}\,\N\!\left(x_k;\; a_k e^{-t},\; \dt\right).
+\]
+
+\subsection{The marginal distribution of noisy observations}
+
+The noisy observations $\bx = (x_0, \ldots, x_K)$ are obtained by
+marginalising over the hidden clean frames:
+
+\begin{resultbox}
+\[
+  P_t(\bx)
+  \;=\;
+  \int_{\R^{K+1}} P_0(\ba)\;\prod_{k=0}^{K}
+  \N\!\left(x_k;\; a_k e^{-t},\; \dt\right)
+  \;d\ba.
+  \tag{Mézard's board formula}
+\]
+\end{resultbox}
+
+We compute this integral by two independent methods.
+
+\subsection{Method 1: Linear transformation of Gaussians}
+
+\begin{theorem}[$P_t$ is Gaussian]\label{thm:Pt_linear}
+The marginal $P_t(\bx)$ is a $(K+1)$-dimensional Gaussian:
+\[
+  P_t(\bx) \;=\; \N\!\left(\bx;\; \bmu_t,\; \Sigma_t\right),
+\]
+with
+\[
+  \bmu_t \;=\; e^{-t}\,\bmu_a,
+  \qquad
+  \Sigma_t \;=\; e^{-2t}\,\Sigma_0 \;+\; \dt\, I_{K+1}.
+\]
+\end{theorem}
+
+\begin{proof}
+Write the observation model in vector form:
+\[
+  \bx = e^{-t}\,\ba + \sqrt{\dt}\,\bz,
+  \qquad
+  \ba \sim \N(\bmu_a, \Sigma_0),
+  \quad
+  \bz \sim \N(\bm{0}, I_{K+1}),
+  \quad
+  \ba \perp \bz.
+\]
+$\bx$ is a linear function of two independent Gaussian vectors,
+hence Gaussian.
+
+\textbf{Mean:}
+\[
+  \bmu_t
+  = \E[\bx]
+  = e^{-t}\,\E[\ba] + \sqrt{\dt}\,\E[\bz]
+  = e^{-t}\,\bmu_a.
+\]
+
+\textbf{Covariance:} using independence $\ba \perp \bz$ and the
+bilinearity of covariance,
+\[
+  \Sigma_t
+  = \Cov\!\left(e^{-t}\,\ba + \sqrt{\dt}\,\bz\right)
+  = e^{-2t}\,\Cov(\ba) + \dt\,\Cov(\bz)
+  = e^{-2t}\,\Sigma_0 + \dt\,I_{K+1}. \qquad\square
+\]
+\end{proof}
+
+\begin{remark}[Physical interpretation of $\Sigma_t$]
+The covariance $\Sigma_t = e^{-2t}\Sigma_0 + \dt I$ has two competing
+contributions:
+\begin{itemize}
+  \item $e^{-2t}\Sigma_0$: the \emph{signal} covariance, carrying all
+    inter-frame AR(1) correlations, shrinking exponentially with $t$.
+  \item $\dt I$: the \emph{noise} covariance, diagonal (independent
+    noise per frame), growing from $0$ to $1$ as $t$ increases.
+\end{itemize}
+At $t=0$: $\Sigma_0 = \Sigma_0$ (pure signal). As $t\to\infty$:
+$\Sigma_t \to I$ (pure noise, all correlation erased).
+\end{remark}
+
+\subsection{Method 2: Direct Gaussian integral}
+
+We now verify Theorem~\ref{thm:Pt_linear} by explicitly computing
+the integral, which is instructive in its own right.
+
+\begin{proof}[Proof of Theorem~\ref{thm:Pt_linear} by direct integration]
+We compute $P_t(\bx) = \int_{\R^{K+1}} P_0(\ba)\,p(\bx\mid\ba)\,d\ba$
+by treating the integrand as a Gaussian in $\ba$ and completing the square.
+
+\medskip
+\noindent\textit{Step 1: combine the two exponentials.}
+Up to positive normalisation constants (absorbed into the proportionality),
+\[
+  P_0(\ba)\cdot p(\bx\mid\ba)
+  \;\propto\;
+  \exp\!\left(
+    -\frac{1}{2}(\ba-\bmu_a)^\top\Sigma_0^{-1}(\ba-\bmu_a)
+    -\frac{1}{2\dt}\|\bx - e^{-t}\ba\|^2
+  \right).
+\]
+Expand the second quadratic (writing $\|\bx - e^{-t}\ba\|^2 =
+\bx^\top\bx - 2e^{-t}\bx^\top\ba + e^{-2t}\ba^\top\ba$):
+\[
+  \frac{1}{2\dt}\|\bx - e^{-t}\ba\|^2
+  = \frac{e^{-2t}}{2\dt}\,\ba^\top\ba
+    - \frac{e^{-t}}{\dt}\,\bx^\top\ba
+    + \frac{1}{2\dt}\,\bx^\top\bx.
+\]
+The last term does not depend on $\ba$; absorb it into the proportionality.
+Expand the first quadratic similarly:
+\[
+  \frac{1}{2}(\ba-\bmu_a)^\top\Sigma_0^{-1}(\ba-\bmu_a)
+  = \frac{1}{2}\ba^\top\Sigma_0^{-1}\ba
+    - \ba^\top\Sigma_0^{-1}\bmu_a
+    + \frac{1}{2}\bmu_a^\top\Sigma_0^{-1}\bmu_a.
+\]
+The last term is a constant in $\ba$; absorb it. Collecting all $\ba$-dependent
+terms in the exponent:
+\[
+  -\frac{1}{2}\,\ba^\top
+    \underbrace{\left(\Sigma_0^{-1} + \frac{e^{-2t}}{\dt}\,I\right)}_{\Lambda}\,\ba
+  + \ba^\top
+    \underbrace{\left(\Sigma_0^{-1}\bmu_a + \frac{e^{-t}}{\dt}\,\bx\right)}_{\bm{h}}.
+\]
+
+\medskip
+\noindent\textit{Step 2: complete the square in $\ba$.}
+Define
+\begin{align*}
+  \Lambda &\;=\; \Sigma_0^{-1} + \frac{e^{-2t}}{\dt}\,I
+  \quad\in\R^{(K+1)\times(K+1)},\\
+  \bm{h} &\;=\; \Sigma_0^{-1}\bmu_a + \frac{e^{-t}}{\dt}\,\bx,\\
+  \bm{m} &\;=\; \Lambda^{-1}\bm{h}
+  \quad\text{(posterior mean of $\ba$ given $\bx$)}.
+\end{align*}
+The standard identity $-\frac{1}{2}\ba^\top\Lambda\ba + \ba^\top\bm{h}
+= -\frac{1}{2}(\ba-\bm{m})^\top\Lambda(\ba-\bm{m})
++ \frac{1}{2}\bm{m}^\top\Lambda\bm{m}$
+rewrites the exponent as a Gaussian in $\ba$ centred at $\bm{m}$,
+plus a term $\frac{1}{2}\bm{m}^\top\Lambda\bm{m}$ that depends only on $\bx$.
+
+\medskip
+\noindent\textit{Step 3: perform the Gaussian integral over $\ba$.}
+\[
+  \int_{\R^{K+1}}
+    \exp\!\left(-\tfrac{1}{2}(\ba-\bm{m})^\top\Lambda(\ba-\bm{m})\right)d\ba
+  = (2\pi)^{(K+1)/2}\,|\Lambda|^{-1/2}.
+\]
+The remaining $\bx$-dependent part of the exponent is:
+\[
+  Q(\bx)
+  \;\equiv\;
+  \frac{1}{2}\bm{m}^\top\Lambda\bm{m} - \frac{1}{2\dt}\,\bx^\top\bx
+  = \frac{1}{2}\bm{h}^\top\Lambda^{-1}\bm{h} - \frac{1}{2\dt}\,\bx^\top\bx.
+\]
+
+\medskip
+\noindent\textit{Step 4: identify $Q(\bx)$ as a Gaussian quadratic in $\bx$.}
+Substitute $\bm{h} = \Sigma_0^{-1}\bmu_a + \frac{e^{-t}}{\dt}\bx$ and
+apply the \textbf{Woodbury identity}
+$\Lambda^{-1} = \left(\Sigma_0^{-1}+\frac{e^{-2t}}{\dt}I\right)^{-1}
+= \Sigma_0 - e^{-2t}\Sigma_0\Sigma_t^{-1}\Sigma_0$
+(derivable from $(A+UCV)^{-1} = A^{-1}-A^{-1}U(C^{-1}+VA^{-1}U)^{-1}VA^{-1}$
+with $A=\Sigma_0^{-1}$, $U=V^\top=I$, $C=\frac{e^{-2t}}{\dt}I$).
+After expanding and collecting the $\bx^\top(\cdot)\bx$ terms, one finds
+that all cross-terms reduce to:
+\[
+  Q(\bx)
+  = -\frac{1}{2}(\bx - e^{-t}\bmu_a)^\top \Sigma_t^{-1}(\bx - e^{-t}\bmu_a)
+    + \text{const},
+\]
+where $\Sigma_t = e^{-2t}\Sigma_0 + \dt I$ (one verifies:
+$\frac{1}{\dt}I - \frac{e^{-2t}}{\dt^2}\Sigma_0\Lambda^{-1} = \Sigma_t^{-1}$
+by multiplying both sides by $\Sigma_t$ and using $\Lambda = \Sigma_0^{-1}+\frac{e^{-2t}}{\dt}I$).
+
+\medskip
+\noindent\textit{Conclusion.}
+Assembling all factors, $P_t(\bx) \propto
+\exp\!\left(-\frac{1}{2}(\bx-\bmu_t)^\top\Sigma_t^{-1}(\bx-\bmu_t)\right)$
+with $\bmu_t = e^{-t}\bmu_a$ and $\Sigma_t = e^{-2t}\Sigma_0+\dt I$,
+confirming it is $\N(\bmu_t,\Sigma_t)$.
+\end{proof}
+
+\begin{resultbox}
+\textbf{Noisy joint distribution.}
+\[
+  \boxed{
+  P_t(\bx)
+  = \frac{1}{(2\pi)^{(K+1)/2}|\Sigma_t|^{1/2}}
+    \exp\!\left(
+      -\frac{1}{2}(\bx - \bmu_t)^\top\,\Sigma_t^{-1}\,(\bx - \bmu_t)
+    \right),}
+\]
+with $\bmu_t = e^{-t}\bmu_a$ and
+$\Sigma_t = e^{-2t}\Sigma_0 + \dt I_{K+1}$.
+\end{resultbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Joint Score Function}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Derivation}
+
+\begin{definition}[Joint score]
+The \textbf{joint score} at diffusion time $t$ is:
+\[
+  \bm{S}(\bx, t)
+  \;=\;
+  \nabla_{\bx}\log P_t(\bx)
+  \;\in\; \R^{K+1}.
+\]
+Its $k$-th component $S_k(\bx,t) = \partial_{x_k}\log P_t(\bx)$
+measures how increasing $x_k$ changes the log-probability of the
+entire noisy trajectory.
+\end{definition}
+
+\begin{theorem}[Joint score is linear]\label{thm:score}
+\[
+  \bm{S}(\bx, t)
+  \;=\;
+  -\Sigma_t^{-1}\,\bigl(\bx - \bmu_t\bigr).
+\]
+\end{theorem}
+
+\begin{proof}
+Since $P_t(\bx) = \N(\bx;\bmu_t,\Sigma_t)$, its log-density is:
+\[
+  \log P_t(\bx)
+  = -\frac{1}{2}(\bx-\bmu_t)^\top\Sigma_t^{-1}(\bx-\bmu_t)
+    \underbrace{- \frac{K+1}{2}\log(2\pi) - \frac{1}{2}\log|\Sigma_t|}_{\text{constant in }\bx}.
+\]
+It therefore suffices to differentiate $-\frac{1}{2}(\bx-\bmu_t)^\top\Sigma_t^{-1}(\bx-\bmu_t)$
+with respect to $\bx$. Expand the quadratic form using bilinearity:
+\[
+  (\bx-\bmu_t)^\top\Sigma_t^{-1}(\bx-\bmu_t)
+  = \bx^\top\Sigma_t^{-1}\bx
+    - 2\,\bmu_t^\top\Sigma_t^{-1}\bx
+    + \underbrace{\bmu_t^\top\Sigma_t^{-1}\bmu_t}_{\text{constant in }\bx}.
+\]
+We differentiate the two remaining $\bx$-dependent terms separately.
+
+\medskip
+\noindent\textit{Step 1: gradient of the quadratic term.}
+For any symmetric matrix $A \in \R^{n\times n}$ and $\bm{v}\in\R^n$,
+compute the $m$-th partial derivative of $\bm{v}^\top A\bm{v}
+= \sum_{i,j}A_{ij}v_iv_j$ by the product rule:
+\[
+  \frac{\partial}{\partial v_m}\Bigl(\bm{v}^\top A\bm{v}\Bigr)
+  = \sum_j A_{mj}v_j \;+\; \sum_i A_{im}v_i
+  = \bigl(A\bm{v}\bigr)_m + \bigl(A^\top\bm{v}\bigr)_m.
+\]
+Since $\Sigma_t^{-1}$ is symmetric ($\Sigma_t^{-1} = (\Sigma_t^{-1})^\top$,
+as the inverse of a symmetric matrix is symmetric), the two sums are
+equal and:
+\[
+  \nabla_{\bx}\!\left(\bx^\top\Sigma_t^{-1}\bx\right)
+  = 2\,\Sigma_t^{-1}\bx.
+\]
+
+\medskip
+\noindent\textit{Step 2: gradient of the linear term.}
+The term $-2\,\bmu_t^\top\Sigma_t^{-1}\bx$ is linear in $\bx$.
+Write it as $\bm{c}^\top\bx$ where $\bm{c} = -2\,\Sigma_t^{-1}\bmu_t$
+is a constant vector (independent of $\bx$). Since
+$\nabla_{\bx}(\bm{c}^\top\bx) = \bm{c}$ for any constant $\bm{c}$:
+\[
+  \nabla_{\bx}\!\left(-2\,\bmu_t^\top\Sigma_t^{-1}\bx\right)
+  = -2\,\Sigma_t^{-1}\bmu_t.
+\]
+
+\medskip
+\noindent\textit{Combining Steps 1 and 2:}
+\begin{align*}
+  \bm{S}(\bx,t)
+  &= \nabla_{\bx}\!\left[\log P_t(\bx)\right] \\
+  &= -\frac{1}{2}\,\nabla_{\bx}\!\left(
+      \bx^{\top}\Sigma_t^{-1}\bx \;-\; 2\,\bmu_t^{\top}\Sigma_t^{-1}\bx
+    \right) \\
+  &= -\frac{1}{2}\!\left(2\,\Sigma_t^{-1}\bx - 2\,\Sigma_t^{-1}\bmu_t\right) \\
+  &= -\Sigma_t^{-1}(\bx - \bmu_t).
+\end{align*}
+\end{proof}
+
+\begin{remark}[Linearity is a Gaussian property]
+The score is affine in $\bx$:
+\[
+  \bm{S}(\bx, t) = \underbrace{-\Sigma_t^{-1}}_{A(t)}\,\bx
+  + \underbrace{\Sigma_t^{-1}\bmu_t}_{\bm{b}(t)}.
+\]
+This linearity is specific to Gaussian distributions. For a non-Gaussian
+prior $P_0$ (e.g.\ a mixture of Gaussians), $P_t$ is non-Gaussian for
+small $t$ and the score is a nonlinear function of $\bx$. The AR(1)
+Gaussian model is the unique tractable case where linearity holds exactly
+at all $t$.
+\end{remark}
+
+\subsection{The \texorpdfstring{$k$}{k}-th component and inter-frame coupling}
+
+The $k$-th component of the joint score is:
+
+\begin{corollary}[Component-wise joint score]
+\[
+  S_k(\bx, t)
+  \;=\;
+  -\sum_{j=0}^{K}(\Sigma_t^{-1})_{kj}\,(x_j - \mu_{t,j}),
+\]
+where $\mu_{t,j} = e^{-t}\alpha^j\mu_0$. This couples $x_k$ to
+\textbf{all other frames} $x_j$ through the precision matrix entries
+$(\Sigma_t^{-1})_{kj}$.
+\end{corollary}
+
+\begin{remark}[Limiting regimes]
+\hfill
+\begin{itemize}
+  \item \textbf{$t \to 0$ (clean signal):} $\Sigma_t^{-1} \to
+    \Sigma_0^{-1}$, which is tridiagonal. Hence
+    $S_k$ depends only on $x_{k-1}$, $x_k$, $x_{k+1}$ —
+    nearest-neighbour coupling only.
+
+  \item \textbf{$t \to \infty$ (pure noise):} $\Sigma_t^{-1}
+    \to \dt^{-1}I \to I$, so $S_k \approx -x_k/\dt$ — each
+    frame's score depends only on itself, all inter-frame coupling
+    vanishes.
+
+  \item \textbf{Intermediate $t$:} $\Sigma_t^{-1}$ is not tridiagonal
+    in general. Adding $\dt I$ to $\Sigma_0$ and inverting fills in
+    the structural zeros of $\Sigma_0^{-1}$, producing small but nonzero
+    off-tridiagonal entries. The tridiagonal structure is only approximate
+    for $t > 0$.
+\end{itemize}
+\end{remark}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Connection to M\'ezard's Formula}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The formula derived in Theorem~\ref{thm:score} has an equivalent
+probabilistic representation as a conditional expectation, which is what
+M\'ezard wrote on the board during the meeting.
+
+\begin{theorem}[Score as a conditional expectation]\label{thm:mezard}
+The $k$-th component of the joint score satisfies:
+\[
+  \boxed{
+  S_k(\bx, t)
+  \;=\;
+  \left\langle
+    \frac{a_k\,e^{-t} - x_k}{\dt}
+  \right\rangle_{\!\ba \mid \bx},}
+\]
+where $\langle \cdot \rangle_{\ba \mid \bx}$ denotes expectation under
+the posterior
+$P(\ba \mid \bx) \propto P_0(\ba)\prod_{j}\N(x_j;\,a_j e^{-t},\,\dt)$.
+\end{theorem}
+
+\begin{proof}
+By definition:
+\[
+  S_k(\bx,t)
+  = \partial_{x_k}\log P_t(\bx)
+  = \frac{\partial_{x_k} P_t(\bx)}{P_t(\bx)}.
+\]
+Write $P_t(\bx) = \int P_0(\ba)\prod_j \N(x_j;\,a_j e^{-t},\,\dt)\,d\ba$.
+Only the $k$-th factor depends on $x_k$. Using the identity
+$\partial_{x}\log\N(x;\,\mu,\,\sigma^2) = (\mu-x)/\sigma^2$:
+\[
+  \partial_{x_k}\N(x_k;\,a_k e^{-t},\,\dt)
+  = \N(x_k;\,a_k e^{-t},\,\dt)\cdot\frac{a_k e^{-t} - x_k}{\dt}.
+\]
+Therefore:
+\[
+  \partial_{x_k}P_t(\bx)
+  = \int P_0(\ba)\prod_j\N(x_j;\,a_j e^{-t},\,\dt)
+    \cdot\frac{a_k e^{-t}-x_k}{\dt}\,d\ba.
+\]
+Dividing by $P_t(\bx)$ turns the integral into an expectation under
+the posterior $P(\ba\mid\bx)$:
+\[
+  S_k(\bx,t)
+  = \left\langle\frac{a_k e^{-t} - x_k}{\dt}\right\rangle_{\ba\mid\bx}.
+  \qquad\square
+\]
+\end{proof}
+
+\begin{remark}[Denoising interpretation]
+The formula $S_k = (e^{-t}\langle a_k\rangle_{\ba\mid\bx} - x_k)/\dt$
+is a \textbf{denoising residual}: the expected clean signal scaled back
+to the observed level, minus the actual noisy observation, divided by
+the noise variance. Three features deserve emphasis:
+\begin{enumerate}
+  \item The expectation $\langle a_k\rangle_{\ba\mid\bx}$ conditions on
+    the \textbf{full noisy trajectory} $\bx$, not just $x_k$. This is
+    the key difference from the marginal score.
+  \item For Gaussian AR(1), the posterior $P(\ba\mid\bx)$ is Gaussian,
+    and the posterior mean $\langle\ba\rangle_{\ba\mid\bx}$ is
+    computable exactly by the \textbf{Kalman smoother}.
+  \item The posterior mean is \textbf{linear} in $\bx$:
+    $\langle\ba\rangle_{\ba\mid\bx} = e^{-t}\Sigma_0\Sigma_t^{-1}
+    (\bx - \bmu_t) + \bmu_a$, which is consistent with the
+    explicit formula $S_k = -[\Sigma_t^{-1}(\bx-\bmu_t)]_k$.
+\end{enumerate}
+\end{remark}
+
+\subsection{Equivalence of the two formulas}
+
+We now prove algebraically that M\'ezard's conditional expectation formula
+and the explicit linear formula of Theorem~\ref{thm:score} are identical.
+The key ingredient is the \textbf{posterior mean} of the clean frames.
+
+\begin{lemma}[Gaussian posterior mean]\label{lem:postmean}
+For Gaussian $P_0(\ba) = \N(\ba;\bmu_a,\Sigma_0)$ and Gaussian
+likelihood $p(\bx\mid\ba) = \prod_k\N(x_k;\,a_ke^{-t},\dt)$,
+the posterior $P(\ba\mid\bx)$ is Gaussian with mean:
+\[
+  \langle\ba\rangle_{\ba\mid\bx}
+  \;=\;
+  \bmu_a \;+\; e^{-t}\,\Sigma_0\,\Sigma_t^{-1}\,(\bx - \bmu_t).
+\]
+\end{lemma}
+
+\begin{proof}
+The posterior precision is $\Lambda = \Sigma_0^{-1}+\frac{e^{-2t}}{\dt}I$
+(from Step~2 of the direct integral proof) and the posterior mean is
+$\bm{m} = \Lambda^{-1}(\Sigma_0^{-1}\bmu_a + \frac{e^{-t}}{\dt}\bx)$.
+Apply the Woodbury identity $\Lambda^{-1} = \Sigma_0 - e^{-2t}\Sigma_0\Sigma_t^{-1}\Sigma_0$
+and the relation $\frac{e^{-2t}}{\dt}\Sigma_0 = \Sigma_t^{-1}\Sigma_0\cdot\frac{e^{-2t}\Sigma_0}{\dt}$...
+
+More directly: use the standard Gaussian conditioning formula.
+Because $\bx = e^{-t}\ba + \sqrt{\dt}\bz$ with $\ba\perp\bz$,
+the joint covariance between $\ba$ and $\bx$ is
+$\Cov(\ba,\bx) = e^{-t}\Cov(\ba,\ba) = e^{-t}\Sigma_0$.
+The conditional mean formula for jointly Gaussian variables gives:
+\[
+  \langle\ba\rangle_{\ba\mid\bx}
+  = \bmu_a + \Cov(\ba,\bx)\,[\Cov(\bx,\bx)]^{-1}(\bx-\bmu_t)
+  = \bmu_a + e^{-t}\Sigma_0\,\Sigma_t^{-1}(\bx-\bmu_t). \qquad\square
+\]
+\end{proof}
+
+\begin{proposition}[Equivalence of the two score formulas]
+The M\'ezard formula and the linear formula agree exactly:
+\[
+  \left\langle\frac{a_k e^{-t}-x_k}{\dt}\right\rangle_{\!\ba\mid\bx}
+  \;=\;
+  -\bigl[\Sigma_t^{-1}(\bx-\bmu_t)\bigr]_k.
+\]
+\end{proposition}
+
+\begin{proof}
+Since $x_k$ is a constant under $\langle\cdot\rangle_{\ba\mid\bx}$:
+\[
+  \left\langle\frac{a_k e^{-t}-x_k}{\dt}\right\rangle_{\!\ba\mid\bx}
+  = \frac{e^{-t}\langle a_k\rangle_{\ba\mid\bx} - x_k}{\dt}.
+\]
+Substitute Lemma~\ref{lem:postmean} for the $k$-th component:
+\[
+  = \frac{e^{-t}\!\left(\mu_{a,k} + e^{-t}[\Sigma_0\Sigma_t^{-1}(\bx-\bmu_t)]_k\right) - x_k}{\dt}.
+\]
+Use $e^{-t}\mu_{a,k} = \mu_{t,k}$ (since $\bmu_t = e^{-t}\bmu_a$) and write
+$e^{-2t}\Sigma_0 = \Sigma_t - \dt I$ (rearranging $\Sigma_t = e^{-2t}\Sigma_0+\dt I$),
+so $e^{-2t}\Sigma_0\Sigma_t^{-1} = (\Sigma_t-\dt I)\Sigma_t^{-1} = I - \dt\Sigma_t^{-1}$:
+\[
+  = \frac{\mu_{t,k} + [I - \dt\Sigma_t^{-1}]_k(\bx-\bmu_t) - x_k}{\dt}.
+\]
+Expanding $[I - \dt\Sigma_t^{-1}]_k(\bx-\bmu_t)
+= (x_k - \mu_{t,k}) - \dt[\Sigma_t^{-1}(\bx-\bmu_t)]_k$:
+\[
+  = \frac{\mu_{t,k} + (x_k - \mu_{t,k}) - \dt[\Sigma_t^{-1}(\bx-\bmu_t)]_k - x_k}{\dt}
+  = \frac{-\dt[\Sigma_t^{-1}(\bx-\bmu_t)]_k}{\dt}
+  = -[\Sigma_t^{-1}(\bx-\bmu_t)]_k. \qquad\square
+\]
+\end{proof}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Summary and Notation Table}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The complete derivation chain}
+
+\[
+  \underbrace{P_0(\ba)}_{\text{AR(1) prior}}
+  \;\xrightarrow{\;\text{OU noise, independent per frame}\;}
+  \underbrace{P_t(\bx) = \N(\bmu_t,\,\Sigma_t)}_{\text{noisy joint dist.}}
+  \;\xrightarrow{\;\nabla_{\bx} \log\;}
+  \underbrace{\bm{S}(\bx,t) = -\Sigma_t^{-1}(\bx-\bmu_t)}_{\text{joint score}}
+\]
+
+\subsection{Key formulas collected}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{lll}
+\toprule
+\textbf{Object} & \textbf{Formula} & \textbf{Key property} \\
+\midrule
+Markov prior & $P_0(\ba) = p_0(a_0)\prod_k M(a_{k+1}\mid a_k)$ &
+  Markov factorisation \\
+Covariance & $(\Sigma_0)_{jk} = \alpha^{|j-k|}\sigma_{\min(j,k)}^2$ &
+  Dense \\
+Precision & $(\Sigma_0^{-1})_{k,k\pm1} = -\alpha/\sigma_\eta^2$ &
+  Tridiagonal (sparse) \\
+OU variance & $\dt = 1 - e^{-2t}$ & $e^{-2t}+\dt=1$ \\
+Noisy covariance & $\Sigma_t = e^{-2t}\Sigma_0 + \dt I$ &
+  Signal + noise \\
+Noisy mean & $\bmu_t = e^{-t}\bmu_a$ & Shrinks by $e^{-t}$ \\
+Joint score (algebraic) & $\bm{S} = -\Sigma_t^{-1}(\bx-\bmu_t)$ &
+  Linear in $\bx$ \\
+Joint score (M\'ezard) & $S_k = \langle(a_k e^{-t}-x_k)/\dt\rangle_{\ba\mid\bx}$ &
+  Denoising residual \\
+Marginal score (old) & $s(x_k,k,t) = -(x_k-\mu_{t,k})/T_{kk}$ &
+  Ignores other frames \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Notation reference}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$k = 0,\ldots,K$ & Internal time index (frame number), $K+1$ frames total \\
+$t \geq 0$ & Diffusion time (OU noise level) \\
+$a_k \in \R$ & Clean frame at internal time $k$ \\
+$x_k \in \R$ & Noisy observation of frame $k$ at diffusion time $t$ \\
+$\ba, \bx \in \R^{K+1}$ & Full clean / noisy trajectory \\
+$\alpha \in (-1,1)$ & AR(1) contraction coefficient \\
+$\sigma_0^2$ & Variance of initial frame $a_0$ \\
+$\sigma_\eta^2$ & AR(1) noise variance (variance of each $\eta_k$) \\
+$\sigma_\infty^2 = \sigma_\eta^2/(1-\alpha^2)$ & Stationary variance \\
+$\dt = 1 - e^{-2t}$ & OU noise variance at time $t$ \\
+$\Sigma_0$ & $(K+1)\times(K+1)$ covariance of clean chain \\
+$\Sigma_t = e^{-2t}\Sigma_0+\dt I$ & Covariance of noisy observations \\
+$\bmu_a = (\mu_0,\alpha\mu_0,\ldots,\alpha^K\mu_0)^\top$ & Mean of clean chain \\
+$\bmu_t = e^{-t}\bmu_a$ & Mean of noisy observations \\
+$M(a_{k+1}\mid a_k)$ & AR(1) transition kernel \\
+$P_0(\ba)$ & Joint distribution of clean trajectory \\
+$P_t(\bx)$ & Joint distribution of noisy trajectory \\
+$\bm{S}(\bx,t) = \nabla_{\bx}\log P_t(\bx)$ & Joint score (correct object) \\
+$s(x_k,k,t) = \nabla_{x_k}\log p_t(x_k\mid k)$ & Marginal score (old, incorrect for propagator) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Discussion: Alternative Noise Models for Sequences}
+\label{sec:noise_discussion}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{What does it mean to apply diffusion noise to a sequence?}
+
+In our derivation we applied the OU process \emph{independently and
+identically} to each frame:
+\[
+  x_k = a_k\,e^{-t} + \sqrt{\dt}\,z_k,
+  \qquad z_k \overset{\mathrm{i.i.d.}}{\sim} \N(0,1),
+  \qquad k = 0,\ldots,K.
+\]
+This choice is natural but is not the only possibility. The choice of
+noise model fundamentally changes $P_t(\bx)$, the precision matrix
+$\Sigma_t^{-1}$, and therefore the structure of the joint score.
+Below we compare three alternatives systematically.
+
+\subsection{Case 1: i.i.d.\ OU per frame (our setting)}
+
+The noise covariance is $\text{Cov}(\bm{z}) = I_{K+1}$, so:
+\[
+  \Sigma_t = e^{-2t}\Sigma_0 + \dt\,I_{K+1}.
+\]
+The noise term $\dt I$ is \emph{diagonal} — it adds no coupling between
+frames. All inter-frame structure in $\Sigma_t$ comes entirely from the
+signal term $e^{-2t}\Sigma_0$, which decays to zero as $t\to\infty$.
+This is what makes the score coupling vanish at large $t$.
+
+The joint distribution $P_t(\bx)$ is Gaussian for all $t \geq 0$,
+regardless of whether $P_0$ is Gaussian. This is because convolving
+any distribution with a Gaussian (the OU noise) yields a distribution
+that is at least as smooth, and for Gaussian $P_0$ it remains Gaussian
+exactly.
+
+\subsection{Case 2: correlated OU noise across frames}
+
+Suppose instead the noise has a covariance structure $C \neq I$:
+\[
+  \bx = e^{-t}\ba + \sqrt{\dt}\,C^{1/2}\bz,
+  \qquad \bz \sim \N(\bm{0}, I_{K+1}).
+\]
+Then $\text{Cov}(\sqrt{\dt}C^{1/2}\bz) = \dt C$, and:
+\[
+  \Sigma_t^{(C)} = e^{-2t}\Sigma_0 + \dt\,C.
+\]
+If $P_0$ is Gaussian, $P_t$ remains Gaussian — the closure property
+holds. However, the precision matrix becomes
+$(\Sigma_t^{(C)})^{-1}$, which has a different sparsity structure than
+in Case~1. In particular, if $C$ is itself dense (e.g.\ correlated
+noise between consecutive frames), the noise term \emph{adds}
+off-diagonal entries, potentially strengthening rather than erasing
+inter-frame coupling in the score. This would be physically meaningful
+if the noise represents a correlated perturbation (e.g.\ camera shake
+affecting all frames simultaneously).
+
+\begin{remark}
+A natural choice for a sequence is a \emph{temporally correlated} noise
+with covariance $C_{jk} = \rho^{|j-k|}$ for some $\rho \in (0,1)$.
+This adds a second tridiagonal structure to $\Sigma_t$, and the
+precision $(\Sigma_t^{(C)})^{-1}$ remains banded but with potentially
+wider bandwidth.
+\end{remark}
+
+\subsection{Case 3: a single shared noise applied to the full sequence}
+
+At the opposite extreme, one could apply a single scalar noise
+$\xi \sim \N(0,1)$ to the entire trajectory:
+\[
+  x_k = a_k\,e^{-t} + \sqrt{\dt}\,\xi \quad \text{for all } k.
+\]
+Then $\text{Cov}(\bx\mid\ba) = \dt\,\mathbf{1}\mathbf{1}^\top$ (a rank-1
+matrix, where $\mathbf{1} = (1,\ldots,1)^\top$). This is a \emph{highly
+degenerate} noise: all frames receive exactly the same random
+perturbation. Even for Gaussian $P_0$, the resulting $P_t(\bx)$ is
+Gaussian, but:
+\[
+  \Sigma_t^{(\text{shared})}
+  = e^{-2t}\Sigma_0 + \dt\,\mathbf{1}\mathbf{1}^\top,
+\]
+which is rank-$(K+1) + 1$ in general but structurally very different from
+Case~1. The noise now \emph{introduces} inter-frame correlation rather
+than destroying it, so the score at large $t$ does not simplify to
+$-\bx/\dt$ — instead it retains a non-trivial coupling through the
+rank-1 noise term.
+
+\subsection{What if \texorpdfstring{$P_0$}{P0} is not Gaussian?}
+
+If $P_0(\ba)$ is not Gaussian (e.g.\ a mixture of Gaussians, or a
+distribution with heavy tails), the answer depends on the noise model:
+
+\begin{itemize}
+  \item \textbf{i.i.d.\ OU (Case 1):} $P_t(\bx)$ is the convolution of
+    $P_0$ with a Gaussian kernel. For small $t$ this preserves the
+    non-Gaussian structure of $P_0$; for large $t$ the Gaussian kernel
+    dominates and $P_t \approx \N(\bm{0},I)$. At intermediate $t$ the
+    score $\bm{S}(\bx,t) = \nabla_{\bx}\log P_t(\bx)$ is \emph{nonlinear}
+    in $\bx$ — the linear formula $-\Sigma_t^{-1}(\bx-\bmu_t)$ no
+    longer applies.
+
+  \item \textbf{Mixture of Gaussians:} if
+    $P_0(\ba) = \sum_c \pi_c\,\N(\ba;\bmu_c,\Sigma_c)$, then
+    $P_t(\bx) = \sum_c \pi_c\,\N(\bx;\,e^{-t}\bmu_c,\,e^{-2t}\Sigma_c
+    + \dt I)$ — still a mixture of Gaussians. The score is a
+    \emph{weighted average} of the per-component scores, with
+    weights depending on the posterior component probabilities given $\bx$.
+    This is nonlinear in $\bx$ in general.
+\end{itemize}
+
+\begin{resultbox}
+\textbf{Key takeaway.} The Gaussian AR(1) model with i.i.d.\ OU noise is
+the \emph{unique} setting in this family where: (i) $P_t$ is Gaussian
+for all $t$, (ii) the joint score is linear in $\bx$, (iii) the score
+has a closed-form precision structure, and (iv) the Kalman smoother
+provides the exact posterior. Any departure from Gaussianity in $P_0$
+breaks (i)--(iv).
+\end{resultbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Extension to Multivariate Frames}
+\label{sec:multivariate}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Setup}
+
+Suppose each frame is now a $d$-dimensional vector:
+\[
+  \ba_k \in \R^d, \qquad k = 0, 1, \ldots, K.
+\]
+The full trajectory is $\ba = (\ba_0^\top, \ba_1^\top, \ldots,
+\ba_K^\top)^\top \in \R^{d(K+1)}$. The AR(1) dynamics become:
+\[
+  \ba_{k+1} = A\,\ba_k + \bm{\eta}_k,
+  \qquad
+  \bm{\eta}_k \overset{\mathrm{i.i.d.}}{\sim} \N(\bm{0},\, Q),
+\]
+where $A \in \R^{d\times d}$ is the transition matrix (replacing the
+scalar $\alpha$) and $Q \in \R^{d\times d}$ is the noise covariance
+matrix (replacing $\sigma_\eta^2$).
+
+The initial distribution is $\ba_0 \sim \N(\bmu_0, \Pi_0)$ for some
+$\bmu_0\in\R^d$ and positive definite $\Pi_0\in\R^{d\times d}$.
+
+\subsection{Does \texorpdfstring{$P_0(\ba)$}{P0(a)} remain Gaussian?}
+
+\begin{proposition}
+For multivariate $\ba_k \in \R^d$ with the AR(1) dynamics above, the
+joint distribution $P_0(\ba) = P_0(\ba_0, \ldots, \ba_K)$ is a
+$d(K+1)$-dimensional Gaussian.
+\end{proposition}
+
+\begin{proof}
+The argument is identical to the scalar case. The Markov factorisation
+holds:
+\[
+  P_0(\ba_0,\ldots,\ba_K)
+  = p_0(\ba_0)\prod_{k=0}^{K-1} M(\ba_{k+1}\mid\ba_k),
+\]
+where $M(\ba_{k+1}\mid\ba_k) = \N(\ba_{k+1};\,A\ba_k,\,Q)$.
+Each factor is Gaussian in the joint variable $(\ba_k,\ba_{k+1})$,
+and the product of Gaussians with a shared linear structure is Gaussian.
+\end{proof}
+
+\subsection{The covariance matrix in the multivariate case}
+
+The mean and covariance of $\ba_k$ generalise directly:
+\[
+  \bmu_k = A^k\,\bmu_0,
+  \qquad
+  \Pi_k = A^k\Pi_0(A^k)^\top + \sum_{j=0}^{k-1}A^j Q (A^j)^\top.
+\]
+The cross-covariance between frames $j \leq k$ is:
+\[
+  \Cov(\ba_j, \ba_k) = A^{k-j}\,\Pi_j \;\in\; \R^{d\times d}.
+\]
+The full joint covariance $\Sigma_0 \in \R^{d(K+1)\times d(K+1)}$
+is now a \emph{block matrix} with $d\times d$ blocks:
+\[
+  (\Sigma_0)_{jk} = A^{|j-k|}\,\Pi_{\min(j,k)} \in \R^{d\times d}.
+\]
+
+\subsection{The precision matrix: block-tridiagonal structure}
+
+\begin{proposition}[Block-tridiagonal precision]
+The precision matrix $\Sigma_0^{-1}$ in the multivariate AR(1) case
+is \textbf{block-tridiagonal}, with $d\times d$ blocks:
+\begin{align*}
+  (\Sigma_0^{-1})_{00} &= \Pi_0^{-1} + A^\top Q^{-1} A, \\
+  (\Sigma_0^{-1})_{kk} &= Q^{-1} + A^\top Q^{-1} A,
+    \quad k = 1,\ldots,K-1,\\
+  (\Sigma_0^{-1})_{KK} &= Q^{-1}, \\
+  (\Sigma_0^{-1})_{k,k+1} = [(\Sigma_0^{-1})_{k+1,k}]^\top
+    &= -Q^{-1}A, \quad k = 0,\ldots,K-1.
+\end{align*}
+\end{proposition}
+
+The derivation is the same as the scalar case: expand the exponent,
+read off block coefficients, and use the symmetry of the full matrix.
+The scalar entries $1/\sigma_0^2$, $(1+\alpha^2)/\sigma_\eta^2$,
+$-\alpha/\sigma_\eta^2$ are simply replaced by the $d\times d$ matrices
+$\Pi_0^{-1}$, $Q^{-1}+A^\top Q^{-1}A$, $-Q^{-1}A$.
+
+\subsection{The OU diffusion and joint score in the multivariate case}
+
+Applying i.i.d.\ OU noise independently to each frame component:
+\[
+  \bx_k = e^{-t}\ba_k + \sqrt{\dt}\,\bm{z}_k,
+  \qquad
+  \bm{z}_k \overset{\mathrm{i.i.d.}}{\sim} \N(\bm{0}, I_d).
+\]
+The result carries through exactly:
+\[
+  P_t(\bx) = \N\!\left(\bx;\; e^{-t}\bmu_a,\;
+    e^{-2t}\Sigma_0 + \dt\, I_{d(K+1)}\right),
+\]
+and the joint score is:
+\[
+  \bm{S}(\bx,t) = -\Sigma_t^{-1}(\bx - e^{-t}\bmu_a)
+  \;\in\; \R^{d(K+1)}.
+\]
+The $k$-th \emph{block} of the score (a $d$-vector) is:
+\[
+  \bm{S}_k(\bx,t)
+  = -\sum_{j=0}^{K}(\Sigma_t^{-1})_{kj}\,(\bx_j - e^{-t}\bmu_j)
+  \;\in\; \R^d.
+\]
+Everything remains Gaussian, the score remains linear, and the
+precision matrix remains block-tridiagonal (approximately, for $t>0$).
+The Kalman smoother generalises to the vector case without modification.
+
+\begin{remark}[What changes]
+The main additional complication is that $A$ is now a matrix, which
+may not commute with $Q$. The off-diagonal blocks $-Q^{-1}A$ are
+not generally symmetric, so the full precision matrix is symmetric
+as a whole (as required) but its blocks are not individually symmetric.
+For the special case $A = \alpha I_d$ and $Q = \sigma_\eta^2 I_d$
+(isotropic scalar-times-identity dynamics), everything reduces to $d$
+independent copies of the scalar AR(1) case and the structure is
+exactly as before, just replicated $d$ times.
+\end{remark}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Kalman Filter and Smoother}
+\label{sec:kalman}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Why the Kalman smoother matters here}
+
+In the Mézard formula (Theorem~\ref{thm:mezard}):
+\[
+  S_k(\bx,t) = \frac{e^{-t}\langle a_k\rangle_{\ba\mid\bx} - x_k}{\dt},
+\]
+the central object is $\langle a_k\rangle_{\ba\mid\bx}$: the posterior
+mean of the \emph{clean} frame $a_k$ given the entire \emph{noisy}
+trajectory $\bx = (x_0,\ldots,x_K)$.
+
+Computing this posterior mean is \emph{exactly} the problem solved
+by the \textbf{Kalman smoother}. The Kalman smoother is therefore
+not merely a useful tool — it \emph{is} the explicit propagator.
+
+\subsection{The Kalman filter: forward pass}
+
+The Kalman filter processes the noisy observations sequentially,
+maintaining a Gaussian belief over the current clean frame.
+
+\medskip
+\noindent\textbf{Initialisation.} Prior belief at time $0$:
+\[
+  p(a_0) = \N(a_0;\;\mu_0,\;\sigma_0^2).
+\]
+
+\noindent\textbf{Prediction step.} Given the posterior at time $k$,
+$p(a_k\mid x_0,\ldots,x_k) = \N(a_k;\;\hat{a}_{k|k},\;P_{k|k})$,
+predict the next frame using the dynamics:
+\[
+  \hat{a}_{k+1|k} = \alpha\,\hat{a}_{k|k},
+  \qquad
+  P_{k+1|k} = \alpha^2\,P_{k|k} + \sigma_\eta^2.
+\]
+
+\noindent\textbf{Update step.} Upon observing $x_{k+1}$, compute the
+\emph{Kalman gain}:
+\[
+  \mathcal{K}_{k+1}
+  = \frac{e^{-t}\,P_{k+1|k}}{e^{-2t}\,P_{k+1|k} + \dt},
+\]
+and update the belief:
+\[
+  \hat{a}_{k+1|k+1}
+  = \hat{a}_{k+1|k}
+    + \mathcal{K}_{k+1}\!\left(x_{k+1} - e^{-t}\hat{a}_{k+1|k}\right),
+  \qquad
+  P_{k+1|k+1}
+  = (1 - e^{-t}\mathcal{K}_{k+1})\,P_{k+1|k}.
+\]
+
+The innovation $x_{k+1} - e^{-t}\hat{a}_{k+1|k}$ is the surprise in the
+new observation relative to the prediction. The Kalman gain
+$\mathcal{K}_{k+1}$ weights how much to update: large when the
+prediction uncertainty $P_{k+1|k}$ is large, small when the noise
+$\dt$ is large.
+
+\subsection{The Kalman smoother: backward pass}
+
+The filter gives $\hat{a}_{k|k}$ — the best estimate using only
+observations up to time $k$. The \emph{smoother} improves this by
+running a backward pass that incorporates future observations.
+
+\medskip
+\noindent\textbf{Smoother initialisation.} At the last frame:
+\[
+  \hat{a}_{K|K}^s = \hat{a}_{K|K}, \qquad P_{K|K}^s = P_{K|K}.
+\]
+
+\noindent\textbf{Backward recursion.} For $k = K-1, K-2, \ldots, 0$:
+\[
+  L_k = P_{k|k}\,\alpha\,P_{k+1|k}^{-1}
+  \quad\text{(smoother gain)},
+\]
+\[
+  \hat{a}_{k|K}^s
+  = \hat{a}_{k|k} + L_k\!\left(\hat{a}_{k+1|K}^s - \hat{a}_{k+1|k}\right),
+  \qquad
+  P_{k|K}^s
+  = P_{k|k} + L_k\!\left(P_{k+1|K}^s - P_{k+1|k}\right)L_k^\top.
+\]
+
+The output $\hat{a}_{k|K}^s = \langle a_k\rangle_{\ba\mid\bx}$ is the
+exact posterior mean we need for the Mézard formula.
+
+\subsection{Connection to the joint score}
+
+The Kalman smoother provides a \emph{recursive} way to evaluate
+$\bm{S}(\bx,t)$ without ever explicitly forming or inverting the
+$(K+1)\times(K+1)$ matrix $\Sigma_t$. Instead, it computes
+$\langle a_k\rangle_{\ba\mid\bx}$ for all $k$ in $\mathcal{O}(K)$
+operations (two linear passes), versus $\mathcal{O}(K^3)$ for direct
+matrix inversion.
+
+More importantly, the smoother \emph{is} the propagator. The backward
+recursion step:
+\[
+  \hat{a}_{k|K}^s
+  = \hat{a}_{k|k} + L_k\!\left(\hat{a}_{k+1|K}^s - \hat{a}_{k+1|k}\right)
+\]
+says: the smoothed estimate at frame $k$ is updated from the smoothed
+estimate at frame $k+1$ via the smoother gain $L_k$. This is the
+propagator $P_t$ mapping $S_{k+1} \to S_k$ in closed form.
+
+\begin{resultbox}
+\textbf{The Kalman smoother is the exact propagator.}
+For the Gaussian AR(1) model, the hypothesised propagator
+$S_k \approx P_t(S_{k-1})$ is not an approximation — it is exact,
+and $P_t$ is the Kalman smoother gain operator. Computing the joint
+score for the full $K+1$ frame trajectory costs $\mathcal{O}(K)$
+via the smoother, not $\mathcal{O}(K^3)$ via matrix inversion.
+\end{resultbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Suggested Visualisations}
+\label{sec:plots}
+% ══════════════════════════════════════════════════════════════════════════════
+
+The following plots and animations are suggested to build intuition
+for the results in this document. Each targets a specific conceptual
+point.
+
+\subsection{Static plots}
+
+\begin{enumerate}
+
+  \item \textbf{Covariance vs precision matrix (side by side, heat map).}
+    For $K = 4$, plot $\Sigma_0$ and $\Sigma_0^{-1}$ as colour-coded
+    grids with numerical values in each cell. Use distinct colours for
+    diagonal, off-diagonal, and zero entries. Vary $\alpha$ with a
+    slider to show how the dense $\Sigma_0$ compresses to diagonal while
+    $\Sigma_0^{-1}$ remains tridiagonal. \textit{Key message: inversion
+    extracts direct couplings.}
+
+  \item \textbf{$\Sigma_t^{-1}$ entries vs diffusion time $t$.}
+    Plot the diagonal entry $(\Sigma_t^{-1})_{kk}$ and the
+    off-diagonal entry $|(\Sigma_t^{-1})_{k,k+1}|$ as functions of
+    $t \in [0, 3]$. Mark the asymptotic values at $t=0$ (tridiagonal
+    limit) and $t\to\infty$ (diagonal limit). \textit{Key message:
+    inter-frame coupling in the score decays as $e^{-2t}$.}
+
+  \item \textbf{Joint score $S_0(x_0,x_1,t)$ vs $x_0$ for fixed $x_1$,
+    compared with marginal score.}
+    For $K=1$: plot both $S_0^{\text{joint}}(x_0, x_1, t)$ (blue)
+    and $s^{\text{marg}}(x_0, t) = -(x_0-\mu_{t,0})/T_{00}$ (red dashed)
+    as functions of $x_0$. Move $x_1$ with a slider.
+    \textit{Key message: the joint score shifts vertically with $x_1$;
+    the marginal score is blind to it.}
+
+  \item \textbf{The $K=2$ precision matrix at various $t$.}
+    Four panels at $t = 0, 0.5, 1.0, 2.0$: show $\Sigma_t^{-1}$ as
+    a $3\times 3$ grid. \textit{Key message: off-diagonal entries shrink
+    and matrix approaches $I$ as $t$ grows.}
+
+\end{enumerate}
+
+\subsection{Animations}
+
+\begin{enumerate}
+
+  \item \textbf{OU forward process on a trajectory.}
+    Animate $K+1$ frames of a clean AR(1) sample as $t$ increases
+    from $0$ to $3$: each frame independently drifts toward $0$ and
+    spreads, while the frames remain correlated (they all undergo
+    the same shrinkage). Show the marginal distribution at each frame
+    as a Gaussian envelope, and overlay sample paths.
+    \textit{Key message: noise is added independently per frame,
+    but the trajectory remains correlated throughout.}
+
+  \item \textbf{Posterior mean (Kalman smoother) vs observation.}
+    Fix a noisy trajectory $\bx$. As $t$ varies, animate how the
+    Kalman-smoothed estimate $\langle\ba\rangle_{\ba\mid\bx}$ moves.
+    At $t=0$: $\langle a_k\rangle = x_k e^{t} \approx x_k$ (perfect
+    denoising). At large $t$: $\langle a_k\rangle \to \mu_{a,k}$
+    (prior dominates, observation is useless).
+    \textit{Key message: the score ``denoising residual'' shrinks as
+    noise overwhelms the signal.}
+
+  \item \textbf{Joint score vector field on $(x_0, x_1)$ plane, varying $t$.}
+    For $K=1$: quiver plot of $(S_0, S_1)$ at each point of a grid.
+    At $t \approx 0$: arrows are tilted off-axis (strong coupling).
+    At large $t$: arrows point radially inward (score $\approx -\bx/\dt$,
+    fully decoupled). Animate $t$ continuously.
+    \textit{Key message: the propagator structure of the score fades
+    continuously as $t$ grows.}
+
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\end{document}
+% ══════════════════════════════════════════════════════════════════════════════

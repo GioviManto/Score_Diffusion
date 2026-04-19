@@ -1,0 +1,44 @@
+================================================================================
+FIGURE GENERATION COMPLETE
+================================================================================
+
+GAUSSIAN BENCHMARK (N=60, K=max=59)
+--------------------------------------------------------------------------------
+N = 60, alpha = 0.9, sigma0_sq = 1.0, sigma_eta_sq = 0.190000
+Max average precision interaction range at t = 1.2053
+Min tridiagonal mass fraction at t = 0.7576
+Max absolute neighbor score correlation at t = 0.0010
+
+LAPLACE AR(1) MODELS
+--------------------------------------------------------------------------------
+K=1 (N=2): alpha = 0.9, b_laplace = 0.308221
+Laplace variance = 2*b^2 = 0.190000
+Gaussian variance = 0.190000
+
+K=2 (N=3): Same parameters as K=1
+
+FIGURES GENERATED
+--------------------------------------------------------------------------------
+Gaussian benchmark (01-11):
+  fig01: Sigma_0 vs Precision_0 heatmaps
+  fig02: Time evolution of Sigma_t and Precision_t
+  fig03: Eigenvalue trajectories
+  fig04: Tridiagonal mass fraction and conditioning
+  fig05: Precision row profile
+  fig06: Precision in eigenbasis
+  fig07: Leading eigenvectors
+  fig08: Precision symlog heatmaps (fill-in)
+  fig09: Deterministic vs stochastic precision
+  fig10: Locality observables (4-panel)
+  fig11: Posterior mean gain row profile
+
+Laplace AR(1) models (12-17):
+  fig12: Laplace vs Gaussian innovation density
+  fig13: K=1 Laplace vs Gaussian score comparison
+  fig14: K=1 score Hessian (second derivatives)
+  fig15: K=2 Laplace vs Gaussian score along slices
+  fig16: Monte Carlo validation of score
+  fig17: K=2 score Hessian band mass vs time
+
+All figures saved to: /sessions/gallant-ecstatic-pascal/mnt/Diffusion/Score_Diffusion/research_continuation_v2/figures
+================================================================================

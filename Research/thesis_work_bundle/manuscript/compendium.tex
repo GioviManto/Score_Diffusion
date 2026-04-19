@@ -1,0 +1,2502 @@
+\documentclass[11pt,a4paper,openany]{book}
+
+% ============================================================
+% Packages
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{microtype}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black,
+            urlcolor=blue!60!black}
+
+% ============================================================
+% Theorem environments
+% ============================================================
+\newtheoremstyle{plainserif}{10pt}{10pt}{\itshape}{}%
+   {\bfseries}{.}{0.5em}{}
+\newtheoremstyle{remarkstyle}{10pt}{10pt}{}{}%
+   {\itshape}{.}{0.5em}{}
+
+\theoremstyle{plainserif}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+\theoremstyle{remarkstyle}
+\newtheorem*{remark}{Remark}
+\newtheorem*{interpretation}{Interpretation}
+
+% Side-note box for ``why'' explanations
+\definecolor{whybox}{RGB}{245,245,230}
+\newenvironment{whybox}{%
+  \begin{center}\begin{minipage}{0.95\linewidth}\small
+  \textbf{\textit{Why this step?}}\quad\ignorespaces}{%
+  \end{minipage}\end{center}}
+
+% ============================================================
+% Macros
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\V}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\Lap}{\mathrm{Lap}}
+\newcommand{\btilde}{\tilde{b}}
+\newcommand{\hatfn}[1]{\widehat{#1}}
+\newcommand{\mills}{R}
+\newcommand{\tr}{\operatorname{tr}}
+\DeclareMathOperator{\Hess}{Hess}
+\newcommand{\ind}{\mathbf{1}}
+
+% Header style
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small \leftmark}
+\fancyhead[RO]{\small \rightmark}
+\fancyfoot[C]{\small \thepage}
+\renewcommand{\chaptermark}[1]{\markboth{\small\textsc{Chapter \thechapter.\ #1}}{}}
+\renewcommand{\sectionmark}[1]{\markright{\small\textsc{\thesection.\ #1}}{}}
+
+% ============================================================
+% Title page
+% ============================================================
+\title{\bfseries Mathematical Compendium for the
+Laplace AR(1) Diffusion Benchmark\\[4pt]
+{\large\itshape Full derivations, proofs, and interpretations accompanying the
+main memo}}
+\author{Giovanni Mantovani \and Marco Lomel\'e \\[6pt]
+\small Supervisor: Prof.\ Marc M\'ezard \quad Tutor: J\'er\^ome Garnier-Brun\\[2pt]
+\small Bocconi University \textendash\ MSc Data Science \& AI}
+\date{\today}
+
+\begin{document}
+\frontmatter
+\maketitle
+
+% ============================================================
+% Preface
+% ============================================================
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+
+This compendium accompanies the main memo
+\emph{``Exact Benchmark for the Laplace AR(1) Diffusion''} and provides the
+full mathematical workings behind every statement made there.
+The main memo is designed to be read quickly; it states the results, shows
+the key formulas, and presents the numerical validation. It assumes the
+reader trusts the derivations.
+This document does not make that assumption. Every theorem is proved,
+every algebraic step is written out, every change of variables is justified,
+and every interpretation is anchored in the preceding algebra.
+
+The style is deliberately pedagogical. When a step may look surprising,
+we pause to explain why it works --- why a particular substitution is made,
+why a particular coordinate is natural, why a particular limit gives the
+behaviour we claim. This is meant to be a document one could hand to a
+collaborator (or to oneself six months from now) and recover the full
+mathematical story without having to reconstruct any step.
+
+We chose a book format rather than a long article because the material
+divides naturally into six self-contained parts:
+
+\begin{description}[leftmargin=1.5em,style=nextline]
+\item[Part I --- Setting and foundations.]
+  The generative model, the noising channel, and the structural constants
+  that the whole analysis rests on.
+\item[Part II --- The $K=1$ structure theorems.]
+  Factorisation, residual density, joint score, curvature field. The
+  core of the exact benchmark.
+\item[Part III --- Fourier representation.]
+  The characteristic function, the rotation to innovation-frequency
+  coordinates, the linear ODE satisfied by the residual density.
+\item[Part IV --- Scalar observables.]
+  The Mills-ratio closed form for the centre curvature, Gaussian
+  benchmark, kurtosis, FWHM.
+\item[Part V --- The $K=2$ case.]
+  The exact attempt, the obstruction to $1$D factorisation, and the
+  exact four-term representation.
+\item[Part VI --- Interpretation.]
+  What Gaussianity buys us, what Markovianity buys us, and where the
+  two structural roles can be disentangled.
+\end{description}
+
+Throughout, we keep the same notation as the original derivation
+note~\cite{laplace_note} (reproduced in Table~\ref{tab:constants} below)
+so that this document reads as a careful expansion of that note rather
+than a parallel account.
+
+\paragraph{How to read this document.}
+The main theorems are numbered and cross-referenced with the memo.
+Proofs are written out in full; each non-trivial algebraic step that we
+believe a reader could stumble on is boxed as a ``why this step'' note.
+An equation labelled (e.g.) \textbf{Eq.~\eqref{eq:h-closed}} in the memo
+has the same reference here, so that one can flip between documents.
+
+\tableofcontents
+
+% ============================================================
+\mainmatter
+% ============================================================
+
+\part{Setting and foundations}
+
+% ============================================================
+\chapter{The generative model and the question we are asking}
+\label{ch:setting}
+% ============================================================
+
+\section{The clean chain}
+
+We study an autoregressive chain of order one driven by Laplace
+innovations. Fix parameters $\alpha \in \R$, $b > 0$, $\sigma_0 > 0$,
+$\mu_0 \in \R$, and define
+\begin{equation}
+A_0 \sim \Normal(\mu_0, \sigma_0^2), \qquad
+A_{k+1} = \alpha A_k + \varepsilon_{k+1},\quad
+\varepsilon_k \stackrel{\mathrm{iid}}{\sim} \Lap(0, b),
+\label{eq:clean-chain}
+\end{equation}
+where $\Lap(0,b)$ has density $(2b)^{-1}\exp(-|u|/b)$. The chain
+$(A_k)_{k\geq 0}$ is a first-order Markov chain: conditional on $A_k$, the
+future $A_{k+1}, A_{k+2}, \ldots$ is independent of the past
+$A_0, \ldots, A_{k-1}$. The innovation $\varepsilon_k$ is the part of
+$A_k$ that is new -- not predictable from $A_{k-1}$.
+
+We refer to $(A_k)$ as the \emph{clean chain}. The density of
+$(A_0, \ldots, A_{K-1})$ factorises:
+\begin{equation}
+p_0(a_0, \ldots, a_{K-1}) = \phi_{\mu_0,\sigma_0^2}(a_0)\,
+\prod_{k=1}^{K-1} \frac{1}{2b}\exp\!\left(-\frac{|a_k - \alpha a_{k-1}|}{b}\right),
+\label{eq:clean-density}
+\end{equation}
+where $\phi_{m,\sigma^2}$ denotes the Gaussian pdf with mean $m$ and
+variance $\sigma^2$. This factorisation reflects the clean Markov property:
+the joint density is a product over bonds, each bond depending only on two
+consecutive variables.
+
+\begin{whybox}
+  Equation~\eqref{eq:clean-density} is what makes the AR(1) chain a
+  Markov random field with a tridiagonal coupling structure. If we were
+  to work in Fourier space, each bond would contribute a rational factor
+  of the form $1/(1 + b^2 \ell^2)$ to the characteristic function along
+  its own innovation-frequency axis, a structure we will exploit
+  heavily in Part III.
+\end{whybox}
+
+\section{The OU corruption channel}
+
+Generative diffusion proceeds by smoothly noising the clean data through
+the Ornstein--Uhlenbeck (OU) channel:
+\begin{equation}
+X_k(t) = \beta\, A_k + \sqrt{\Delta}\, Z_k,\qquad
+\beta := e^{-t},\qquad \Delta := 1 - e^{-2t},\qquad
+Z_k \stackrel{\mathrm{iid}}{\sim} \Normal(0, 1),
+\label{eq:OU}
+\end{equation}
+with $(Z_0, \ldots, Z_{K-1})$ independent of the chain
+$(A_0, \ldots, A_{K-1})$. For each fixed $t$, the transformation
+$A_k \mapsto X_k(t)$ is affine-Gaussian and coordinatewise: each
+$X_k(t)$ depends only on $A_k$ and an independent Gaussian. In
+particular, conditional on $A = (A_0, \ldots, A_{K-1})$, the
+coordinates $X_0(t), \ldots, X_{K-1}(t)$ are independent Gaussians.
+
+This is the coordinate-local variant of the standard variance-preserving
+diffusion kernel; an alternative view starts from the SDE
+$\mathrm{d}X_k = -X_k\,\mathrm{d}t + \sqrt{2}\,\mathrm{d}B_k$ with
+initial condition $X_k(0)=A_k$, whose marginal distribution at time $t$
+is exactly \eqref{eq:OU}.
+
+\begin{whybox}
+Three properties of the OU channel will be used over and over again:
+(i) at $t=0$ we have $\beta=1$, $\Delta=0$ and $X=A$ identically;
+(ii) as $t\to\infty$, $\beta \to 0$, $\Delta\to 1$ and $X \to \Normal(0,I)$
+regardless of the data;
+(iii) the channel is \emph{conditionally independent across coordinates}
+given the clean state.
+Property (iii) is the reason Markov structure survives noising, as we
+will prove in Section~\ref{sec:markov-survives}.
+\end{whybox}
+
+\section{The central question}
+\label{sec:central-question}
+
+Given the noisy distribution at time $t$,
+$p_t(x_0, x_1, \ldots, x_{K-1})$, we study the \emph{joint score}
+\begin{equation}
+S(x, t) := \nabla_x \log p_t(x_0, \ldots, x_{K-1}) \in \R^K,
+\qquad x = (x_0, \ldots, x_{K-1}),
+\label{eq:joint-score}
+\end{equation}
+and the \emph{curvature field}
+\begin{equation}
+H_t(x) := -\nabla_x^2 \log p_t(x_0, \ldots, x_{K-1}) \in \R^{K\times K}.
+\label{eq:curvature}
+\end{equation}
+These are different from the per-frame marginal scores
+$\nabla_{x_k} \log p_t(x_k)$: the latter discard correlations between
+different time steps and therefore miss the whole point of diffusion over
+dynamic objects. Our question is:
+
+\begin{quote}
+\emph{How does the joint score $S(x, t)$ reflect the Markov structure of
+the clean chain, and what happens to that structure as $t$ varies?}
+\end{quote}
+
+In the Gaussian AR(1) benchmark (studied in~\cite{structure_sigma_t}), the
+answer is known exactly: $p_t$ is Gaussian, $S$ is linear, and
+$H_t = \Sigma_t^{-1}$ is a constant precision matrix that interpolates
+between tridiagonal (at $t=0$, reflecting the Markov structure) and a
+full matrix (for large $t$). The present compendium works out the
+answer in the simplest non-Gaussian case -- the Laplace chain -- where
+Gaussianity and Markovianity play separable structural roles. The
+resulting exact benchmark then serves as a fulcrum for the thesis: any
+general-purpose theory of joint scores over dynamic objects must recover
+this benchmark in its appropriate limits.
+
+\begin{remark}[Joint vs.\ marginal scores]
+Throughout, ``score'' means joint score as in~\eqref{eq:joint-score}.
+Whenever we need the per-frame marginal score
+$\nabla_{x_k} \log p_t(x_k)$ we will write ``marginal score.''
+\end{remark}
+
+% ============================================================
+\chapter{Why Markov structure survives noising}
+\label{ch:markov-survives}
+% ============================================================
+
+Before diving into explicit computations, we establish a structural fact
+that underpins all of Part II: the noisy law $p_t$ is itself a Markov
+random field over time, with exactly the same sparsity graph as the clean
+law. This is not automatic -- it requires the conditional independence
+property of the OU channel. The proof is short and instructive.
+
+\label{sec:markov-survives}
+\begin{proposition}[Markov property survives OU noising]
+\label{prop:markov-survives}
+Under~\eqref{eq:clean-chain}--\eqref{eq:OU}, the noisy sequence
+$(X_0, \ldots, X_{K-1})$ is Markov of order one: for every $k$,
+\begin{equation}
+p_t(x_k \mid x_0, \ldots, x_{k-1}) = p_t(x_k \mid x_{k-1}).
+\label{eq:noisy-markov}
+\end{equation}
+Equivalently, $X_{k+1} \perp (X_0, \ldots, X_{k-1}) \mid X_k$.
+\end{proposition}
+
+\begin{proof}
+We will use two facts repeatedly:
+\begin{itemize}[leftmargin=2em, topsep=3pt]
+\item[(i)] \textbf{Clean Markov property.}
+$A_{k+1} \perp (A_0,\ldots,A_{k-1}) \mid A_k$.
+\item[(ii)] \textbf{Channel independence.}
+Given the entire clean chain $A$, the noises $Z_0,\ldots,Z_{K-1}$
+are i.i.d.\ $\Normal(0,1)$ and independent of $A$, so
+$(X_0, \ldots, X_{K-1}) \mid A$ has independent coordinates and
+$X_k \mid A = A_k$ depends only on $A_k$.
+\end{itemize}
+We compute $p_t(x_k \mid x_0, \ldots, x_{k-1})$ by conditioning on the clean
+chain:
+\begin{align}
+p_t(x_k \mid x_0, \ldots, x_{k-1})
+ &= \int p_t(x_k \mid A, x_0, \ldots, x_{k-1}) \,
+        p(A \mid x_0, \ldots, x_{k-1}) \,\mathrm{d}A
+ \label{eq:markov-pf-1}\\
+ &= \int p_t(x_k \mid A_k)\,
+        p(A \mid x_0, \ldots, x_{k-1}) \,\mathrm{d}A,
+ \label{eq:markov-pf-2}
+\end{align}
+where the second equality uses channel independence (ii): given $A$,
+$X_k$ depends only on $A_k$ and is independent of
+$X_0,\ldots,X_{k-1}$. After integrating out $A_{k+1},\ldots,A_{K-1}$
+(which are irrelevant) and the components $A_0, \ldots, A_{k-1}$ (which
+do not appear in $p_t(x_k \mid A_k)$), we are left with
+\begin{equation}
+p_t(x_k \mid x_0, \ldots, x_{k-1}) =
+\int p_t(x_k \mid A_k)\, p(A_k \mid x_0, \ldots, x_{k-1}) \,\mathrm{d}A_k.
+\label{eq:markov-pf-3}
+\end{equation}
+It remains to show that
+$p(A_k \mid x_0,\ldots,x_{k-1}) = p(A_k \mid x_{k-1})$.
+Condition on $A_{k-1}$ and use the clean Markov property~(i):
+$A_k \perp (A_0,\ldots,A_{k-2}) \mid A_{k-1}$.
+Channel independence gives
+$A_k \perp (X_0,\ldots,X_{k-2}) \mid A_{k-1}$,
+and furthermore
+$(A_k, A_{k-1}) \perp (X_0,\ldots,X_{k-2}) \mid X_{k-1}$
+because of the memoryless Markov structure of
+$A_0 \to X_0$, $A_1 \to X_1$, etc.
+Integrating out $A_{k-1}$ then yields
+$p(A_k \mid x_0,\ldots,x_{k-1}) = p(A_k \mid x_{k-1})$, so
+\eqref{eq:markov-pf-3} reduces to
+\begin{equation*}
+p_t(x_k \mid x_0, \ldots, x_{k-1}) =
+\int p_t(x_k \mid A_k)\, p(A_k \mid x_{k-1}) \,\mathrm{d}A_k
+= p_t(x_k \mid x_{k-1}),
+\end{equation*}
+which is~\eqref{eq:noisy-markov}.
+\end{proof}
+
+\begin{interpretation}
+The noisy chain is genuinely Markov: every noisy transition
+$p_t(x_{k+1} \mid x_k)$ encodes the full conditional dependence structure
+at time $t$. The deep reason is that the OU channel is
+\emph{coordinate-local}: it never creates new coupling between coordinates
+at fixed $t$. Any coupling in $(X_0, \ldots, X_{K-1})$ must be inherited
+from the clean chain.
+\end{interpretation}
+
+\begin{corollary}[Factorisation of the noisy joint density]
+\label{cor:noisy-factor}
+We have
+\begin{equation}
+p_t(x_0, \ldots, x_{K-1}) = p_t(x_0)\, \prod_{k=1}^{K-1} p_t(x_k \mid x_{k-1}).
+\label{eq:noisy-factor}
+\end{equation}
+\end{corollary}
+
+\begin{remark}[Score structure]
+Because the joint log-density is a sum of two-point terms,
+$\log p_t = \log p_t(x_0) + \sum_{k} \log p_t(x_k \mid x_{k-1})$,
+the Hessian $H_t = -\nabla^2 \log p_t$ is a sum of block matrices each of
+size $2\times 2$ supported on adjacent indices. This is why the joint
+score and curvature field have a tridiagonal block structure at $K\geq 2$
+even before we compute anything explicitly.
+\end{remark}
+
+% ============================================================
+\chapter{Structural constants for $K=1$}
+\label{ch:constants}
+% ============================================================
+
+We now specialise to $K=1$, i.e.\ we work with the pair $(X_0, X_1)$ noised
+from $(A_0, A_1)$. This already contains the non-trivial physics: a Gaussian
+prior, a Laplace innovation, and a coordinate-local Gaussian channel.
+The goal of this chapter is to compute, from first principles, all the
+structural constants that appear in the exact formulas -- the
+reparameterisations $v$, $s^2$, $\tau^2$, $\rho$, $\nu$, $\btilde$, $a$.
+Every later derivation rests on these, so we are careful to show where
+each quantity comes from.
+
+\section{The marginal $p_t(x_0)$}
+
+Because $X_0 = \beta A_0 + \sqrt{\Delta}Z_0$ with
+$A_0 \sim \Normal(\mu_0, \sigma_0^2)$ and $Z_0 \sim \Normal(0,1)$
+independent,
+\begin{equation}
+X_0 \sim \Normal(\beta\mu_0, v), \qquad
+v := \beta^2 \sigma_0^2 + \Delta,
+\label{eq:x0-marginal}
+\end{equation}
+and the density is
+\begin{equation}
+p_t(x_0) = \frac{1}{\sqrt{2\pi v}}\exp\!\left(-\frac{(x_0-\beta\mu_0)^2}{2v}\right),
+\qquad
+\partial_{x_0}\log p_t(x_0) = -\frac{x_0 - \beta\mu_0}{v}.
+\label{eq:x0-score}
+\end{equation}
+
+\begin{whybox}
+The quantity $v$ interpolates between $\sigma_0^2$ (at $t=0$, where
+$\beta=1,\Delta=0$) and $1$ (as $t\to\infty$, where $\beta\to 0,\Delta\to 1$).
+It is the total variance of $X_0$, combining the prior variance
+(scaled down by $\beta^2$) and the injected OU noise variance $\Delta$.
+\end{whybox}
+
+\section{The posterior $A_0 \mid X_0 = x_0$}
+
+The joint $(A_0, X_0)$ is bivariate Gaussian, so the posterior
+$A_0 \mid X_0 = x_0$ is again Gaussian. The standard conditioning
+formulas are
+\begin{align}
+m(x_0) &:= \E[A_0 \mid X_0 = x_0]
+  = \mu_0 + \frac{\Cov(A_0, X_0)}{\V(X_0)}(x_0 - \E X_0), \\
+s^2 &:= \V(A_0 \mid X_0 = x_0)
+  = \V(A_0) - \frac{\Cov(A_0, X_0)^2}{\V(X_0)}.
+\end{align}
+We have
+$\Cov(A_0, X_0) = \Cov(A_0, \beta A_0 + \sqrt{\Delta}Z_0) = \beta\sigma_0^2$,
+so
+\begin{align}
+m(x_0) &= \mu_0 + \frac{\beta \sigma_0^2}{v}(x_0 - \beta\mu_0)
+       = \frac{\Delta \mu_0 + \beta\sigma_0^2 x_0}{v},
+\label{eq:posterior-mean}\\
+s^2 &= \sigma_0^2 - \frac{\beta^2 \sigma_0^4}{v} = \frac{\sigma_0^2 \Delta}{v}.
+\label{eq:posterior-var}
+\end{align}
+
+\begin{whybox}
+Equation~\eqref{eq:posterior-mean} can be rewritten as
+$m(x_0) = \mu_0 + \rho'\, (x_0 - \beta\mu_0)$
+with $\rho' = \beta\sigma_0^2/v$; this is the familiar
+``shrinkage factor'' of Gaussian regression.
+Equation~\eqref{eq:posterior-var} says the posterior variance
+factorises into the prior variance $\sigma_0^2$ times the ratio
+$\Delta/v$, which quantifies \emph{how much the noise veils the signal}:
+it is zero at $t=0$ (we see $A_0$ perfectly), and it approaches
+$\sigma_0^2$ as $t \to \infty$ (we see nothing).
+\end{whybox}
+
+\section{The residual random variable}
+\label{sec:residual-setup}
+
+We now derive the key identity
+\begin{equation}
+X_1 \mid X_0 = x_0 \stackrel{d}{=} \nu + \rho x_0 + R_t,
+\qquad
+R_t = \beta\varepsilon + G_t,\quad G_t \sim \Normal(0, \tau^2),
+\label{eq:residual}
+\end{equation}
+where $R_t$ is independent of $X_0$ and of the particular $x_0$. The
+constants $\nu, \rho, \tau^2$ will be pinned down by direct computation.
+
+Start from
+\[
+X_1 = \beta A_1 + \sqrt{\Delta}Z_1 = \beta(\alpha A_0 + \varepsilon) + \sqrt{\Delta}Z_1
+    = \beta\alpha A_0 + \beta\varepsilon + \sqrt{\Delta}Z_1.
+\]
+Decompose $A_0 = m(x_0) + \xi$ where $\xi := A_0 - m(x_0)$. Conditional on
+$X_0 = x_0$, $\xi \sim \Normal(0, s^2)$ and, importantly, $\xi$ is
+independent of $(\varepsilon, Z_1)$: indeed, $\xi$ is a function of
+$(A_0, X_0) = (A_0, \beta A_0 + \sqrt{\Delta}Z_0)$, hence a linear combination
+of $A_0$ and $Z_0$, both of which are independent of $\varepsilon$ and $Z_1$.
+Therefore
+\begin{equation}
+X_1 \mid X_0 = x_0 \stackrel{d}{=} \beta\alpha m(x_0) + \bigl(\beta\alpha \xi + \beta\varepsilon
+                    + \sqrt{\Delta}Z_1\bigr).
+\label{eq:residual-pf-1}
+\end{equation}
+The deterministic part simplifies using~\eqref{eq:posterior-mean}:
+\begin{align}
+\beta\alpha m(x_0)
+ &= \beta\alpha\cdot \frac{\Delta\mu_0 + \beta\sigma_0^2 x_0}{v}
+  = \underbrace{\frac{\alpha\beta\Delta\mu_0}{v}}_{=:\, \nu}
+    + \underbrace{\frac{\alpha\beta^2\sigma_0^2}{v}}_{=:\, \rho}\, x_0,
+\label{eq:nu-rho}
+\end{align}
+which \emph{defines} the parameters $\nu$ and $\rho$.
+
+The random part of~\eqref{eq:residual-pf-1} is
+$R_t := \beta\alpha\xi + \beta\varepsilon + \sqrt{\Delta}Z_1$.
+Split it as
+\[
+R_t = \beta\varepsilon + G_t, \qquad
+G_t := \beta\alpha\xi + \sqrt{\Delta}Z_1.
+\]
+The variable $G_t$ is a linear combination of two independent Gaussians,
+hence Gaussian with mean zero and variance
+\begin{equation}
+\tau^2 := \V(G_t) = \beta^2\alpha^2 s^2 + \Delta
+       = \Delta + \alpha^2\beta^2\frac{\sigma_0^2\Delta}{v}
+       = \Delta\left(1 + \frac{\alpha^2\beta^2\sigma_0^2}{v}\right).
+\label{eq:tau2-derivation}
+\end{equation}
+Both $\varepsilon$ and $G_t$ are independent of each other: $\varepsilon$
+is independent of $(\xi, Z_1)$ by construction and $G_t$ is built from
+$(\xi, Z_1)$. Finally, the whole of $R_t$ is independent of $X_0$:
+conditional on $x_0$, both $\varepsilon$ (by independence) and $G_t$ (with
+mean $0$ and variance not depending on $x_0$) are independent of the
+conditioning.
+
+Collecting everything, we have proved~\eqref{eq:residual} with
+\begin{equation}
+\boxed{\;\rho = \dfrac{\alpha\beta^2\sigma_0^2}{v},\qquad
+       \nu  = \dfrac{\alpha\beta\Delta\mu_0}{v},\qquad
+       \tau^2 = \Delta + \alpha^2\beta^2 s^2,\qquad
+       s^2 = \dfrac{\sigma_0^2\Delta}{v}.\;}
+\label{eq:core-constants}
+\end{equation}
+
+We also define $\btilde := \beta b$ -- the effective Laplace scale of the
+\emph{rescaled} innovation $\beta\varepsilon$, since $\beta\varepsilon \sim \Lap(0,\btilde)$.
+The dimensionless quantity
+\begin{equation}
+a := \tau / \btilde
+\label{eq:a-def}
+\end{equation}
+will appear repeatedly and plays the role of an inverse
+non-Gaussianity parameter: large $a$ means the Gaussian part of $R_t$
+dominates and $R_t$ is nearly Gaussian; small $a$ means the Laplace
+part dominates and the cusp at $r=0$ is strongly felt.
+
+\section{An auxiliary constant: the leakage $c$}
+
+A slightly different parameterisation will be useful in Chapters~\ref{ch:fourier}
+and~\ref{ch:interpretation}. Define the \emph{innovation coordinate}
+\begin{equation}
+y := x_1 - \alpha x_0,
+\end{equation}
+which is the noisy analogue of the clean innovation
+$\varepsilon = A_1 - \alpha A_0$. Direct substitution gives
+\begin{align}
+Y := X_1 - \alpha X_0
+ &= \beta(A_1 - \alpha A_0) + \sqrt{\Delta}(Z_1 - \alpha Z_0)
+ = \beta\varepsilon + \sqrt{\Delta}(Z_1 - \alpha Z_0).
+\label{eq:innovation-coord}
+\end{align}
+This variable contains no $A_0$ contribution at all -- its dependence on
+$A$ is entirely through the innovation $\varepsilon$. But $Y$ is not
+independent of $X_0$ at finite $t$, because both contain the noise $Z_0$.
+To see how $y$ and the residual $r$ relate, compute
+\begin{align}
+r &= x_1 - \nu - \rho x_0 = y + \alpha x_0 - \nu - \rho x_0
+   = y + (\alpha - \rho)\,x_0 - \nu.
+\end{align}
+Using~\eqref{eq:core-constants},
+\begin{equation}
+\alpha - \rho = \alpha - \frac{\alpha\beta^2\sigma_0^2}{v}
+              = \alpha\cdot \frac{v - \beta^2\sigma_0^2}{v}
+              = \alpha\cdot \frac{\Delta}{v} =: c,
+\label{eq:c-def}
+\end{equation}
+so
+\begin{equation}
+r = y + c\,(x_0 - \beta\mu_0).
+\label{eq:r-in-terms-of-y}
+\end{equation}
+The constant $c = \alpha\Delta/v$ measures how much the shared OU noise
+``leaks'' $x_0$-dependence into the innovation channel. At $t=0$,
+$\Delta = 0 \Rightarrow c = 0$, and the residual and innovation coincide;
+at general $t$, a linear shift $c(x_0 - \beta\mu_0)$ separates them.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l l l l}
+\hline
+Symbol & Definition & Meaning & Limit $t\to 0$ / $t\to\infty$\\ \hline
+$\beta$ & $e^{-t}$ & OU shrinkage & $1$ / $0$\\
+$\Delta$ & $1-\beta^2$ & OU injected variance & $0$ / $1$\\
+$v$ & $\beta^2\sigma_0^2 + \Delta$ & $\V(X_0)$ & $\sigma_0^2$ / $1$\\
+$s^2$ & $\sigma_0^2\Delta/v$ & $\V(A_0\mid X_0)$ & $0$ / $\sigma_0^2$\\
+$\rho$ & $\alpha\beta^2\sigma_0^2/v$ & residual slope in $x_0$ & $\alpha$ / $0$\\
+$\nu$ & $\alpha\beta\Delta\mu_0/v$ & residual offset & $0$ / $0$\\
+$c$ & $\alpha\Delta/v$ & innovation leakage & $0$ / $\alpha$\\
+$\btilde$ & $\beta b$ & rescaled Laplace scale & $b$ / $0$\\
+$\tau^2$ & $\Delta + \alpha^2\beta^2 s^2$ & residual Gaussian variance & $0$ / $1$\\
+$a$ & $\tau/\btilde$ & Mills argument & $0$ / $\infty$\\
+\hline
+\end{tabular}
+\caption{Structural constants and their limits. All derived from
+first principles in Chapter~\ref{ch:constants}.}
+\label{tab:constants}
+\end{table}
+
+\begin{remark}[Check: the $t\to 0$ limit]
+At $t=0$: $\beta=1$, $\Delta=0$, $v = \sigma_0^2$, $s^2 = 0$,
+$\tau = 0$, $\rho = \alpha$, $\nu = 0$, $\btilde = b$, $a = 0$.
+The residual becomes $R_0 = \varepsilon$, and~\eqref{eq:residual}
+reduces to $X_1 = \alpha X_0 + \varepsilon$, i.e.\ the clean chain.
+Good.
+\end{remark}
+
+\begin{remark}[Check: the $t\to\infty$ limit]
+At $t\to\infty$: $\beta\to 0$, $\Delta\to 1$, $v\to 1$, $\tau^2\to 1$,
+$\rho\to 0$, $\btilde\to 0$, $a\to\infty$. The residual
+$R_t = \beta\varepsilon + G_t$ becomes a standard normal, and the chain
+collapses to $X \sim \Normal(0, I)$, the diffusion prior. Good.
+\end{remark}
+
+% ============================================================
+\part{The $K{=}1$ structure theorems}
+% ============================================================
+
+\chapter{Factorisation theorem}
+\label{ch:fact}
+
+The factorisation theorem states that the noisy joint density $p_t(x_0,x_1)$
+decomposes exactly as a product of a Gaussian site density and a
+one-dimensional non-Gaussian bond. Conceptually: the only non-Gaussian
+content of $(X_0, X_1)$ lives in the one-dimensional residual coordinate
+$r = x_1 - \nu - \rho x_0$; everything perpendicular to this direction
+is Gaussian.
+
+\begin{theorem}[Factorisation, $K{=}1$]
+\label{thm:fact}
+Under the model~\eqref{eq:clean-chain}--\eqref{eq:OU},
+\begin{equation}
+p_t(x_0, x_1) = g_t(x_0)\, h_t(r),
+\qquad
+r = x_1 - \nu - \rho x_0,
+\label{eq:fact-main}
+\end{equation}
+where $g_t(x_0) = \frac{1}{\sqrt{2\pi v}}\exp\!\bigl(-(x_0-\beta\mu_0)^2/(2v)\bigr)$
+is the Gaussian marginal of $X_0$, and $h_t$ is the density of the
+Normal-Laplace random variable
+\begin{equation}
+R_t = \beta\varepsilon + G_t,\qquad
+\varepsilon \sim \Lap(0,b),\;\;
+G_t \sim \Normal(0,\tau^2),\;\;
+\varepsilon \perp G_t.
+\label{eq:Rt}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By the chain rule of probability, $p_t(x_0, x_1) = p_t(x_0) p_t(x_1\mid x_0)$.
+We have already shown $p_t(x_0) = g_t(x_0)$ in~\eqref{eq:x0-score}. From
+Section~\ref{sec:residual-setup},
+\[
+X_1 \mid X_0 = x_0 \stackrel{d}{=} \nu + \rho x_0 + R_t,
+\]
+and $R_t$ is independent of $x_0$ (indeed, its distribution does not
+depend on $x_0$ at all). By a standard change-of-variables argument, the
+conditional density is
+\begin{equation}
+p_t(x_1 \mid x_0) = h_t(x_1 - \nu - \rho x_0) = h_t(r).
+\end{equation}
+Multiplying through gives~\eqref{eq:fact-main}.
+\end{proof}
+
+\begin{interpretation}[What this result is, and what it is not]
+Theorem~\ref{thm:fact} is \emph{not} the clean factorisation of a Markov
+chain -- that would read $p_t(x_0,x_1) = p_t(x_0) p_t(x_1\mid x_0)$, which
+is always true and carries no information about the innovation structure.
+What~\eqref{eq:fact-main} says is that the \emph{conditional law}
+$p_t(x_1 \mid x_0)$ is a \emph{translate} of the same universal 1D density
+$h_t$, at an $x_0$-dependent location $\nu + \rho x_0$. This is a
+non-trivial consequence of the AR(1)+OU structure: both the deterministic
+shift $\nu + \rho x_0$ and the shape $h_t$ are explicit.
+\end{interpretation}
+
+\begin{remark}
+From this point on, every derivative of $\log p_t(x_0, x_1)$ with respect
+to $x_0$ or $x_1$ can be computed via the chain rule through the single
+variable $r$. This is why the subsequent theorems all read as ``take
+$\psi_t := (\log h_t)'$, and here are the scores/Hessians.''
+\end{remark}
+
+% ============================================================
+\chapter{The Normal-Laplace residual density}
+\label{ch:convolution}
+% ============================================================
+
+The residual density $h_t$ is the convolution of a Laplace and a Gaussian
+density. We compute it in closed form. The result is classical
+(it is the Normal--Laplace density used in financial modelling), but it
+is important to see the algebra because the \emph{form} of the answer --
+two exponential terms, each multiplied by a Gaussian CDF -- is what makes
+all subsequent derivations (score, curvature, Mills' ratio) tractable.
+
+\section{Setup}
+
+Since $\beta\varepsilon \sim \Lap(0, \btilde)$ with $\btilde = \beta b$, the density
+of $R_t = \beta\varepsilon + G_t$ with $G_t \sim \Normal(0,\tau^2)$ independent is
+\begin{equation}
+h_t(r) = \int_{-\infty}^{\infty}
+   \frac{1}{2\btilde}\, e^{-|u|/\btilde}\cdot
+   \frac{1}{\sqrt{2\pi\tau^2}}\, e^{-(r-u)^2/(2\tau^2)} \,\mathrm{d}u.
+\label{eq:h-convolution}
+\end{equation}
+The absolute value $|u|$ prevents a direct Gaussian integration, so we split
+the real line at $u = 0$:
+\begin{align}
+h_t(r)
+ &= \frac{1}{2\btilde\sqrt{2\pi\tau^2}}
+   \left[ I_+(r) + I_-(r) \right],
+\label{eq:h-split}
+\end{align}
+with
+\begin{equation}
+I_+(r) := \int_0^\infty\! \exp\!\left( -\frac{u}{\btilde} - \frac{(r-u)^2}{2\tau^2}\right)\!\mathrm{d}u,
+\qquad
+I_-(r) := \int_{-\infty}^0\!\exp\!\left( \frac{u}{\btilde} - \frac{(r-u)^2}{2\tau^2}\right)\!\mathrm{d}u.
+\label{eq:I-pm-def}
+\end{equation}
+Each of $I_\pm$ is a half-line Gaussian integral with a linear term --
+exactly the form that reduces to a complementary Gaussian CDF after
+completing the square.
+
+\section{Computation of $I_+(r)$}
+\label{sec:I-plus}
+
+Expand the exponent of the $I_+$ integrand:
+\begin{align}
+-\frac{u}{\btilde} - \frac{(r-u)^2}{2\tau^2}
+&= -\frac{u}{\btilde} - \frac{u^2 - 2ru + r^2}{2\tau^2}
+\label{eq:Iplus-expand}\\
+&= -\frac{u^2}{2\tau^2} + \left(\frac{r}{\tau^2} - \frac{1}{\btilde}\right) u
+   - \frac{r^2}{2\tau^2}.
+\label{eq:Iplus-rearranged}
+\end{align}
+We now complete the square in $u$. Write
+\begin{equation}
+\frac{r}{\tau^2} - \frac{1}{\btilde} = \frac{r - \tau^2/\btilde}{\tau^2},
+\end{equation}
+so that the linear coefficient in $u$ equals $(r - \tau^2/\btilde)/\tau^2$.
+The quadratic-plus-linear combination becomes
+\begin{align}
+-\frac{u^2}{2\tau^2} + \frac{r-\tau^2/\btilde}{\tau^2}\, u
+&= -\frac{1}{2\tau^2}\left[ u^2 - 2(r - \tau^2/\btilde)\, u \right]
+\label{eq:Iplus-sq-1}\\
+&= -\frac{1}{2\tau^2}\left[ (u - r + \tau^2/\btilde)^2 - (r - \tau^2/\btilde)^2 \right].
+\label{eq:Iplus-sq-2}
+\end{align}
+
+\begin{whybox}
+Completing the square in $u$ converts ``Gaussian times exponential'' into
+``Gaussian centred at a shifted point, times a deterministic factor.''
+The shifted centre $u_* = r - \tau^2/\btilde$ tells us where the
+integrand is concentrated; the deterministic factor $(r-\tau^2/\btilde)^2 - r^2$
+absorbs the parts that do not depend on $u$.
+\end{whybox}
+
+Combining the completion-of-squares with the $-r^2/(2\tau^2)$ term from
+\eqref{eq:Iplus-rearranged} gives
+\begin{align}
+-\frac{u}{\btilde} - \frac{(r-u)^2}{2\tau^2}
+ &= -\frac{(u - r + \tau^2/\btilde)^2}{2\tau^2}
+   + \frac{(r-\tau^2/\btilde)^2 - r^2}{2\tau^2}
+\label{eq:Iplus-almost}\\
+ &= -\frac{(u - r + \tau^2/\btilde)^2}{2\tau^2}
+   - \frac{r}{\btilde} + \frac{\tau^2}{2\btilde^2}.
+\label{eq:Iplus-final-exponent}
+\end{align}
+The last step uses
+$\frac{(r-\tau^2/\btilde)^2 - r^2}{2\tau^2}
+= \frac{-2r\tau^2/\btilde + \tau^4/\btilde^2}{2\tau^2}
+= -\frac{r}{\btilde} + \frac{\tau^2}{2\btilde^2}$.
+
+Pulling the deterministic factor out of the integral,
+\begin{equation}
+I_+(r) = e^{-r/\btilde + \tau^2/(2\btilde^2)}
+   \int_0^\infty \exp\!\left(-\frac{(u - r + \tau^2/\btilde)^2}{2\tau^2}\right)\mathrm{d}u.
+\label{eq:Iplus-after-square}
+\end{equation}
+Change variable: $z = (u - r + \tau^2/\btilde)/\tau$, so $\mathrm{d}u = \tau\,\mathrm{d}z$
+and the lower limit $u = 0$ becomes $z = -r/\tau + \tau/\btilde$.
+Using $a = \tau/\btilde$,
+\begin{equation}
+I_+(r) = e^{-r/\btilde + a^2/2}\, \tau\, \int_{-r/\tau + a}^\infty
+         e^{-z^2/2}\,\mathrm{d}z
+       = e^{-r/\btilde + a^2/2}\, \tau\sqrt{2\pi}\,\Phi\!\left(\frac{r}{\tau} - a\right).
+\label{eq:Iplus-closed}
+\end{equation}
+Here $\Phi(x) := \int_{-\infty}^x \phi(z)\,\mathrm{d}z$ is the standard normal
+CDF, and we used $\int_c^\infty e^{-z^2/2}\,\mathrm{d}z = \sqrt{2\pi}\,\Phi(-c)$
+together with $\Phi(-c) = \Phi(c)\bigl|_{c\to -c}$.
+
+\begin{remark}[Check the exponent constants]
+The prefactor $\exp(-r/\btilde + a^2/2)$ has a natural interpretation:
+$-r/\btilde$ is the Laplace exponential decay in the tail $r\to+\infty$,
+and $a^2/2 = \tau^2/(2\btilde^2)$ is a finite correction coming from the
+Gaussian smoothing. As $\tau\to 0$ the correction vanishes and we recover
+pure Laplace behaviour.
+\end{remark}
+
+\section{Computation of $I_-(r)$}
+
+By the symmetry $u \mapsto -u$,
+\begin{align}
+I_-(r) &= \int_{-\infty}^0 \exp\!\left(\frac{u}{\btilde} - \frac{(r-u)^2}{2\tau^2}\right)\mathrm{d}u
+        = \int_0^\infty \exp\!\left(-\frac{u}{\btilde} - \frac{(r+u)^2}{2\tau^2}\right)\mathrm{d}u.
+\end{align}
+This is the same integral as $I_+$ with $r \to -r$. Therefore, by
+\eqref{eq:Iplus-closed},
+\begin{equation}
+I_-(r) = e^{r/\btilde + a^2/2}\,\tau\sqrt{2\pi}\,\Phi\!\left(-\frac{r}{\tau} - a\right).
+\label{eq:Iminus-closed}
+\end{equation}
+
+\section{The closed form of $h_t$}
+
+Substituting~\eqref{eq:Iplus-closed} and~\eqref{eq:Iminus-closed} into
+\eqref{eq:h-split} and simplifying the constants:
+\begin{align}
+h_t(r) &= \frac{1}{2\btilde\sqrt{2\pi\tau^2}}\cdot
+   e^{a^2/2}\,\tau\sqrt{2\pi}\,
+   \left[ e^{-r/\btilde}\Phi\!\left(\frac{r}{\tau}-a\right)
+        + e^{r/\btilde}\Phi\!\left(-\frac{r}{\tau}-a\right) \right] \nonumber\\
+&= \boxed{\;\frac{e^{a^2/2}}{2\btilde}
+   \left[ e^{-r/\btilde}\,\Phi\!\left(\frac{r}{\tau}-a\right)
+        + e^{r/\btilde}\,\Phi\!\left(-\frac{r}{\tau}-a\right) \right].\;}
+\label{eq:h-closed}
+\end{align}
+This is the Normal--Laplace density; it is the key formula of Part II.
+
+\begin{interpretation}
+The two exponentials capture the two Laplace tails (decay to the right
+and to the left), each damped by a Gaussian-CDF factor that smooths out
+the cusp at $r = 0$. In the limit $\tau \to 0$ (so $a\to 0$), each
+$\Phi(\cdot - a)$ becomes a Heaviside step that selects the correct half
+of the Laplace, and we recover the clean Laplace density
+$e^{-|r|/\btilde}/(2\btilde)$ as expected.
+\end{interpretation}
+
+\begin{remark}[Sanity check: $h_t$ integrates to 1]
+As $r\to\pm\infty$, one of the two exponentials dominates and the other
+vanishes; the Gaussian CDF in the dominant branch approaches $1$,
+recovering pure Laplace decay. Integrating $e^{-|r|/\btilde}/(2\btilde)$
+over $\R$ gives $1$, which is the leading contribution. The finite-$\tau$
+corrections cancel; a direct computation via the convolution definition
+confirms $\int h_t(r)\,\mathrm{d}r = 1$.
+\end{remark}
+
+\begin{definition}[$L_\pm$ and the compact form]
+\label{def:Lpm}
+We introduce the notation
+\begin{equation}
+L_+(r) := e^{-r/\btilde}\, \Phi\!\left(\frac{r}{\tau}-a\right),\qquad
+L_-(r) := e^{r/\btilde}\, \Phi\!\left(-\frac{r}{\tau}-a\right),
+\label{eq:Lpm-def}
+\end{equation}
+so that
+\begin{equation}
+h_t(r) = \frac{e^{a^2/2}}{2\btilde}\bigl[L_+(r) + L_-(r)\bigr].
+\label{eq:h-compact}
+\end{equation}
+\end{definition}
+
+% ============================================================
+\chapter{Score theorem}
+\label{ch:score}
+% ============================================================
+
+The next building block is the closed form of the joint score. We compute
+the residual score $\psi_t = (\log h_t)'$ first; the full joint score
+then follows by the chain rule through $r$.
+
+\section{A useful identity}
+
+Before differentiating, we record an identity that makes the computation
+clean.
+
+\begin{lemma}[Gaussian-derivative cancellation]
+\label{lem:gaussian-id}
+\begin{equation}
+e^{-r/\btilde}\,\phi\!\left(\frac{r}{\tau}-a\right)
+= e^{r/\btilde}\,\phi\!\left(\frac{r}{\tau}+a\right)
+= e^{-a^2/2}\,\phi\!\left(\frac{r}{\tau}\right).
+\label{eq:gauss-id}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Using $\phi(x) = (2\pi)^{-1/2}e^{-x^2/2}$ and
+$(r/\tau - a)^2 = (r/\tau)^2 - 2ar/\tau + a^2$, we get
+$\phi(r/\tau - a) = \phi(r/\tau)\, e^{ar/\tau - a^2/2}$.
+Since $a/\tau = 1/\btilde$,
+\begin{equation}
+e^{-r/\btilde}\,\phi(r/\tau - a) = e^{-r/\btilde}\,\phi(r/\tau)\,e^{r/\btilde - a^2/2}
+  = e^{-a^2/2}\,\phi(r/\tau).
+\end{equation}
+The other equality is by the same argument with $r\to -r$.
+\end{proof}
+
+\begin{whybox}
+This identity is at the heart of why $h_t'$ simplifies. When we
+differentiate $L_+ + L_-$, each piece produces two terms: one from the
+exponential part, one from the Gaussian CDF (whose derivative is a
+Gaussian pdf). Lemma~\ref{lem:gaussian-id} says that the two
+\emph{pdf} pieces are equal and cancel when summed with opposite signs.
+The surviving terms come only from the exponentials.
+\end{whybox}
+
+\section{Derivative of $h_t$}
+
+Differentiate $L_\pm$ using the product rule. Recall that
+$\Phi'(x) = \phi(x)$, so $\frac{\mathrm{d}}{\mathrm{d}r}\Phi(r/\tau \pm a) = (1/\tau)\phi(r/\tau \pm a)$.
+\begin{align}
+L_+'(r) &= -\frac{1}{\btilde} e^{-r/\btilde}\,\Phi\!\left(\frac{r}{\tau}-a\right)
+          + \frac{1}{\tau} e^{-r/\btilde}\,\phi\!\left(\frac{r}{\tau}-a\right),
+\label{eq:Lplus-der}\\
+L_-'(r) &= +\frac{1}{\btilde} e^{r/\btilde}\,\Phi\!\left(-\frac{r}{\tau}-a\right)
+          - \frac{1}{\tau} e^{r/\btilde}\,\phi\!\left(\frac{r}{\tau}+a\right),
+\label{eq:Lminus-der}
+\end{align}
+where we used $\phi(-r/\tau - a) = \phi(r/\tau + a)$ by symmetry of $\phi$
+and a sign-flip under the inner derivative.
+Now sum:
+\begin{align}
+L_+'(r) + L_-'(r)
+ &= -\frac{1}{\btilde} L_+(r) + \frac{1}{\btilde} L_-(r)
+    + \frac{1}{\tau}\Bigl[ e^{-r/\btilde}\phi(r/\tau - a)
+       - e^{r/\btilde}\phi(r/\tau + a) \Bigr].
+\end{align}
+By Lemma~\ref{lem:gaussian-id}, the bracket in the last term is exactly
+zero:
+\begin{equation}
+e^{-r/\btilde}\phi\!\left(\frac{r}{\tau} - a\right)
+- e^{r/\btilde}\phi\!\left(\frac{r}{\tau} + a\right)
+= e^{-a^2/2}\phi\!\left(\frac{r}{\tau}\right) - e^{-a^2/2}\phi\!\left(\frac{r}{\tau}\right) = 0.
+\label{eq:pdf-cancel}
+\end{equation}
+Therefore
+\begin{equation}
+L_+'(r) + L_-'(r) = \frac{1}{\btilde}\bigl[L_-(r) - L_+(r)\bigr],
+\label{eq:Lplus-plus-Lminus-deriv}
+\end{equation}
+and differentiating \eqref{eq:h-compact},
+\begin{equation}
+h_t'(r) = \frac{e^{a^2/2}}{2\btilde^2}\bigl[L_-(r) - L_+(r)\bigr].
+\label{eq:hprime-closed}
+\end{equation}
+
+\section{The residual score}
+
+Dividing $h_t'$ by $h_t$ and cancelling the $e^{a^2/2}/2$ factors:
+\begin{equation}
+\psi_t(r) := \frac{h_t'(r)}{h_t(r)} =
+\frac{1}{\btilde}\,\frac{L_-(r) - L_+(r)}{L_+(r) + L_-(r)}.
+\label{eq:psi-closed}
+\end{equation}
+
+\begin{theorem}[Joint score on the residual ray]
+\label{thm:score}
+The joint score $S(x,t) = \nabla_x \log p_t(x_0, x_1)$ of the $K=1$ model
+equals
+\begin{equation}
+S(x,t) = \begin{pmatrix}
+-\dfrac{x_0 - \beta\mu_0}{v} - \rho\,\psi_t(r) \\[4pt]
+\psi_t(r)
+\end{pmatrix},
+\qquad r = x_1 - \nu - \rho x_0,
+\label{eq:S-full}
+\end{equation}
+with $\psi_t$ given by~\eqref{eq:psi-closed}. In particular,
+$\psi_t(r) \to \mp 1/\btilde$ as $r\to\pm\infty$.
+\end{theorem}
+
+\begin{proof}
+From the factorisation $\log p_t(x_0,x_1) = \log g_t(x_0) + \log h_t(r)$,
+\begin{align}
+\partial_{x_1} \log p_t &= \partial_{x_1} \log h_t(r) = (\log h_t)'(r)\cdot \partial_{x_1} r = \psi_t(r),\\
+\partial_{x_0} \log p_t &= (\log g_t)'(x_0) + (\log h_t)'(r)\cdot \partial_{x_0} r
+                        = -\frac{x_0-\beta\mu_0}{v} + \psi_t(r)\cdot(-\rho),
+\end{align}
+where we used $\partial_{x_1} r = 1$ and $\partial_{x_0} r = -\rho$.
+Stacking gives~\eqref{eq:S-full}.
+\end{proof}
+
+\subsection*{Tail behaviour of $\psi_t$}
+
+We prove the saturation claim rigorously. Focus on $r\to+\infty$ (the other
+side is identical by symmetry of $h_t$). Write the ratio in~\eqref{eq:psi-closed} as
+\begin{equation}
+\frac{L_-(r) - L_+(r)}{L_+(r) + L_-(r)}
+ = \frac{L_-(r)/L_+(r) - 1}{L_-(r)/L_+(r) + 1}
+ = \tanh\!\left(\tfrac{1}{2}\log\bigl(L_-(r)/L_+(r)\bigr)\right),
+\label{eq:psi-tanh}
+\end{equation}
+where the second equality uses $(x-1)/(x+1) = \tanh((\log x)/2)$ for $x > 0$.
+We have $L_-(r)/L_+(r) = e^{2r/\btilde}\,\Phi(-r/\tau - a)/\Phi(r/\tau - a)$.
+As $r\to+\infty$: $\Phi(r/\tau - a) \to 1$ and $\Phi(-r/\tau - a) \to 0$,
+but the factor $e^{2r/\btilde}$ grows so fast that we need to be careful.
+Using Mills' ratio $\Phi(-x) \sim \phi(x)/x$ for $x\to +\infty$,
+\begin{equation}
+\Phi(-r/\tau - a) \sim \frac{\phi(r/\tau + a)}{r/\tau + a}\to 0 \text{ super-exponentially in }r,
+\end{equation}
+so $\log L_-(r) \sim r/\btilde - (r/\tau + a)^2/2 \sim -r^2/(2\tau^2)$ for large $r$,
+while $\log L_+(r) \sim -r/\btilde$. Therefore
+\begin{equation}
+\log(L_-(r)/L_+(r)) \sim -\frac{r^2}{2\tau^2} + \frac{r}{\btilde} \to -\infty \text{ as }r\to\infty.
+\end{equation}
+Plugging into~\eqref{eq:psi-tanh}, $\tanh((-\infty)/2) = -1$, so
+$\psi_t(r)\cdot \btilde \to -1$, i.e.\ $\psi_t(r) \to -1/\btilde$.
+By $r\mapsto -r$ symmetry, $\psi_t(r)\to +1/\btilde$ as $r\to-\infty$. $\Box$
+
+\begin{interpretation}[Why the score saturates]
+For a Gaussian, the tails are so thin that escaping them costs quadratic
+energy, and the restoring force -- the score -- grows linearly. For a Laplace,
+the tails are only exponential; the cost of escape grows linearly, and the
+restoring force is bounded. Here, even with a Gaussian contribution $G_t$
+added to $\beta\varepsilon$, the Laplace tail dominates at large $|r|$ and the
+score saturates at $\pm 1/\btilde = \pm 1/(\beta b)$. Saturation is the
+signature of sub-Gaussian tails; any diffusion model that tries to
+represent a Laplace-like innovation with a Gaussian score will be
+\emph{locally} wrong in the tails by a factor growing in $|r|$.
+\end{interpretation}
+
+% ============================================================
+\chapter{Curvature theorem}
+\label{ch:curv}
+% ============================================================
+
+The residual score $\psi_t(r)$ depends only on $r$. The Hessian $H_t(x)$
+is obtained by differentiating the score and thus inherits this
+dependence: all of its entries are proportional to a single scalar
+function $\kappa_t(r) := -\psi_t'(r)$. We show this explicitly and then
+note the strong low-rank consequence.
+
+\section{Componentwise computation}
+
+From Theorem~\ref{thm:score}, we have
+$S_0(x) = -(x_0-\beta\mu_0)/v - \rho\psi_t(r)$
+and $S_1(x) = \psi_t(r)$. The Hessian is
+\begin{equation}
+H_t(x) = -\nabla_x^2 \log p_t = -\begin{pmatrix} \partial_{x_0} S_0 & \partial_{x_1} S_0 \\
+                                                   \partial_{x_0} S_1 & \partial_{x_1} S_1 \end{pmatrix}.
+\end{equation}
+Using $\partial_{x_0} r = -\rho$ and $\partial_{x_1} r = 1$, and writing
+$\psi_t'(r) = -\kappa_t(r)$,
+\begin{align}
+\partial_{x_1} S_1 &= \psi_t'(r) = -\kappa_t(r), \\
+\partial_{x_0} S_1 &= \psi_t'(r)\cdot(-\rho) = \rho\kappa_t(r), \\
+\partial_{x_1} S_0 &= -\rho\psi_t'(r) = \rho\kappa_t(r), \\
+\partial_{x_0} S_0 &= -\frac{1}{v} - \rho\psi_t'(r)\cdot(-\rho) = -\frac{1}{v} - \rho^2 \kappa_t(r)
+   \quad \text{(wait, with the sign of }\psi_t').
+\end{align}
+Let us redo the last one carefully:
+$S_0 = -(x_0-\beta\mu_0)/v - \rho\psi_t(r)$, so
+$\partial_{x_0} S_0 = -1/v - \rho \psi_t'(r)\cdot \partial_{x_0} r
+                    = -1/v - \rho \psi_t'(r)\cdot(-\rho)
+                    = -1/v + \rho^2 \psi_t'(r)
+                    = -1/v - \rho^2 \kappa_t(r)$.
+Hence
+\begin{equation}
+H_t(x) = -\begin{pmatrix} -1/v - \rho^2\kappa_t(r) & \rho\kappa_t(r) \\
+                          \rho\kappa_t(r) & -\kappa_t(r) \end{pmatrix}
+       = \begin{pmatrix} 1/v + \rho^2\kappa_t(r) & -\rho\kappa_t(r) \\
+                          -\rho\kappa_t(r) & \kappa_t(r) \end{pmatrix}.
+\label{eq:H-explicit}
+\end{equation}
+
+\begin{theorem}[Rank-1 structure of the curvature, $K{=}1$]
+\label{thm:curv}
+\begin{equation}
+H_t(x) = \underbrace{\begin{pmatrix}1/v & 0\\0 & 0\end{pmatrix}}_{=:\, Q_0}
+       \,+\, \kappa_t(r)\, M_\rho,\qquad
+M_\rho := \begin{pmatrix}\rho^2 & -\rho\\ -\rho & 1\end{pmatrix}.
+\label{eq:H-ray}
+\end{equation}
+The matrix $M_\rho$ has rank one, with $M_\rho = nn^\top$ where
+$n = (\rho, -1)^\top$. Its eigenvalues are $\{0, 1+\rho^2\}$, with
+eigenvectors $\propto (1,\rho)^\top$ (kernel) and $n$ respectively.
+Consequently, for fixed $t$, the curvature field $H_t(x)$ traces a
+one-parameter affine ray in the space of $2\times 2$ symmetric matrices,
+parameterised by the scalar $\kappa_t(r)$.
+\end{theorem}
+
+\begin{proof}
+Equation~\eqref{eq:H-ray} is just a rearrangement of~\eqref{eq:H-explicit}.
+For $M_\rho$: $\det M_\rho = \rho^2 - \rho^2 = 0$, so rank $\le 1$, and the
+trace is $1 + \rho^2 > 0$, so rank is exactly $1$. The non-zero eigenvalue
+is the trace $1 + \rho^2$; the corresponding eigenvector is $n = (\rho,-1)^\top$
+(check: $M_\rho n = (\rho^3+\rho, -\rho^2 -1)^\top = (1+\rho^2)(\rho,-1)^\top$).
+$\Box$
+\end{proof}
+
+\begin{interpretation}
+The Gaussian case has $H_t = \Sigma_t^{-1}$ constant in $x$: the curvature
+field is a single matrix. The Laplace case has $H_t$ varying with $x$, but
+only along the $1$D ray indexed by the scalar $\kappa_t(r)$. This is the
+non-Gaussian generalisation of ``precision matrix'': the field is not a
+single matrix, but a smooth curve of matrices with rank-1 update, governed
+by the scalar function $r\mapsto \kappa_t(r)$.
+\end{interpretation}
+
+\section{Alternative expression for $\kappa_t$: the ODE route}
+
+The formula $\kappa_t(r) = -\psi_t'(r)$ can be turned into an explicit
+expression that avoids differentiating the tanh-type formula~\eqref{eq:psi-closed}.
+The trick is the identity
+\begin{equation}
+\kappa_t(r) = -\frac{\mathrm{d}^2}{\mathrm{d}r^2}\log h_t(r)
+            = -\frac{h_t''(r)}{h_t(r)} + \left(\frac{h_t'(r)}{h_t(r)}\right)^2
+            = \psi_t(r)^2 - \frac{h_t''(r)}{h_t(r)}.
+\label{eq:kappa-as-psi-sq-plus}
+\end{equation}
+We will show in Chapter~\ref{ch:fourier} that $h_t$ satisfies the linear
+ODE
+\begin{equation}
+(1 - \btilde^2 \partial_r^2) h_t(r) = \phi_\tau(r),\qquad
+\phi_\tau(r) := \frac{1}{\sqrt{2\pi\tau^2}}\exp\!\left(-\frac{r^2}{2\tau^2}\right).
+\label{eq:h-ODE}
+\end{equation}
+Solving for $h_t''$,
+\begin{equation}
+h_t''(r) = \frac{h_t(r) - \phi_\tau(r)}{\btilde^2}.
+\label{eq:hprimeprime}
+\end{equation}
+Plugging into~\eqref{eq:kappa-as-psi-sq-plus},
+\begin{equation}
+\boxed{\;\kappa_t(r) = \psi_t(r)^2 - \frac{1}{\btilde^2} + \frac{1}{\btilde^2}\,\frac{\phi_\tau(r)}{h_t(r)}.\;}
+\label{eq:kappa-alt}
+\end{equation}
+This is the form we will use to prove the Mills-ratio closed form of
+$\kappa_t(0)$ in Chapter~\ref{ch:mills}. It is also the form most
+convenient for numerical evaluation, since the tanh-type formula for
+$\psi_t$ is stable and~\eqref{eq:kappa-alt} avoids differentiating it.
+
+\begin{remark}[Sanity check at the tails]
+As $r\to\pm\infty$: $\psi_t(r)\to\mp 1/\btilde$, so $\psi_t^2\to 1/\btilde^2$,
+cancelling the $-1/\btilde^2$. Meanwhile $\phi_\tau(r)/h_t(r)\to 0$ because
+$h_t$ has exponential Laplace tails whereas $\phi_\tau$ has Gaussian tails
+that decay strictly faster. Therefore $\kappa_t(\pm\infty) = 0$, consistent
+with the saturation of $\psi_t$.
+\end{remark}
+
+
+% ============================================================
+\part{Fourier representation}
+% ============================================================
+
+The results of Part II were obtained in real space: convolution in
+Section~\ref{ch:convolution}, chain rule in Chapter~\ref{ch:score},
+linear algebra in Chapter~\ref{ch:curv}. The Fourier picture tells the
+same story but in a cleaner geometric language: the characteristic
+function of $p_t$ factorises explicitly, the non-Gaussian content
+collapses onto a single innovation-frequency axis, and the residual
+density satisfies a genuinely linear ODE. We now derive all of this
+from scratch.
+
+% ============================================================
+\chapter{Characteristic function of the $K{=}1$ law}
+\label{ch:fourier}
+% ============================================================
+
+\section{Clean characteristic function}
+
+The clean joint law of $(A_0, A_1)$ has characteristic function
+\begin{equation}
+\hatfn{p}_0(q_0, q_1) := \E\!\left[ e^{i(q_0 A_0 + q_1 A_1)} \right]
+ = \E\!\left[ e^{i q_0 A_0 + i q_1 (\alpha A_0 + \varepsilon)} \right]
+ = \E\!\left[ e^{i(q_0 + \alpha q_1) A_0} \right]\,
+   \E\!\left[ e^{i q_1 \varepsilon} \right],
+\label{eq:clean-cf}
+\end{equation}
+where we used independence of $A_0$ and $\varepsilon$. The two
+expectations are standard:
+\begin{align}
+\E\!\left[ e^{i(q_0+\alpha q_1) A_0} \right]
+ &= \exp\!\left( i\mu_0 (q_0+\alpha q_1) - \tfrac{\sigma_0^2}{2}(q_0+\alpha q_1)^2\right), \\
+\E\!\left[ e^{i q_1 \varepsilon} \right]
+ &= \frac{1}{1 + b^2 q_1^2}, \qquad \varepsilon \sim \Lap(0,b).
+\end{align}
+
+\begin{whybox}
+The characteristic function of $\Lap(0,b)$ is
+\[
+\int_\R \frac{1}{2b} e^{-|u|/b}\,e^{iqu}\,\mathrm{d}u
+ = \frac{1}{2b}\left[ \int_0^\infty e^{(iq-1/b)u}\,\mathrm{d}u
+                     + \int_{-\infty}^0 e^{(iq+1/b)u}\,\mathrm{d}u \right]
+ = \frac{1}{1 + b^2 q^2}.
+\]
+The rational form $1/(1+b^2 q^2)$ is what makes Laplace such a
+tractable non-Gaussian noise: it is the simplest nontrivial example
+of an ``exponential of a rational pole'' structure in Fourier space.
+\end{whybox}
+
+Collecting,
+\begin{equation}
+\hatfn{p}_0(q_0, q_1) = \frac{1}{1 + b^2 q_1^2}\,
+   \exp\!\left(i\mu_0 (q_0+\alpha q_1) - \tfrac{\sigma_0^2}{2}(q_0+\alpha q_1)^2\right).
+\label{eq:clean-cf-final}
+\end{equation}
+
+\section{OU corruption in Fourier space}
+
+The channel $X_k = \beta A_k + \sqrt{\Delta} Z_k$ with
+$Z_k \perp A$ implies, for the joint characteristic function
+$\hatfn{p}_t(k_0, k_1) := \E[e^{i(k_0 X_0 + k_1 X_1)}]$:
+\begin{align}
+\hatfn{p}_t(k_0,k_1)
+ &= \E\!\left[ e^{i(k_0 (\beta A_0 + \sqrt{\Delta} Z_0) + k_1(\beta A_1 + \sqrt{\Delta}Z_1))}\right] \nonumber\\
+ &= \E\!\left[ e^{i\beta(k_0 A_0 + k_1 A_1)}\right]\cdot
+    \E\!\left[ e^{i\sqrt{\Delta}(k_0 Z_0 + k_1 Z_1)}\right] \nonumber\\
+ &= \hatfn{p}_0(\beta k_0, \beta k_1)\,\cdot\, e^{-\Delta(k_0^2 + k_1^2)/2},
+\label{eq:cf-OU-corrupt}
+\end{align}
+using independence of $A$ from $(Z_0, Z_1)$ and the standard Gaussian
+CF $\E[e^{iqZ}] = e^{-q^2/2}$. Substituting~\eqref{eq:clean-cf-final}
+with $(q_0,q_1) = (\beta k_0, \beta k_1)$ and writing
+$\btilde = \beta b$,
+\begin{align}
+\hatfn{p}_t(k_0, k_1)
+ &= \frac{1}{1+\btilde^2 k_1^2}\,
+    \exp\!\left(i\beta\mu_0(k_0+\alpha k_1)
+               - \tfrac{\beta^2\sigma_0^2}{2}(k_0+\alpha k_1)^2
+               - \tfrac{\Delta}{2}(k_0^2+k_1^2)\right).
+\label{eq:cf-Kone}
+\end{align}
+
+\begin{theorem}[Fourier representation, $K{=}1$]
+\label{thm:fourier-K1}
+The characteristic function of the noisy joint law is given
+by~\eqref{eq:cf-Kone}. In the rotated innovation-frequency coordinates
+\begin{equation}
+\ell_0 := k_0 + \alpha k_1, \qquad
+\ell_1 := k_1,
+\label{eq:ell-rotation-K1}
+\end{equation}
+(equivalently, $k_0 = \ell_0 - \alpha \ell_1$, $k_1 = \ell_1$),
+the characteristic function has the form
+\begin{equation}
+\hatfn{q}_t(\ell_0, \ell_1) :=
+\hatfn{p}_t(\ell_0 - \alpha\ell_1, \ell_1)
+= \underbrace{e^{i\beta\mu_0 \ell_0
+                - \frac{\beta^2\sigma_0^2}{2}\ell_0^2
+                - \frac{\Delta}{2}[(\ell_0 - \alpha\ell_1)^2 + \ell_1^2]}}_{\text{Gaussian sector}}
+  \cdot \underbrace{\frac{1}{1 + \btilde^2 \ell_1^2}}_{\text{rational sector}}.
+\label{eq:cf-rotated-K1}
+\end{equation}
+The non-Gaussian content is a function of $\ell_1$ alone; the
+Gaussian sector is a nondegenerate quadratic form in $(\ell_0,\ell_1)$.
+\end{theorem}
+
+\begin{proof}
+Equation~\eqref{eq:cf-Kone} is derived above.
+Substitute $k_0 + \alpha k_1 = \ell_0$ and $k_1 = \ell_1$;
+also $k_0^2 + k_1^2 = (\ell_0 - \alpha\ell_1)^2 + \ell_1^2$. The rational
+factor becomes $1/(1 + \btilde^2 \ell_1^2)$. No further simplification is
+needed.
+\end{proof}
+
+\begin{interpretation}[Why this rotation is natural]
+The clean chain has the causal decomposition
+$A_0, \varepsilon = A_1 - \alpha A_0$ with $A_0, \varepsilon$ independent.
+Their Fourier duals are $k_0 + \alpha k_1$ (the conjugate of $A_0$) and
+$k_1$ (the conjugate of $\varepsilon$). The rotation~\eqref{eq:ell-rotation-K1}
+is \emph{exactly} this causal coordinate change, rewritten in Fourier space.
+After the rotation, the Laplace innovation contributes one rational factor
+in $\ell_1$ only, decoupled from the site frequency $\ell_0$.
+\end{interpretation}
+
+\section{From characteristic function to residual ODE}
+\label{sec:residual-ODE}
+
+We now derive~\eqref{eq:h-ODE}, the linear ODE satisfied by the residual
+density $h_t(r)$. Start from the observation that $R_t = \beta\varepsilon + G_t$
+has characteristic function
+\begin{equation}
+\hatfn{h}_t(\ell) := \E[e^{i\ell R_t}]
+ = \E[e^{i\ell\beta\varepsilon}]\,\E[e^{i\ell G_t}]
+ = \frac{1}{1 + \btilde^2 \ell^2}\cdot e^{-\tau^2 \ell^2/2}.
+\label{eq:htilde-lit}
+\end{equation}
+Multiply both sides by $(1 + \btilde^2 \ell^2)$:
+\begin{equation}
+(1 + \btilde^2 \ell^2)\,\hatfn{h}_t(\ell) = e^{-\tau^2 \ell^2/2}.
+\label{eq:htilde-clean}
+\end{equation}
+Invert the Fourier transform. Under the convention
+$h_t(r) = \frac{1}{2\pi}\int e^{-i\ell r}\hatfn{h}_t(\ell)\,\mathrm{d}\ell$,
+multiplication by $i\ell$ corresponds to $\partial_r$; in particular
+$(i\ell)^2 = -\ell^2$ corresponds to $\partial_r^2$, so multiplication by
+$\ell^2$ corresponds to $-\partial_r^2$. Applying the inverse transform to
+both sides of~\eqref{eq:htilde-clean}:
+\begin{equation}
+(1 - \btilde^2 \partial_r^2)\,h_t(r) = \phi_\tau(r),\qquad
+\phi_\tau(r) := \frac{1}{\sqrt{2\pi\tau^2}} e^{-r^2/(2\tau^2)}.
+\label{eq:h-ODE-repeat}
+\end{equation}
+This is~\eqref{eq:h-ODE}, rigorously derived.
+
+\begin{remark}[Check: the clean limit]
+At $t=0$: $\tau = 0$, so $\phi_\tau(r)$ becomes a Dirac delta $\delta(r)$;
+the ODE reduces to $(1 - b^2 \partial_r^2) h_0 = \delta$, whose solution
+(with decay at infinity) is the Green's function
+$h_0(r) = (1/2b)e^{-|r|/b}$, the clean Laplace density. Good.
+\end{remark}
+
+\begin{remark}[Check: the far-$t$ limit]
+As $t\to\infty$: $\btilde\to 0$, so the ODE reduces to
+$h_\infty(r) = \phi_\tau(r)$ (a pure Gaussian with variance $\tau^2\to 1$).
+This recovers the Gaussian benchmark in the fully-noised regime.
+\end{remark}
+
+\section{Recovering $h_t$ from the ODE: an alternative route}
+
+The ODE~\eqref{eq:h-ODE-repeat} gives an alternative way of arriving at
+the closed form~\eqref{eq:h-closed}, bypassing the direct convolution.
+The Green's function of $1 - \btilde^2 \partial_r^2$ that decays at
+infinity is $(2\btilde)^{-1} e^{-|r|/\btilde}$, so
+\begin{equation}
+h_t(r) = \int_\R \frac{1}{2\btilde}\,e^{-|r-u|/\btilde}\,\phi_\tau(u)\,\mathrm{d}u.
+\end{equation}
+This is not our original convolution, but a dual one: a Laplace density
+convolved against a Gaussian. By the symmetry of convolution, however,
+this is the same object, and working through the completion-of-squares
+in $u$ (instead of in $r$) gives~\eqref{eq:h-closed} with the roles of
+$L_+$ and $L_-$ symmetrised.
+
+\begin{whybox}
+Why the ODE matters: from~\eqref{eq:h-ODE-repeat} we read off
+$h_t'' = (h_t - \phi_\tau)/\btilde^2$ without having to differentiate
+\eqref{eq:h-closed} twice. This is the single fact that made the
+alternative expression~\eqref{eq:kappa-alt} for $\kappa_t(r)$ possible --
+and that alternative expression is exactly what delivers the Mills-ratio
+closed form at $r=0$ in the next part.
+\end{whybox}
+
+\section{A diagnostic: where nonlinearity enters}
+\label{sec:nonlinearity-diagnosis}
+
+In Fourier space, everything is \emph{linear}: the characteristic
+function, the rational rational factor, the ODE. The \emph{nonlinearity}
+of the score and curvature comes from a single operation: taking the
+logarithm of the real-space density.
+\begin{itemize}[leftmargin=2em, topsep=3pt]
+\item $h_t$ is a linear combination of exponential-times-Gaussian-CDF
+terms.
+\item $\log h_t$ is not linear in those terms; it combines them via a
+log-sum-exp, which gives a tanh-type saturating score.
+\item $\partial_r \log h_t = h_t'/h_t$ is therefore bounded (saturates);
+$\partial_r^2 \log h_t$ is concentrated near $r=0$ (where the ratio
+$\phi_\tau/h_t$ peaks) and vanishes at infinity.
+\end{itemize}
+This is the cleanest identification of where non-Gaussianity lives in the
+problem. It foreshadows the broader story of the thesis: \emph{the density
+is linearly structured in Fourier; the score is where nonlinearity
+takes hold, and it is concentrated in the innovation direction.}
+
+
+% ============================================================
+\part{Scalar observables}
+% ============================================================
+
+The structure theorems of Part II describe the entire residual density
+$h_t(r)$, the entire score $\psi_t(r)$, and the entire curvature field
+$\kappa_t(r)$. These are \emph{functions} of $r$; to get finite-dimensional
+diagnostics that we can track as $t$ varies -- and that play the role of
+the Gaussian precision-matrix mass -- we extract scalar summaries. Each
+one is a functional of $h_t$. Our goal is to compute each in closed form
+and to interpret what it measures.
+
+% ============================================================
+\chapter{Centre curvature: the Mills-ratio closed form}
+\label{ch:mills}
+% ============================================================
+
+The most important scalar summary is the curvature at the origin,
+$\kappa_t(0)$. We state and prove in full the identity that expresses it
+through Mills' ratio, and then interpret its limits.
+
+\section{Statement}
+
+\begin{theorem}[Closed form for $\kappa_t(0)$]
+\label{thm:kappa-center}
+Let $\phi, \Phi$ denote the standard normal pdf and cdf, and let
+\begin{equation}
+\mills(a) := \frac{\Phi(-a)}{\phi(a)}, \qquad a\in\R,
+\label{eq:mills-def}
+\end{equation}
+be Mills' ratio of the standard normal. Then, with $a = \tau/\btilde$,
+\begin{equation}
+\boxed{\; \kappa_t(0)\,\btilde^2 = \frac{1}{a\,\mills(a)} - 1. \;}
+\label{eq:mills-main}
+\end{equation}
+Equivalently,
+\begin{equation}
+\kappa_t(0) = \frac{1}{\btilde^2}\left(\frac{1}{a\mills(a)} - 1\right).
+\end{equation}
+\end{theorem}
+
+\begin{whybox}
+Why this is the right object: $\kappa_t(0)\,\btilde^2$ is dimensionless
+(both sides have dimension of length squared, canceling). It depends on
+$t$ only through the single scalar $a(t) = \tau(t)/\btilde(t)$, which
+monotonically increases from $0$ at $t=0$ to $+\infty$ as $t\to\infty$.
+Thus the entire one-parameter family of residual densities is compressed
+into a single dimensionless curve.
+\end{whybox}
+
+\section{Proof}
+
+The proof has three elementary ingredients: the alternative formula for
+$\kappa_t$ from Section~\ref{ch:curv}, the closed form for $h_t(0)$, and
+Mills' ratio at a single point.
+
+\paragraph{Step 1: $\psi_t(0) = 0$.}
+By direct inspection of~\eqref{eq:h-closed}, $h_t(-r) = h_t(r)$: swap the
+two terms using $\Phi(r/\tau - a) \leftrightarrow \Phi(-r/\tau - a)$ under
+$r\mapsto -r$. So $h_t$ is an even function, and its derivative at $0$ is
+zero:
+\begin{equation}
+\psi_t(0) = \frac{h_t'(0)}{h_t(0)} = 0.
+\end{equation}
+
+\paragraph{Step 2: the alternative formula evaluated at $0$.}
+From~\eqref{eq:kappa-alt},
+\begin{equation}
+\kappa_t(0) = \psi_t(0)^2 - \frac{1}{\btilde^2} + \frac{1}{\btilde^2}\,\frac{\phi_\tau(0)}{h_t(0)}
+            = -\frac{1}{\btilde^2} + \frac{1}{\btilde^2}\,\frac{\phi_\tau(0)}{h_t(0)}.
+\label{eq:mills-step2}
+\end{equation}
+It remains to evaluate the ratio $\phi_\tau(0)/h_t(0)$.
+
+\paragraph{Step 3: compute $h_t(0)$.}
+From~\eqref{eq:h-closed} at $r = 0$:
+\begin{align}
+h_t(0) &= \frac{e^{a^2/2}}{2\btilde}\left[L_+(0) + L_-(0)\right]
+       = \frac{e^{a^2/2}}{2\btilde}\left[ e^0\Phi(-a) + e^0 \Phi(-a)\right]
+       = \frac{e^{a^2/2}}{\btilde}\Phi(-a).
+\label{eq:h0-value}
+\end{align}
+(We used $L_+(0) = \Phi(-a)$ and $L_-(0) = \Phi(-a)$ from~\eqref{eq:Lpm-def}.)
+
+\paragraph{Step 4: compute $\phi_\tau(0)/h_t(0)$.}
+$\phi_\tau(0) = 1/\sqrt{2\pi\tau^2}$, and rewriting using $\tau = a\btilde$:
+\begin{equation}
+\phi_\tau(0) = \frac{1}{\sqrt{2\pi}\, a\btilde}.
+\end{equation}
+Dividing,
+\begin{equation}
+\frac{\phi_\tau(0)}{h_t(0)}
+ = \frac{1/(\sqrt{2\pi}\, a\btilde)}{e^{a^2/2}\Phi(-a)/\btilde}
+ = \frac{1}{a\,\sqrt{2\pi}\,e^{a^2/2}\,\Phi(-a)}
+ = \frac{\phi(a)}{a\,\phi(a)\,\sqrt{2\pi}\,e^{a^2/2}\,\Phi(-a)}.
+\end{equation}
+But $\phi(a) = (2\pi)^{-1/2} e^{-a^2/2}$, so
+$(2\pi)^{1/2}e^{a^2/2} = 1/\phi(a)$, and
+\begin{equation}
+\frac{\phi_\tau(0)}{h_t(0)}
+ = \frac{\phi(a)}{a\,\Phi(-a)}
+ = \frac{1}{a\,\mills(a)},
+\label{eq:ratio-is-mills}
+\end{equation}
+where we used~\eqref{eq:mills-def}.
+
+\paragraph{Step 5: assemble.}
+Substituting~\eqref{eq:ratio-is-mills} into~\eqref{eq:mills-step2},
+\begin{equation}
+\kappa_t(0)\,\btilde^2 = -1 + \frac{1}{a\,\mills(a)}
+                       = \frac{1}{a\,\mills(a)} - 1,
+\end{equation}
+which is~\eqref{eq:mills-main}. $\Box$
+
+\section{Sanity check: the two extreme limits}
+
+Mills' ratio has well-known expansions at $a\to 0$ and $a\to\infty$.
+Using them, we recover the clean Laplace and Gaussian limits.
+
+\paragraph{Clean limit $t\to 0^+$ ($a\to 0^+$).}
+At $a = 0$: $\phi(0) = 1/\sqrt{2\pi}$, $\Phi(0) = 1/2$, so
+$\mills(0) = \sqrt{2\pi}/2 = \sqrt{\pi/2}$.
+Expanding,
+\begin{equation}
+\mills(a) = \sqrt{\pi/2}\,\bigl(1 - a\sqrt{2/\pi} + O(a^2)\bigr),\qquad a\to 0.
+\label{eq:mills-small}
+\end{equation}
+Hence
+\begin{equation}
+\frac{1}{a\mills(a)} = \frac{1}{a\sqrt{\pi/2}}\bigl(1 + a\sqrt{2/\pi} + O(a^2)\bigr)
+ = \frac{\sqrt{2/\pi}}{a} + 1 + O(a).
+\end{equation}
+Therefore
+\begin{equation}
+\kappa_t(0)\,\btilde^2 \sim \frac{\sqrt{2/\pi}}{a} \to +\infty \quad (a\to 0^+),
+\label{eq:kappa-small-t}
+\end{equation}
+i.e.\ the centre curvature diverges as $1/a = \btilde/\tau$ when $t\to 0$.
+This is the $r=0$ Laplace cusp: the clean Laplace density has a corner
+at $0$, so the log-density has infinite negative curvature there.
+
+\paragraph{Fully-noised limit $t\to\infty$ ($a\to\infty$).}
+For large $a$,
+\begin{equation}
+\mills(a) \sim \frac{1}{a} - \frac{1}{a^3} + O(a^{-5}),
+\label{eq:mills-large}
+\end{equation}
+hence $a\mills(a) \sim 1 - 1/a^2 + \cdots$, and
+$1/(a\mills(a)) \sim 1 + 1/a^2$. Subtracting 1:
+\begin{equation}
+\kappa_t(0)\,\btilde^2 \sim \frac{1}{a^2} = \frac{\btilde^2}{\tau^2}.
+\end{equation}
+Thus $\kappa_t(0) \sim 1/\tau^2$. Compare to the Gaussian-benchmark
+curvature $\kappa_t^{(G)} = 1/\tau_G^2 = 1/(\tau^2 + 2\btilde^2)$: for
+large $a$, $\tau^2 \gg \btilde^2$, and both agree to leading order.
+
+\begin{interpretation}[What the Mills-ratio form buys us]
+Equation~\eqref{eq:mills-main} is not just a compact formula: it is the
+explicit statement that the centre curvature is a universal function of
+a single dimensionless ratio $a$. As $a$ sweeps from $0$ to $\infty$
+along diffusion time, $\kappa_t(0)\btilde^2$ sweeps from $+\infty$ to $0$,
+passing through every positive value exactly once (monotonicity is not
+proved here but follows from the fact that $a\mills(a)$ is strictly
+increasing). Every finite-time non-Gaussianity of the centre of the
+density is encoded in this single scalar curve, and the Gaussian
+benchmark simply reads as a different universal function of $a$,
+differing by a correction of order $1/a^4$ at large $a$.
+\end{interpretation}
+
+% ============================================================
+\chapter{Gaussian benchmark and the centre-benchmark gap}
+\label{ch:benchmark}
+% ============================================================
+
+To calibrate non-Gaussianity, we compare the Laplace benchmark against a
+\emph{matched-variance} Gaussian model. This gives a rigorous notion of
+``how far is the true curvature from the Gaussian fit of the same
+two-point statistics.''
+
+\section{The matched Gaussian innovation}
+
+Replace $\varepsilon \sim \Lap(0,b)$ by $\varepsilon^{(G)} \sim \Normal(0, 2b^2)$.
+Since $\V(\varepsilon) = 2b^2 = \V(\varepsilon^{(G)})$, the two innovations
+have identical second-order statistics. In the Laplace benchmark,
+$R_t = \beta\varepsilon + G_t$ has variance $2\btilde^2 + \tau^2 =: \tau_G^2$;
+in the matched Gaussian benchmark, the corresponding residual
+$R_t^{(G)}$ has the same variance but is Gaussian:
+\begin{equation}
+R_t^{(G)} \sim \Normal(0, \tau_G^2),\qquad \tau_G^2 := 2\btilde^2 + \tau^2.
+\label{eq:tauG2}
+\end{equation}
+The joint noisy law is jointly Gaussian and the curvature is constant
+in $x$:
+\begin{equation}
+H_t^{(G)} = \begin{pmatrix}1/v + \rho^2/\tau_G^2 & -\rho/\tau_G^2 \\
+                         -\rho/\tau_G^2 & 1/\tau_G^2\end{pmatrix}
+= \begin{pmatrix}1/v & 0\\ 0 & 0\end{pmatrix} + \kappa_t^{(G)} M_\rho,
+\qquad
+\kappa_t^{(G)} := \frac{1}{\tau_G^2}.
+\label{eq:kappaG}
+\end{equation}
+
+\begin{whybox}
+Matching $\V(\varepsilon) = \V(\varepsilon^{(G)}) = 2b^2$ means the two
+benchmarks cannot be told apart by any two-point statistic of the
+residual. Everything that distinguishes them -- the cusp at $r=0$, the
+saturating score, the location-dependent curvature -- is by construction
+higher-order.
+\end{whybox}
+
+\section{The centre-benchmark gap}
+
+The residual curvature at $r=0$ of the Laplace model is
+$\kappa_t(0) = (1/\btilde^2)(1/(a\mills(a)) - 1)$.
+The matched Gaussian gives constant $\kappa_t^{(G)} = 1/(\tau^2 + 2\btilde^2)
+= 1/(\btilde^2(a^2 + 2))$. Their gap is
+\begin{equation}
+\delta\kappa_t := \kappa_t(0) - \kappa_t^{(G)}
+= \frac{1}{\btilde^2}\left[\frac{1}{a\mills(a)} - 1 - \frac{1}{a^2 + 2}\right].
+\label{eq:gap-exact}
+\end{equation}
+
+\paragraph{Small $a$ (small $t$): the cusp dominates.}
+$1/(a\mills(a)) \sim \sqrt{2/\pi}/a$ and $1/(a^2+2) \to 1/2$, so
+$\delta\kappa_t \sim (\btilde^2)^{-1}\sqrt{2/\pi}/a$, i.e.\ diverges
+like $1/a$. The Gaussian fit misses the Laplace cusp catastrophically
+in the clean regime.
+
+\paragraph{Large $a$ (large $t$): the gap closes.}
+Use $1/(a\mills(a)) \sim 1 + 1/a^2 + 3/a^4 + \cdots$ (from the expansion
+$\mills(a) = 1/a - 1/a^3 + 3/a^5 - \cdots$) and
+$1/(a^2 + 2) = 1/a^2 - 2/a^4 + O(a^{-6})$:
+\begin{align}
+\frac{1}{a\mills(a)} - 1 - \frac{1}{a^2+2}
+ &= \left(\frac{1}{a^2} + \frac{3}{a^4} + O(a^{-6})\right)
+    - \left(\frac{1}{a^2} - \frac{2}{a^4} + O(a^{-6})\right) \nonumber \\
+ &= \frac{5}{a^4} + O(a^{-6}).
+\end{align}
+So $\delta\kappa_t \sim 5/(\btilde^2 a^4) = 5\btilde^2/\tau^4$, which
+goes to zero as $t\to\infty$. The gap closes quartically.
+
+\begin{interpretation}[Where the Gaussian benchmark is honest]
+For small $t$ (strong non-Gaussianity), the Gaussian benchmark
+\emph{underestimates} centre curvature by a factor growing like $\btilde/\tau$;
+a score trained against a Gaussian fit will miss the cusp entirely.
+For large $t$, the gap closes extremely fast ($\btilde^2/\tau^4$), so
+non-Gaussian fine-tuning yields negligible benefit in the
+late-diffusion regime. This is the quantitative underpinning of the
+folklore that diffusion models ``don't need to care about non-Gaussianity
+at late times.''
+\end{interpretation}
+
+% ============================================================
+\chapter{Kurtosis and bandwidth}
+\label{ch:kurtosis}
+% ============================================================
+
+\section{The fourth cumulant of $R_t$}
+
+\begin{proposition}[Residual fourth cumulant]
+\label{prop:kurt}
+Let $\kappa_4(Y)$ denote the fourth cumulant of a real random variable
+$Y$. Then
+\begin{equation}
+\kappa_4(R_t) = 12\,\beta^4\,b^4,
+\label{eq:kappa4}
+\end{equation}
+and consequently the excess kurtosis of $R_t$ is
+\begin{equation}
+\frac{\kappa_4(R_t)}{\V(R_t)^2} = \frac{12\beta^4 b^4}{(2\btilde^2 + \tau^2)^2}
+ = \frac{12 \btilde^4}{\btilde^4(a^2+2)^2}
+ = \frac{12}{(a^2+2)^2}
+ = \frac{3}{(1 + a^2/2)^2}.
+\label{eq:excess-kurt}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+$R_t = \beta\varepsilon + G_t$ is a sum of independent variables, so
+cumulants add: $\kappa_4(R_t) = \kappa_4(\beta\varepsilon) + \kappa_4(G_t)$.
+The Gaussian $G_t$ has $\kappa_4 = 0$.
+The fourth cumulant of $\beta\varepsilon$ scales as $\beta^4$ times that of
+$\varepsilon \sim \Lap(0,b)$. For Laplace$(0,b)$, the fourth moment is
+$24 b^4$ and the second moment is $2b^2$, so
+$\kappa_4 = m_4 - 3 m_2^2 = 24b^4 - 3(2b^2)^2 = 12b^4$. (Here
+$\kappa_3 = 0$ by symmetry.) Hence
+$\kappa_4(R_t) = 12\beta^4 b^4$. Substituting $\V(R_t) = 2\btilde^2 + \tau^2$
+and $\btilde = \beta b$ gives~\eqref{eq:excess-kurt}. $\Box$
+\end{proof}
+
+\begin{interpretation}[Non-Gaussianity persistence]
+At $t=0$ ($a=0$): excess kurtosis is $3$, the Laplace value.
+At $t\to\infty$ ($a\to\infty$): excess kurtosis $\to 0$, the Gaussian
+limit. The decay is $\sim 12/a^4$, the same quartic rate as the
+centre-benchmark gap. This is not a coincidence: both quantities are
+measuring the same thing -- the fourth-order departure from Gaussianity
+of $R_t$ -- just through different functionals (one pointwise at $r=0$,
+one integrated).
+\end{interpretation}
+
+\section{Full width at half maximum of $\kappa_t$}
+
+Since $\kappa_t(r)$ is an even function peaked at $r=0$ and decaying to
+zero at $\pm\infty$, the characteristic width of the curvature
+band is
+\begin{equation}
+\mathrm{FWHM}(t) := 2 r^*(t), \qquad \kappa_t(r^*) = \tfrac{1}{2}\kappa_t(0).
+\end{equation}
+This is the non-Gaussian generalisation of the ``tridiagonal mass''
+bandwidth $b_{0.95}(t)$ used in the Gaussian case: it quantifies how
+localised the curvature is to the residual-ray centre.
+
+\begin{whybox}
+Why FWHM rather than another width: the function $\kappa_t(r)$ has
+heavy tails (they decay to zero) but a clear peak at $0$. Second moment
+is dominated by the tails and does not measure concentration; variance
+of the corresponding curvature mass is ill-defined; FWHM is
+well-defined, robust, and easy to compute from the closed form.
+\end{whybox}
+
+\paragraph{Two natural length scales.}
+The residual density $h_t(r)$ is built from two elementary scales:
+$\btilde$ (Laplace scale of the rescaled innovation) and $\tau$
+(Gaussian scale of the smoothing). Numerical experiments (Figure 4 of
+the main memo) confirm:
+\begin{itemize}[leftmargin=2em, topsep=3pt]
+\item $\mathrm{FWHM}(t) \approx \btilde$ for small $t$ (Laplace regime, $a\ll 1$);
+\item $\mathrm{FWHM}(t) \approx \tau$ for large $t$ (Gaussian regime, $a\gg 1$);
+\item crossover around $a = \tau/\btilde \approx 1$.
+\end{itemize}
+A closed form for $\mathrm{FWHM}(t)$ is possible in principle via the
+alternative formula~\eqref{eq:kappa-alt} but is not illuminating;
+the scales $\btilde$ and $\tau$ provide the right intuition.
+
+
+% ============================================================
+\part{The $K{=}2$ case}
+% ============================================================
+
+The $K=1$ case is a pedagogical exercise: one innovation, one residual,
+one non-Gaussian scalar. The $K=2$ case is where the central question of
+the thesis starts to bite. Two innovations are coupled through the
+shared latent state $A_1$; can we still factorise the exact density into
+a product of one-dimensional non-Gaussian bonds? The answer, as we will
+show in full, is \emph{no}: there is a specific Gaussian
+cross-covariance, $-\alpha\Delta$, that forbids this factorisation at
+any finite $t$. But the \emph{Markov locality pattern} survives:
+non-Gaussianity remains diagonal in innovation coordinates, and the
+Gaussian sector only couples nearest neighbours. We work out every step.
+
+% ============================================================
+\chapter{Characteristic function for $K{=}2$}
+\label{ch:K2-fourier}
+% ============================================================
+
+\section*{A note on rotation conventions}
+
+Before diving in, we flag a convention change relative to Part III.
+Two different rotations of the frequency variables are natural in this
+problem, and we use each where it is cleanest.
+
+\paragraph{Causal (prior/innovation) rotation.} This is the Fourier dual
+of the real-space innovation coordinates
+$(x_0, y_1, y_2, \ldots)$ with $y_k = x_k - \alpha x_{k-1}$.
+It diagonalises the linear phase of the characteristic function
+(making it depend only on the first coordinate), but it leaves the
+Laplace rational factors on non-axis-aligned directions.
+
+\paragraph{Minimal (innovation) rotation.}
+This is the rotation that aligns the Laplace rational factors with the
+coordinate axes, but leaves the linear phase in a general direction.
+
+\medskip
+
+At $K=1$ these two rotations coincide (there is only one innovation),
+and Part III uses the causal convention
+$\ell_0 = k_0 + \alpha k_1,\ \ell_1 = k_1$. This choice highlights the
+one-dimensional non-Gaussian axis $\ell_1$.
+
+At $K=2$ the two rotations differ. We will use the \emph{minimal}
+convention $\ell_0 = k_0,\ \ell_1 = k_1 + \alpha k_2,\ \ell_2 = k_2$
+because it is the one that separates the two Laplace innovations onto
+distinct axes --- and separating the innovations is precisely the
+content we need to test when asking whether the $K=1$ factorisation
+extends. A reader who prefers the fully-causal rotation will find it
+equivalent (the two differ by a further Gaussian shear in the site axis),
+and will obtain a slightly different $M$ matrix whose off-diagonal
+structure is tridiagonal rather than having one block-column pattern;
+the cross-term $M_{12} = -\alpha\Delta$ is the same in both conventions
+and is what matters for the obstruction theorem.
+
+\section{Clean characteristic function}
+
+The clean chain for $K = 2$ has
+\begin{equation}
+A_0 \sim \Normal(\mu_0, \sigma_0^2),\qquad
+A_1 = \alpha A_0 + \varepsilon_1,\qquad
+A_2 = \alpha A_1 + \varepsilon_2,
+\end{equation}
+with $\varepsilon_1, \varepsilon_2 \stackrel{\mathrm{iid}}{\sim} \Lap(0, b)$
+independent of $A_0$.
+
+The clean characteristic function is
+\begin{equation}
+\hatfn p_0(q_0, q_1, q_2) =
+\E\!\left[ e^{i(q_0 A_0 + q_1 A_1 + q_2 A_2)}\right].
+\end{equation}
+Substitute $A_1 = \alpha A_0 + \varepsilon_1$ and
+$A_2 = \alpha^2 A_0 + \alpha\varepsilon_1 + \varepsilon_2$:
+\begin{equation}
+q_0 A_0 + q_1 A_1 + q_2 A_2
+ = (q_0 + \alpha q_1 + \alpha^2 q_2) A_0 + (q_1 + \alpha q_2)\varepsilon_1
+ + q_2\varepsilon_2.
+\end{equation}
+By independence of $A_0, \varepsilon_1, \varepsilon_2$, the characteristic
+function factorises:
+\begin{equation}
+\hatfn p_0(q_0, q_1, q_2) =
+\underbrace{\E[e^{iq A_0}]}_{q = q_0+\alpha q_1+\alpha^2 q_2}\,
+\underbrace{\E[e^{i(q_1+\alpha q_2)\varepsilon_1}]}_{=1/(1+b^2(q_1+\alpha q_2)^2)}\,
+\underbrace{\E[e^{iq_2\varepsilon_2}]}_{=1/(1+b^2 q_2^2)}.
+\label{eq:K2-clean-cf-pre}
+\end{equation}
+With the Gaussian CF $\E[e^{iq A_0}] = \exp(i\mu_0 q - \sigma_0^2 q^2/2)$,
+\begin{equation}
+\boxed{\;
+\hatfn p_0(q_0, q_1, q_2)
+ = \frac{e^{i\mu_0 q - \sigma_0^2 q^2/2}}
+        {(1 + b^2(q_1+\alpha q_2)^2)(1 + b^2 q_2^2)},
+ \qquad q := q_0 + \alpha q_1 + \alpha^2 q_2.
+\;}
+\label{eq:K2-clean-cf}
+\end{equation}
+
+\begin{whybox}
+Notice that the rational factor has two separate denominators: one for
+each innovation. The first, $1 + b^2(q_1 + \alpha q_2)^2$, comes from
+$\varepsilon_1 = A_1 - \alpha A_0$; the second, $1 + b^2 q_2^2$, from
+$\varepsilon_2 = A_2 - \alpha A_1$. The \emph{rotation} that separates
+them is not $(q_0, q_1, q_2) \to (q_0, q_1, q_2)$ but a linear change of
+coordinates we will identify below.
+\end{whybox}
+
+\section{OU corruption}
+
+The argument of Section~\ref{sec:residual-ODE} extends verbatim:
+the joint CF of the noisy chain is
+\begin{equation}
+\hatfn p_t(k_0, k_1, k_2) = \hatfn p_0(\beta k_0, \beta k_1, \beta k_2)\,
+    e^{-\Delta(k_0^2 + k_1^2 + k_2^2)/2}.
+\end{equation}
+Substituting~\eqref{eq:K2-clean-cf} and writing $\btilde = \beta b$,
+$\tilde q := \beta q = \beta(k_0 + \alpha k_1 + \alpha^2 k_2)$:
+\begin{align}
+\hatfn p_t(k_0, k_1, k_2) =
+\frac{\exp\!\left[i\beta\mu_0(k_0+\alpha k_1+\alpha^2 k_2)
+       - \tfrac{\beta^2\sigma_0^2}{2}(k_0+\alpha k_1+\alpha^2 k_2)^2
+       - \tfrac{\Delta}{2}(k_0^2+k_1^2+k_2^2)\right]}
+     {(1 + \btilde^2(k_1+\alpha k_2)^2)(1 + \btilde^2 k_2^2)}.
+\label{eq:K2-fourier-original}
+\end{align}
+
+\section{Rotation to innovation-frequency coordinates}
+
+Define
+\begin{equation}
+\ell_0 := k_0,\qquad
+\ell_1 := k_1 + \alpha k_2,\qquad
+\ell_2 := k_2.
+\label{eq:ell-rotation-K2}
+\end{equation}
+This change of variables is invertible with
+\begin{equation}
+k_0 = \ell_0,\qquad
+k_1 = \ell_1 - \alpha\ell_2,\qquad
+k_2 = \ell_2.
+\end{equation}
+In the new coordinates:
+
+\begin{itemize}[leftmargin=2em, topsep=3pt]
+\item The innovation-2 rational factor is $1/(1 + \btilde^2 \ell_2^2)$
+(unchanged, since $k_2 = \ell_2$).
+\item The innovation-1 rational factor becomes
+$1/(1 + \btilde^2 \ell_1^2)$ (exactly, using
+$k_1 + \alpha k_2 = \ell_1 - \alpha\ell_2 + \alpha\ell_2 = \ell_1$).
+\item The linear phase term $k_0 + \alpha k_1 + \alpha^2 k_2$ becomes
+$\ell_0 + \alpha(\ell_1 - \alpha\ell_2) + \alpha^2\ell_2 = \ell_0 + \alpha\ell_1$.
+\emph{The $\ell_2$ contribution cancels.}
+\end{itemize}
+
+The rational part is now \emph{fully diagonal}: each Laplace factor
+depends on one innovation frequency only. The Gaussian sector is a
+quadratic form in $(\ell_0, \ell_1, \ell_2)$, which we compute carefully.
+
+\paragraph{Computing the Gaussian quadratic form.}
+Let $\mathcal{Q}$ denote the quadratic form appearing in the exponent:
+\begin{equation}
+\mathcal{Q}(k_0, k_1, k_2) = \beta^2\sigma_0^2 (k_0+\alpha k_1+\alpha^2 k_2)^2
+ + \Delta(k_0^2+k_1^2+k_2^2).
+\end{equation}
+Under the rotation:
+\begin{align}
+(k_0+\alpha k_1+\alpha^2 k_2)^2 &= (\ell_0 + \alpha\ell_1)^2
+  = \ell_0^2 + 2\alpha\ell_0\ell_1 + \alpha^2\ell_1^2, \\
+k_0^2 &= \ell_0^2, \\
+k_1^2 &= (\ell_1 - \alpha\ell_2)^2 = \ell_1^2 - 2\alpha\ell_1\ell_2 + \alpha^2\ell_2^2, \\
+k_2^2 &= \ell_2^2.
+\end{align}
+Summing,
+\begin{align}
+\mathcal{Q}(\ell_0, \ell_1, \ell_2) =\;&
+\beta^2\sigma_0^2 (\ell_0^2 + 2\alpha\ell_0\ell_1 + \alpha^2\ell_1^2) \nonumber \\
+&+ \Delta\left(\ell_0^2 + \ell_1^2 - 2\alpha\ell_1\ell_2 + \alpha^2\ell_2^2 + \ell_2^2\right) \nonumber \\
+=\;& \underbrace{(\Delta + \beta^2\sigma_0^2)}_{M_{00}}\ell_0^2
+  + \underbrace{(\Delta + \alpha^2\beta^2\sigma_0^2)}_{M_{11}}\ell_1^2
+  + \underbrace{\Delta(1+\alpha^2)}_{M_{22}}\ell_2^2 \nonumber \\
+& + 2\underbrace{\alpha\beta^2\sigma_0^2}_{M_{01}}\ell_0\ell_1
+  + 2\underbrace{(-\alpha\Delta)}_{M_{12}}\ell_1\ell_2 + 2\cdot 0\cdot \ell_0\ell_2.
+\label{eq:Q-rotated}
+\end{align}
+Thus $\mathcal{Q}(\ell) = \ell^\top M \ell$ with
+\begin{equation}
+\boxed{\;
+M = \begin{pmatrix}
+\Delta + \beta^2\sigma_0^2 & \alpha\beta^2\sigma_0^2 & 0 \\
+\alpha\beta^2\sigma_0^2 & \Delta + \alpha^2\beta^2\sigma_0^2 & -\alpha\Delta \\
+0 & -\alpha\Delta & \Delta(1 + \alpha^2)
+\end{pmatrix}.
+\;}
+\label{eq:M-matrix}
+\end{equation}
+
+\begin{whybox}
+Notice three things in $M$:
+(i) $M_{02} = 0$: the site frequency $\ell_0$ does not couple to the
+last innovation frequency $\ell_2$. This is the Fourier-space signature of
+Markov locality: the chain has only nearest-neighbour coupling.
+(ii) $M_{01} = \alpha\beta^2\sigma_0^2 \neq 0$: the site frequency
+\emph{does} couple to the first innovation frequency. This is the
+prior's effect on the first step of the chain.
+(iii) $M_{12} = -\alpha\Delta \neq 0$: the two innovation frequencies
+\emph{do} couple. This is the obstruction we now examine.
+\end{whybox}
+
+\section{Theorem: the characteristic function factorisation}
+
+\begin{theorem}[Fourier representation, $K{=}2$]
+\label{thm:K2-fourier}
+In the rotated coordinates~\eqref{eq:ell-rotation-K2},
+\begin{equation}
+\hatfn q_t(\ell) :=
+\hatfn p_t(\ell_0, \ell_1 - \alpha\ell_2, \ell_2)
+= e^{i\beta\mu_0(\ell_0 + \alpha\ell_1) - \tfrac{1}{2}\ell^\top M \ell}\cdot
+  \frac{1}{1 + \btilde^2 \ell_1^2}\cdot \frac{1}{1 + \btilde^2 \ell_2^2},
+\label{eq:K2-rotated-cf}
+\end{equation}
+with $M$ given by~\eqref{eq:M-matrix}.
+\end{theorem}
+
+\begin{proof}
+Direct substitution, using the algebra above.
+\end{proof}
+
+\begin{remark}[The clean-chain limit]
+At $t=0$: $\Delta=0$, $\beta=1$, so
+$M = \sigma_0^2\,\mathrm{diag}(1, \alpha^2, 0) + \cdots$ and in fact
+$M_{22} = 0$, i.e.\ the Gaussian sector becomes degenerate in the $\ell_2$
+direction. This matches the fact that at $t=0$ the chain is
+Laplace-innovation-only in $A_2 - \alpha A_1 = \varepsilon_2$, with no
+Gaussian smoothing, and the rational factor $1/(1 + b^2 \ell_2^2)$ is
+a pure Laplace distribution on its own.
+\end{remark}
+
+% ============================================================
+\chapter{The obstruction to one-dimensional closure}
+\label{ch:K2-obstruction}
+% ============================================================
+
+\section{Statement of the obstruction}
+
+For $K=1$, the residual density $h_t(r)$ was a function of a single
+coordinate $r = x_1 - \nu - \rho x_0$. Theorem~\ref{thm:K2-fourier}
+isolates two innovation frequencies $\ell_1, \ell_2$, whose
+\emph{rational} factors are already separated. If we could further
+decouple their \emph{Gaussian} contributions, we would get a full
+product factorisation into a site mode (in $\ell_0$) and two independent
+bonds (in $\ell_1$ and $\ell_2$). The question is whether this is
+possible.
+
+\begin{theorem}[$K{=}2$ obstruction]
+\label{thm:K2-obstruction}
+For any $\alpha \neq 0$ and $t > 0$, the joint noisy law
+$p_t(x_0, x_1, x_2)$ does not admit a factorisation of the form
+\begin{equation}
+p_t(x_0, x_1, x_2) \stackrel{?}{=} g_t(x_0)\, h_t^{(1)}(r_1)\, h_t^{(2)}(r_2),
+\label{eq:K2-false-factorisation}
+\end{equation}
+with $r_1, r_2$ independent residual coordinates and
+$h_t^{(1)}, h_t^{(2)}$ one-dimensional densities.
+\end{theorem}
+
+\begin{proof}
+A factorisation of the form~\eqref{eq:K2-false-factorisation} would, in
+Fourier space, correspond to a fully separated characteristic function
+\[
+\hatfn q_t^{\text{factor}}(\ell_0, \ell_1, \ell_2) =
+  \mathcal G_0(\ell_0) \cdot \mathcal B_1(\ell_1) \cdot \mathcal B_2(\ell_2),
+\]
+where $\mathcal G_0$ is the site factor and $\mathcal B_1, \mathcal B_2$
+are the bond factors. This would require in particular the quadratic
+form in $(\ell_0, \ell_1, \ell_2)$ to be diagonal after the rotation.
+But we have computed $M$ explicitly, and $M_{12} = -\alpha\Delta \neq 0$
+whenever $\alpha \neq 0$ and $\Delta \neq 0$ (i.e.\ $t \neq 0$).
+Therefore no such factorisation exists. $\Box$
+\end{proof}
+
+\begin{interpretation}[The physical origin of $-\alpha\Delta$]
+The cross-term $M_{12} = -\alpha\Delta$ comes from the expansion
+$k_1^2 = (\ell_1 - \alpha\ell_2)^2 = \ell_1^2 - 2\alpha\ell_1\ell_2 + \alpha^2\ell_2^2$.
+It reflects the fact that the OU-injected noise $\sqrt{\Delta}Z_1$ in
+coordinate $X_1$ contributes to both the first innovation channel (via
+$\ell_1 = k_1 + \alpha k_2$) and the coupling with the second
+innovation's dynamics (via the shift $k_1 \to \ell_1 - \alpha\ell_2$).
+Markov locality survives (there is no $\ell_0\ell_2$ coupling in $M$),
+but the two consecutive innovations pick up a shared dependence on
+$Z_1$, the OU noise that lives at the shared vertex $A_1$ of the chain.
+\end{interpretation}
+
+\section{Schur complement: effective coupling of the innovations}
+
+Marginalising out $\ell_0$ in the Gaussian sector gives the effective
+covariance of $(\ell_1, \ell_2)$ as the Schur complement
+\begin{equation}
+\widetilde M := M_{(1:2,1:2)} - M_{(1:2,0)}\, M_{00}^{-1}\, M_{(0,1:2)}.
+\end{equation}
+
+\paragraph{Computation of the Schur complement.}
+Using~\eqref{eq:M-matrix}:
+\begin{equation}
+M_{(1:2,0)} = \begin{pmatrix} \alpha\beta^2\sigma_0^2 \\ 0 \end{pmatrix},\qquad
+M_{00} = \Delta + \beta^2\sigma_0^2 = v,\qquad
+M_{(0,1:2)} = \begin{pmatrix} \alpha\beta^2\sigma_0^2 & 0\end{pmatrix}.
+\end{equation}
+So
+\begin{equation}
+M_{(1:2,0)}\,M_{00}^{-1}\, M_{(0,1:2)} =
+\frac{1}{v}\begin{pmatrix}\alpha^2\beta^4\sigma_0^4 & 0 \\ 0 & 0\end{pmatrix}.
+\end{equation}
+Therefore
+\begin{equation}
+\widetilde M = \begin{pmatrix}
+\Delta + \alpha^2\beta^2\sigma_0^2 - \frac{\alpha^2\beta^4\sigma_0^4}{v} & -\alpha\Delta \\
+-\alpha\Delta & \Delta(1+\alpha^2)
+\end{pmatrix}.
+\end{equation}
+Simplify the $(1,1)$-entry:
+\begin{align}
+\Delta + \alpha^2\beta^2\sigma_0^2 - \frac{\alpha^2\beta^4\sigma_0^4}{v}
+ &= \Delta + \alpha^2\beta^2\sigma_0^2\cdot\frac{v - \beta^2\sigma_0^2}{v}
+  = \Delta + \alpha^2\beta^2\sigma_0^2\cdot\frac{\Delta}{v} \nonumber\\
+ &= \Delta\left(1 + \frac{\alpha^2\beta^2\sigma_0^2}{v}\right)
+  = \frac{\Delta(v + \alpha^2\beta^2\sigma_0^2)}{v}
+  = \frac{\Delta(\Delta + \beta^2\sigma_0^2(1+\alpha^2))}{v},
+\end{align}
+where we used $v = \Delta + \beta^2\sigma_0^2$ twice.
+
+\begin{equation}
+\boxed{\;
+\widetilde M = \begin{pmatrix}
+\dfrac{\Delta(\Delta + \beta^2\sigma_0^2(1+\alpha^2))}{v} & -\alpha\Delta \\[6pt]
+-\alpha\Delta & \Delta(1+\alpha^2)
+\end{pmatrix},\qquad
+\widetilde M_{12} = -\alpha\Delta.
+\;}
+\label{eq:Schur}
+\end{equation}
+
+\begin{remark}
+$\widetilde M_{12} = -\alpha\Delta$ is the same cross-term as $M_{12}$. The
+marginalisation of $\ell_0$ does not change the $(1,2)$ off-diagonal: the
+coupling between $\ell_1$ and $\ell_2$ is \emph{purely} a consequence of
+the OU noise at $A_1$, not of any indirect path through the site variable
+$A_0$.
+\end{remark}
+
+% ============================================================
+\chapter{Exact four-term representation}
+\label{ch:K2-four-terms}
+% ============================================================
+
+We now give an exact real-space representation of $p_t(x_0, x_1, x_2)$ as
+a sum of four terms, each involving a bivariate normal CDF. This is the
+$K=2$ analogue of the two-term representation~\eqref{eq:h-closed}.
+
+\section{Setup}
+
+By the chain rule, $p_t(x_0,x_1,x_2) = p_t(x_0,x_1)\,p_t(x_2\mid x_0,x_1)$.
+By Proposition~\ref{prop:markov-survives}, $X_2 \perp X_0 \mid X_1$, so
+\begin{equation}
+p_t(x_2\mid x_0,x_1) = p_t(x_2\mid x_1).
+\end{equation}
+The \emph{second-step} conditional is the analogue of the $K=1$ conditional
+but with $A_1$ (a non-Gaussian variable) in the role of the latent state.
+This is where the analysis deviates from $K=1$.
+
+\paragraph{Non-Gaussian posterior.}
+The analogue of the step ``$A_0\mid X_0$ is Gaussian'' at the second step
+is: what is the conditional distribution of $A_1 \mid X_1 = x_1$? Using
+Bayes:
+\begin{equation}
+p_t(A_1 = a \mid X_1 = x_1) \propto p_t(X_1 = x_1 \mid A_1 = a)\, p_t(A_1 = a).
+\end{equation}
+$p_t(X_1 = x_1\mid A_1 = a) \propto \exp(-(x_1 - \beta a)^2/(2\Delta))$
+is Gaussian in $a$. The prior $p(A_1)$ is the density of
+$A_1 = \alpha A_0 + \varepsilon_1$, i.e.\ a Gaussian-Laplace convolution.
+This prior on $A_1$ is exactly of the Normal--Laplace type we analysed
+in Chapter~\ref{ch:convolution}, with appropriate parameters:
+\begin{equation}
+A_1 \sim \Normal(\alpha\mu_0, \alpha^2\sigma_0^2) \ast \Lap(0, b).
+\end{equation}
+The posterior $A_1\mid X_1 = x_1$ is therefore \emph{not} Gaussian.
+
+\section{Proof sketch of the four-term representation}
+
+\begin{proposition}[Four-term representation of $p_t(x_0,x_1,x_2)$]
+\label{prop:K2-four-terms}
+There exist explicit functions
+$\mu_{\sigma_1, \sigma_2}(x_0, x_1, x_2)$ and
+$\Sigma_{\sigma_1, \sigma_2}$ for each of the four sign choices
+$(\sigma_1, \sigma_2) \in \{+, -\}^2$, such that
+\begin{equation}
+p_t(x_0, x_1, x_2) =
+\sum_{\sigma_1, \sigma_2 \in \{\pm 1\}}
+  C_{\sigma_1, \sigma_2}(x_0, x_1, x_2)\,
+  \Phi_{2}\!\bigl(
+    \mu_{\sigma_1,\sigma_2}(x);\ 0,\ \Sigma_{\sigma_1,\sigma_2}
+  \bigr),
+\label{eq:K2-four-terms}
+\end{equation}
+where $\Phi_2(\cdot; 0, \Sigma)$ denotes the bivariate normal CDF with
+mean $0$ and covariance $\Sigma$, and $C_{\sigma_1,\sigma_2}$ is an
+explicit exponential prefactor depending on the sign pattern.
+\end{proposition}
+
+\begin{proof}[Sketch]
+Write the joint density in latent form as
+\begin{equation}
+p_t(x_0,x_1,x_2) = \int\!\!\int p_t(x_0,x_1,x_2, u_1, u_2)\,
+                          \mathrm{d}u_1\,\mathrm{d}u_2,
+\end{equation}
+where $u_i := \varepsilon_i$ and the integrand is the joint density with
+the two innovations explicit. The Laplace densities of $u_1, u_2$
+contribute $|u_i|$ terms; splitting each by sign,
+\begin{equation}
+\Lap(u; 0, b) = \sum_{\sigma\in\{\pm 1\}}
+  \frac{1}{2b}\,\mathbf{1}_{\{\sigma u \geq 0\}}\,e^{-\sigma u/b}.
+\end{equation}
+Over each quadrant $\{\sigma_1 u_1 \geq 0,\, \sigma_2 u_2 \geq 0\}$, the
+exponent in the integrand is a quadratic-plus-linear function of
+$(u_1, u_2)$. Completing the squares (the $K=2$ analogue of the $K=1$
+step of Section~\ref{sec:I-plus}) reduces each quadrant integral to a
+bivariate normal CDF $\Phi_2$ with an explicit mean vector
+$\mu_{\sigma_1, \sigma_2}(x)$ and covariance $\Sigma_{\sigma_1, \sigma_2}$
+-- both depending parametrically on the constants $(\alpha, \beta, \sigma_0,
+\mu_0, b, \Delta)$. Collecting terms over the four sign choices
+gives~\eqref{eq:K2-four-terms}. $\Box$
+\end{proof}
+
+\begin{remark}[Why this is as far as we can go in closed form]
+The bivariate normal CDF $\Phi_2$ is not elementary (no closed form in
+exponentials or rationals), but it is numerically stable via Genz's
+algorithm and is treated as a standard special function. Hence the
+$K=2$ density is ``as closed-form as one could reasonably hope'': a
+finite sum over sign patterns of elementary prefactors times a standard
+bivariate Gaussian CDF. At $K=K$, the analogous expression involves a
+sum of $2^{K-1}$ terms, each with a $(K-1)$-variate normal CDF. This
+exponential-in-$K$ scaling is the \emph{analytical} obstruction to a
+full closed form at large $K$: it does not prevent numerical evaluation,
+but it does prevent a single tidy expression.
+\end{remark}
+
+\section{Practical numerical route}
+
+For simulations and visualisation, the four-term representation is less
+useful than direct 3D Fourier inversion of the characteristic
+function~\eqref{eq:K2-fourier-original}:
+\begin{equation}
+p_t(x_0, x_1, x_2) = \frac{1}{(2\pi)^3}\int\!\!\int\!\!\int
+    e^{-i(k_0 x_0 + k_1 x_1 + k_2 x_2)}\,\hatfn p_t(k_0, k_1, k_2)\,
+    \mathrm{d}k_0\,\mathrm{d}k_1\,\mathrm{d}k_2.
+\label{eq:3D-Fourier}
+\end{equation}
+The integrand decays as $|k_i|^{-2}$ along the innovation frequencies
+and as Gaussian along all others, so a uniform grid truncation is fine
+for moderate tolerances. In practice we obtain 3--5\% accuracy with
+$N^3 = 56^3$ grid points. The $K=2$ numerical script in the bundle
+implements this and cross-checks it against a $2\cdot 10^6$-sample Monte
+Carlo estimate.
+
+% ============================================================
+\chapter{Conjectural rank structure of the $K{=}2$ curvature field}
+\label{ch:K2-conj}
+% ============================================================
+
+We do not have a full closed-form analogue of
+Theorem~\ref{thm:curv} for $K=2$. But the numerical exploration and
+structural analysis suggest the following.
+
+\begin{conjecture}[Rank-$\leq 2$ structure of $H_t^{(K=2)}(x)$]
+\label{conj:K2-rank}
+For the Laplace/OU chain of Chapter~\ref{ch:K2-fourier}, the curvature
+field $H_t(x_0, x_1, x_2) = -\nabla^2 \log p_t(x_0,x_1,x_2)$ satisfies
+\begin{equation}
+H_t(x) = H_t^{\mathrm{site}} + \kappa_t^{(1)}(r_1)\, M_\rho^{(1)}
+        + \kappa_t^{(2)}(r_2)\, M_\rho^{(2)} + \mathcal O(\alpha\Delta/v),
+\end{equation}
+where
+\begin{itemize}[leftmargin=2em]
+\item $H_t^{\mathrm{site}}$ is a constant $3\times 3$ Gaussian term;
+\item each $M_\rho^{(i)}$ is a rank-1 matrix supported on the
+nearest-neighbour pair $(i, i+1)$;
+\item $\kappa_t^{(1)}(r_1), \kappa_t^{(2)}(r_2)$ are scalar curvature
+functions of two residual coordinates $r_1, r_2$;
+\item the residual $\mathcal O(\alpha\Delta/v)$ correction captures the
+obstruction cross-coupling $M_{12} = -\alpha\Delta$.
+\end{itemize}
+\end{conjecture}
+
+\begin{interpretation}[What this conjecture says]
+In words: the $K=1$ rank-1 result weakens to rank-$\leq 2$ at $K=2$, as
+one might expect from two independent innovations. The low-rank
+structure is \emph{local} (each rank-1 piece couples only two neighbours),
+which is the Markov-locality signature in real space. The deviation from
+exactness is controlled by the single parameter
+$c = \alpha\Delta/v$ introduced in Section~\ref{sec:residual-setup}.
+If this conjecture holds, it suggests a general pattern:
+\emph{at $K = K_*$, the curvature field lives on a rank-$\leq K_*$
+manifold of matrices, with rank-1 blocks along the chain, and a
+controllable perturbation of order $c^{K_*-1}$.}
+
+Testing this conjecture is on the roadmap for the next phase of the
+thesis.
+\end{interpretation}
+
+
+% ============================================================
+\part{Interpretation and synthesis}
+% ============================================================
+
+% ============================================================
+\chapter{What Gaussianity buys, what Markovianity buys}
+\label{ch:interpretation}
+% ============================================================
+
+The central theoretical goal of the thesis programme is to disentangle
+the roles of Gaussianity and of Markovianity in shaping the structure of
+the joint score. The Laplace AR(1) benchmark is the simplest context in
+which these two ingredients can be unmixed. We now summarise what the
+exact results in this compendium say on that question.
+
+\section{A brief restatement of the problem}
+
+In the Gaussian AR(1) benchmark (studied separately in
+\cite{structure_sigma_t}), the joint density $p_t(x_0, \ldots, x_{K-1})$
+is Gaussian, the score $S(x,t)$ is linear in $x$, and the curvature
+$H_t = \Sigma_t^{-1}$ is a single matrix whose tridiagonal-mass
+fraction $\rho_{\mathrm{tri}}(t)$ measures the persistence of Markov
+locality. There are two sources of structure at play:
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Gaussianity of the innovation and prior} makes the noisy
+law Gaussian, hence the score linear, hence the curvature a constant
+matrix. It is the reason $\Sigma_t^{-1}$ alone describes everything.
+\item \textbf{Markovianity of the clean chain} determines the
+\emph{sparsity pattern} of $\Sigma_0^{-1}$ and, more generally, the
+\emph{fill-in rate} of $\Sigma_t^{-1}$ as diffusion progresses.
+\end{itemize}
+
+These are conceptually distinct. The first is a statement about the
+law; the second is a statement about the conditional independence graph.
+In the Gaussian case they combine seamlessly, and it is easy to conflate
+them. Breaking Gaussianity (by swapping in a Laplace innovation) forces
+them apart.
+
+\section{What Gaussianity alone gave us in $K{=}1$}
+
+In the Gaussian AR(1) benchmark at $K=1$: the clean residual is Gaussian,
+the OU channel is Gaussian, so everything is Gaussian. The curvature
+$\kappa_t^{(G)} = 1/\tau_G^2$ is a constant. The rank-1 structure~\eqref{eq:H-ray}
+holds exactly with $\kappa_t^{(G)}$ in place of $\kappa_t(r)$. In this
+case, the shape of the curvature matrix -- i.e.\ the rank-1 structure
+$M_\rho = nn^\top$ -- is \emph{entirely dictated by Markovianity}, not by
+Gaussianity. It reflects the graph structure of the chain: one bond
+between $X_0$ and $X_1$, and the residual direction $n \propto (\rho, -1)$
+is perpendicular to the residual ray $r = 0$. \emph{This is exactly the
+shape we find in the Laplace case, too:} the rank-1 matrix $M_\rho$ is
+unchanged by the Laplace-vs-Gaussian choice.
+
+\begin{interpretation}[Markov locality is what gives the rank-1 structure]
+The matrix $M_\rho$ in Theorem~\ref{thm:curv} has rank 1 because the chain
+has only one bond at $K=1$. This is a structural claim about the graph,
+not about the innovation law. Whether the innovation is Gaussian or
+Laplace, the curvature field still has rank-1 local structure; what
+changes between the two is the scalar in front ($\kappa_t^{(G)}$ constant
+vs.\ $\kappa_t(r)$ nonconstant in the Laplace case).
+\end{interpretation}
+
+\section{What Gaussianity alone broke when we swapped it for Laplace}
+
+Moving from Gaussian to Laplace kept the rank-1 \emph{shape} but broke the
+\emph{constancy} of the scalar in front:
+\begin{itemize}[leftmargin=2em]
+\item The curvature $\kappa_t(r)$ is now a function of the residual
+coordinate, concentrated at $r=0$ and vanishing in the tails.
+\item The score $\psi_t(r)$ saturates at $\pm 1/\btilde$ in the tails
+rather than growing linearly.
+\item The posterior $A_1\mid X_1 = x_1$ is no longer Gaussian at $K=2$,
+which is ultimately the reason $M_{12} \neq 0$ there.
+\end{itemize}
+
+Notice that the first two effects are \emph{local in $r$} and do not
+affect the chain's Markov graph. The third effect, the $K=2$
+obstruction, is a genuine new phenomenon: it says that non-Gaussian
+priors do not propagate cleanly through OU noising. The single-step
+clean analysis is preserved; the multi-step version is not.
+
+\section{What Markovianity kept intact in $K{=}2$}
+
+Even in the $K=2$ case, where Gaussianity fails us, the Markov structure
+\emph{still} survives in three ways:
+\begin{itemize}[leftmargin=2em]
+\item The joint law is still exactly Markov (Proposition~\ref{prop:markov-survives}):
+$X_2 \perp X_0 \mid X_1$.
+\item The Gaussian sector $M$ of Theorem~\ref{thm:K2-fourier} has a
+strict tridiagonal coupling pattern ($M_{02} = 0$) in the rotated
+coordinates: there is no direct coupling between the site frequency
+$\ell_0$ and the distant innovation $\ell_2$.
+\item The rational (non-Gaussian) factor is \emph{exactly diagonal}:
+one factor per innovation, independent of all others.
+\end{itemize}
+
+The only surviving non-diagonality is the specific cross-term
+$M_{12} = -\alpha\Delta$, coming from the shared OU noise at the shared
+vertex $A_1$. Markov locality survives; only the particular kind of
+``full factorisation into independent bonds'' fails.
+
+\begin{interpretation}[The refined conclusion]
+Gaussianity is what gives clean factorisation into independent bonds at
+$K=K$; without it, the bonds are diagonal in Fourier space but
+\emph{share OU noise} through the shared vertices of the chain. The
+graph-theoretic Markov locality (no direct $\ell_0\ell_2$ coupling)
+survives the loss of Gaussianity; what fails is the stronger statistical
+independence.
+\end{interpretation}
+
+\section{Consequences for the thesis research direction}
+
+These observations directly inform the architecture of a learned score
+network for dynamic data with temporally correlated frames:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Nearest-neighbour coupling is structurally correct.}
+The exact benchmark shows that the right coupling pattern at all $t$ is
+nearest-neighbour (tridiagonal in Fourier, at least for AR(1) dynamics
+under OU). A score network whose attention pattern respects this
+locality should perform well for sequential data, independently of
+whether the innovation is Gaussian.
+
+\item \textbf{The innovation-frequency axis is the right coordinate.}
+Writing the score in innovation coordinates $(\ell_0, \ell_1, \ell_2, \ldots)$
+rather than the raw $(k_0, k_1, k_2, \ldots)$ isolates non-Gaussianity
+to a single axis. A score network that factorises along the residual
+axis -- rather than along the raw frame axis -- should track the
+structure of the exact benchmark.
+
+\item \textbf{Non-Gaussianity is concentrated at finite $t$.}
+The centre-benchmark gap $\delta\kappa_t$ scales as $1/a$ at small $t$
+and as $1/a^4$ at large $t$. Non-Gaussian fine-tuning is critical at
+early diffusion time; at late time the Gaussian benchmark is extremely
+accurate, which justifies Gaussian tails in the score network.
+
+\item \textbf{The obstruction sets a complexity floor.}
+Exact closed-form solutions at $K \geq 2$ require a finite sum of $2^{K-1}$
+multivariate Gaussian CDFs. This exponential-in-$K$ scaling is the
+analytic signature of why an exact score network is not feasible for
+realistic sequence lengths; it is also why parametric low-rank
+approximations -- such as the conjectural rank-$\leq K$ structure of
+Conjecture~\ref{conj:K2-rank} -- are the right next step to investigate.
+\end{enumerate}
+
+% ============================================================
+\chapter{Reading the heatmaps}
+\label{ch:heatmaps}
+% ============================================================
+
+We close with a pedagogical re-reading of the $K=1$ heatmaps shown in
+the main memo (Figure 2). The goal is to explain, step by step, what
+the geometry of the two-dimensional curvature field is telling us.
+
+\section{The residual ray as a one-dimensional manifold}
+
+The residual coordinate $r = x_1 - \nu - \rho x_0$ vanishes on the line
+$x_1 = \nu + \rho x_0$ in the $(x_0, x_1)$ plane. This line is the
+\emph{residual ray} -- a one-dimensional manifold through the bivariate
+domain on which the Laplace cusp lives.
+
+The slope of the ray is $\rho$, which interpolates between $\alpha$ at
+$t=0$ (the clean AR(1) slope) and $0$ as $t\to\infty$ (when the noisy
+$X_1$ decouples from $X_0$).
+
+\section{Interpretation of $H_{11}(x)$}
+
+The entry $H_{11}(x) = \kappa_t(r)$ depends on $(x_0, x_1)$ only through
+the residual $r$. So $H_{11}$ is constant along \emph{any} line parallel
+to the residual ray, i.e.\ along the family of lines
+$x_1 = \nu + \rho x_0 + r$. Geometrically, $H_{11}$ shows a
+``stripe'' pattern: high values concentrated in a band around the
+residual ray, decaying to zero as one moves away.
+
+\begin{whybox}
+Why stripes? Because the non-Gaussianity lives entirely in the one
+residual direction. Anywhere you can move \emph{parallel to} the ray,
+the residual $r$ stays the same and so does $\kappa_t(r)$. You must move
+\emph{perpendicular to} the ray to see $\kappa_t(r)$ change.
+\end{whybox}
+
+\section{Interpretation of $H_{01}(x)$}
+
+The off-diagonal entry is
+$H_{01}(x) = -\rho \kappa_t(r)$. It is a \emph{multiple} of $H_{11}$,
+with the same stripe pattern and proportionality $-\rho$. A positive
+$\rho$ (e.g.\ $\alpha > 0$) gives a negative off-diagonal; a negative
+$\rho$ gives a positive off-diagonal; and $\rho = 0$ gives no
+off-diagonal at all. At $t=0$ where $\rho = \alpha$, the off-diagonal
+reflects the clean correlation. At $t\to\infty$ where $\rho\to 0$, the
+off-diagonal vanishes -- the two coordinates decouple.
+
+\section{What would change if we swapped the innovation law?}
+
+Under the exchange Laplace $\to$ Gaussian: the heatmaps become
+\emph{constant} in color, with the stripe pattern replaced by a single
+uniform value. The rank-1 structure is unchanged; only the scalar
+$\kappa_t$ in front of it flips from a $r$-dependent Laplace curvature
+to a constant Gaussian curvature. This is the graphical embodiment of
+the interpretation of Section~\ref{ch:interpretation}: Markov locality
+$\to$ stripes; Gaussianity $\to$ the color of each stripe is constant.
+
+Under a general non-Gaussian innovation: the stripe pattern persists
+(Markov still holds), but the \emph{shape} of $\kappa_t(r)$ as a function
+of $r$ changes. For multimodal innovations, $\kappa_t$ can even be
+negative, indicating regions of the residual-ray direction where the
+density is locally convex in $\log$-space (``anti-confining'' regions).
+Investigating this is listed as one of the open questions in the main
+memo.
+
+% ============================================================
+\chapter{Open questions revisited}
+\label{ch:open}
+% ============================================================
+
+The main memo lists five open questions. Here we indicate, for each, what
+specific missing piece of the exact picture it corresponds to and how
+it might be attacked.
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Centre-tail gap scaling for general innovation laws.}
+From the ODE~\eqref{eq:h-ODE-repeat}, $h_t''(0) = (h_t(0) - \phi_\tau(0))/\btilde^2$.
+Thus $\kappa_t(0) = -h_t''(0)/h_t(0) = -(1 - \phi_\tau(0)/h_t(0))/\btilde^2$.
+This is a universal formula: for \emph{any} innovation law with a density
+that we can evaluate at $0$, the centre curvature is determined by
+$h_t(0)$. So the centre-tail gap $\kappa_t(0) - \kappa_t^{(G)}$ reduces to
+studying the functional $\varepsilon \mapsto h_t(0)$. For a variance-matched
+Gaussian, this ratio is always $\sqrt{2/\pi}/a$ at leading order at small
+$a$, with model-dependent subleading corrections controlled by higher
+cumulants. A rigorous treatment is accessible via Edgeworth expansion.
+
+\item \textbf{Variance-Gamma bridge.}
+The VG family $\hatfn f_\varepsilon(\ell) = (1 + b^2\ell^2/(2\nu))^{-\nu}$
+interpolates Laplace ($\nu=1$) to Gaussian ($\nu\to\infty$). At integer
+$\nu$, the residual density $h_t^{(\nu)}$ is a sum of $\nu$ Laplace-type
+terms (via partial fractions), and the centre curvature admits a closed
+form as a generalisation of~\eqref{eq:mills-main}. Computing this and
+tracking $\kappa_t^{(\nu)}(0)$ along the VG family would quantify how
+the rank-1 scalar $\kappa_t$ turns on with non-Gaussianity.
+
+\item \textbf{Multimodal innovations.}
+For the symmetric Gaussian-mixture innovation
+$\varepsilon \sim \tfrac12 \Normal(-m, \sigma^2) + \tfrac12 \Normal(+m, \sigma^2)$,
+the characteristic function is
+$\hatfn f_\varepsilon(\ell) = \cos(m\ell)e^{-\sigma^2\ell^2/2}$, and the
+residual $R_t = \beta\varepsilon + G_t$ has density
+\begin{equation}
+h_t(r) = \frac{1}{2}[\phi_{s_t}(r - \beta m) + \phi_{s_t}(r + \beta m)],
+\qquad s_t^2 = \tau^2 + \beta^2 \sigma^2.
+\end{equation}
+For small $t$, $h_t$ has two peaks at $\pm\beta m$; for large $t$, they
+merge. $\kappa_t(r)$ can be \emph{negative} in a range of $r$. The
+critical diffusion time $t^*$ at which the bimodality disappears is an
+explicit function of $m/\sigma$.
+
+\item \textbf{Nonlinear locality observables.}
+Define
+$T_d(x, t) := \sum_{|i-j|\leq d} H_t(x)_{ij}^2 / \|H_t(x)\|_F^2$,
+the fractional Frobenius mass supported within a band of width $d$.
+In the Gaussian benchmark, $T_d(x, t)$ is constant in $x$ and matches
+the Gaussian tridiagonal-mass measure $\rho_{\mathrm{tri}}(t)$. In the
+Laplace benchmark, $T_d(x,t)$ depends on $x$ through $\kappa_t(r)$; its
+pointwise expectation is
+$\bar T_d(t) = \E_{X\sim p_t}[T_d(X,t)]$, a true functional replacement
+for the Gaussian measure. Computing $\bar T_d$ as a function of $t$ and
+$d$ is the bridge between the Gaussian benchmark and the non-Gaussian
+benchmark.
+
+\item \textbf{Testing Conjecture~\ref{conj:K2-rank}.}
+Systematic evaluation of $H_t$ on a 3D grid of $(x_0, x_1, x_2)$ values
+(say $30^3 = 27000$ points), SVD of each $3\times 3$ matrix, statistical
+analysis of the resulting rank distributions. The conjecture predicts
+that the rank-$\leq 2$ approximation error decays as $(\alpha\Delta/v)^2$.
+Verifying this numerically is a direct test.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{laplace_note}
+G.~Mantovani, M.~Lomel\'e,
+\emph{Laplace AR(1) under Ornstein--Uhlenbeck Corruption: Detailed Derivation Note},
+internal manuscript, 2026.
+
+\bibitem{short_presentation}
+G.~Mantovani, M.~Lomel\'e,
+\emph{Markov Locality, Diffusion Fill-In, and the First Non-Gaussian Route},
+short presentation note, March 2026.
+
+\bibitem{structure_sigma_t}
+G.~Mantovani,
+\emph{Structure of $\Sigma_t$ and $\Sigma_t^{-1}$ in Gaussian AR(1) Diffusion},
+internal note, 2026.
+
+\bibitem{thesis_part1}
+G.~Mantovani, M.~Lomel\'e,
+\emph{Score-Based Generative Diffusion Models for Dynamic Objects},
+Thesis Part I, Bocconi University, 2026.
+\end{thebibliography}
+
+\end{document}

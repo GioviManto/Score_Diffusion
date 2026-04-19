@@ -1,0 +1,5 @@
+Figure generation completed.
+N=60, alpha=0.9, sigma0_sq=1.0, sigma_eta_sq=0.18999999999999995
+Max average precision interaction range at t=1.2053
+Min tridiagonal mass fraction at t=0.7576
+Max absolute neighbor score correlation at t=0.0010

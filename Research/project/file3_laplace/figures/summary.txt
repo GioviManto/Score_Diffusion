@@ -1,0 +1,4 @@
+alpha=0.8
+b=0.45
+t=0.45
+Generated figures for Laplace AR(1) study.
