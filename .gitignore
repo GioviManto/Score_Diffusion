@@ -7,3 +7,8 @@
 **/node_modules/
 **/.vite/
 **/.Rhistory
+__pycache__/
+*.pyc
+Experiments/results/
+Experiments/figures/
+Experiments/jobs/logs/
