@@ -1,0 +1,100 @@
+
+=================================================================
+  LEGACY CHECKS (C1–C7) from run_checks.py
+=================================================================
+  [C1] Gaussian chain: Σ · Q = I                       err=1.332e-16  (tol=1e-10)  PASS
+  [C2] Small-t Neumann expansion of Σ_t^{-1}           err=8.882e-16  (tol=1e-10)  PASS
+  [C3] Deterministic-control precision: Σ_t · Q_t = I  err=4.784e-16  (tol=1e-10)  PASS
+  [C4] Normal-Laplace density vs quadrature            err=1.110e-16  (tol=1e-10)  PASS
+  [C5] Laplace K=1 density vs direct double-integral   err=2.776e-17  (tol=1e-07)  PASS
+  [C6] Laplace K=1 score vs 5-point FD                 err=1.270e-09  (tol=2e-05)  PASS
+  [C7] Laplace K=1 Hessian vs 5-point FD               err=1.910e-08  (tol=2e-05)  PASS
+
+=================================================================
+  H1 — Linear joint score (Kalman smoother == precision matrix)
+=================================================================
+  [H1] K=8, α=0.8, t=0.3: S_kalman vs S_precision      err=1.776e-15  (tol=1e-10)  PASS
+  [H1] K=15, α=0.6, t=0.7: S_kalman vs S_precision     err=8.882e-16  (tol=1e-10)  PASS
+  [H1] K=20, α=0.9, t=1.5: S_kalman vs S_precision     err=1.776e-15  (tol=1e-10)  PASS
+
+=================================================================
+  H2 — Σ_0^{-1} tridiagonal for AR(1)
+=================================================================
+  [H2] K=10, α=0.7: off-tridiag max |entry|            err=0.000e+00  (tol=1e-10)  PASS
+  [H2] K=20, α=0.85: off-tridiag max |entry|           err=0.000e+00  (tol=1e-10)  PASS
+  [H2] K=30, α=0.95: off-tridiag max |entry|           err=0.000e+00  (tol=1e-10)  PASS
+
+=================================================================
+  H3 — Toeplitz structure of -Σ_t^{-1} [hypothesis]
+=================================================================
+      N      t    ‖Q-T(Q)‖/‖Q‖
+  -----  -----  --------------
+     10    0.1        0.092470
+     10    0.5        0.034370
+     10    1.0        0.008656
+     10    2.0        0.000251
+     20    0.1        0.068796
+     20    0.5        0.028501
+     20    1.0        0.008620
+     20    2.0        0.000317
+     50    0.1        0.044656
+     50    0.5        0.019304
+     50    1.0        0.006197
+     50    2.0        0.000250
+    100    0.1        0.031831
+    100    0.5        0.013924
+    100    1.0        0.004533
+    100    2.0        0.000186
+  [H3] N=100, t=0.5: Toeplitz dev (boundary effects)   err=1.392e-02  (tol=5e-02)  PASS
+
+=================================================================
+  H4 — Mean contraction  μ_t^k = e^{-t} α^k μ_0  [exact]
+=================================================================
+  [H4] K=10, α=0.7, μ_0=2.0, t=0.6                     err=5.551e-17  (tol=1e-10)  PASS
+  [H4] K=15, α=0.85, μ_0=-1.5, t=1.2                   err=5.551e-17  (tol=1e-10)  PASS
+
+=================================================================
+  H5 — Kalman smoother as EXACT propagator [exact for Gaussian AR(1)]
+=================================================================
+  [H5] K=15, α=0.8, t=0.4: score identity err          err=1.776e-15  (tol=1e-10)  PASS
+       → Interior row-shift deviation: mean=0.0464, max=0.2488  (0=perfect Toeplitz shift)
+  [H5] K=25, α=0.7, t=1.0: score identity err          err=1.776e-15  (tol=1e-10)  PASS
+       → Interior row-shift deviation: mean=0.0102, max=0.0851  (0=perfect Toeplitz shift)
+
+=================================================================
+  K2 — K=2 bivariate CF: M_{12} = -α Δ_t (factorisation fails)
+=================================================================
+  [K2] α=0.7, t=0.5: |M_12 - (-αΔ)|  [M_12=-0.4425]    err=0.000e+00  (tol=1e-10)  PASS
+       → M_12 = -0.442484,  predicted = -0.442484  → NON-ZERO (factorisation fails)
+  [K2] α=0.5, t=1.0: |M_12 - (-αΔ)|  [M_12=-0.4323]    err=0.000e+00  (tol=1e-10)  PASS
+       → M_12 = -0.432332,  predicted = -0.432332  → NON-ZERO (factorisation fails)
+  [K2] α=0.9, t=0.2: |M_12 - (-αΔ)|  [M_12=-0.2967]    err=5.551e-17  (tol=1e-10)  PASS
+       → M_12 = -0.296712,  predicted = -0.296712  → NON-ZERO (factorisation fails)
+
+=================================================================
+  SUMMARY
+=================================================================
+  PASS: 18   FAIL: 0   INFO (no threshold): 16
+
+  PASS  [C1] Gaussian chain: Σ · Q = I  err=1.332e-16
+  PASS  [C2] Small-t Neumann expansion of Σ_t^{-1}  err=8.882e-16
+  PASS  [C3] Deterministic-control precision: Σ_t · Q_t = I  err=4.784e-16
+  PASS  [C4] Normal-Laplace density vs quadrature  err=1.110e-16
+  PASS  [C5] Laplace K=1 density vs direct double-integral  err=2.776e-17
+  PASS  [C6] Laplace K=1 score vs 5-point FD  err=1.270e-09
+  PASS  [C7] Laplace K=1 Hessian vs 5-point FD  err=1.910e-08
+  PASS  [H1] K=8, α=0.8, t=0.3: S_kalman vs S_precision  err=1.776e-15
+  PASS  [H1] K=15, α=0.6, t=0.7: S_kalman vs S_precision  err=8.882e-16
+  PASS  [H1] K=20, α=0.9, t=1.5: S_kalman vs S_precision  err=1.776e-15
+  PASS  [H2] K=10, α=0.7: off-tridiag max |entry|  err=0.000e+00
+  PASS  [H2] K=20, α=0.85: off-tridiag max |entry|  err=0.000e+00
+  PASS  [H2] K=30, α=0.95: off-tridiag max |entry|  err=0.000e+00
+  PASS  [H3] N=100, t=0.5: Toeplitz dev (boundary effects)  err=1.392e-02
+  PASS  [H4] K=10, α=0.7, μ_0=2.0, t=0.6  err=5.551e-17
+  PASS  [H4] K=15, α=0.85, μ_0=-1.5, t=1.2  err=5.551e-17
+  PASS  [H5] K=15, α=0.8, t=0.4: score identity err  err=1.776e-15
+  PASS  [H5] K=25, α=0.7, t=1.0: score identity err  err=1.776e-15
+  PASS  [K2] α=0.7, t=0.5: |M_12 - (-αΔ)|  [M_12=-0.4425]  err=0.000e+00
+  PASS  [K2] α=0.5, t=1.0: |M_12 - (-αΔ)|  [M_12=-0.4323]  err=0.000e+00
+  PASS  [K2] α=0.9, t=0.2: |M_12 - (-αΔ)|  [M_12=-0.2967]  err=5.551e-17
+

@@ -178,27 +178,60 @@ conditioned trajectory change the score at frame `u`?
 
 This is now **a question about the conditional precision structure** of Σ_t^{−1}.
 
-### Hypotheses (updated)
+### Hypotheses (updated after numerical verification 2026-04-22)
 
 **H1 (Linear joint score):** `S(x,t) = A(t) x + b(t)` for `A = −Σ_t^{-1}`,
 `b = Σ_t^{-1} μ_t`. Exact for all Gaussian models. ✓
+_Verified: Kalman-smoother score == precision-matrix score to ~1e-15 for K=8,15,20
+and a range of α, t. See `Experiments/scores_exact.py`, check H1._
 
 **H2 (Tridiagonal precision at t=0):** For AR(1), `Σ_0^{-1}` is tridiagonal,
 so each score component depends only on its two neighbours. Exact. ✓
+_Verified: off-tridiagonal entries are identically zero (max |entry| = 0) for
+K=10, 20, 30 and α=0.7, 0.85, 0.95. See check H2._
 
 **H3 (Score propagation as row shift):** In the stationary regime,
-`−Σ_t^{−1}` is Toeplitz → the k-th row of the propagator is a shift of the
-(k−1)-th row. To be verified.
+`−Σ_t^{−1}` is approximately Toeplitz → the k-th row of the propagator is
+approximately a shift of the (k−1)-th row. [QUANTIFIED — not exact for finite chains]
+
+_Numerical result (`Experiments/scores_exact.py`, check H3):_
+
+| N   | t=0.1 | t=0.5 | t=1.0 | t=2.0 |
+|-----|-------|-------|-------|-------|
+| 10  | 9.2%  | 3.4%  | 0.9%  | 0.025% |
+| 50  | 4.5%  | 1.9%  | 0.6%  | 0.025% |
+| 100 | 3.2%  | 1.4%  | 0.5%  | 0.019% |
+
+_Toeplitz deviation ‖Q_t − T(Q_t)‖_F / ‖Q_t‖_F. Decreases as N→∞ and t→∞
+(boundary effects). True in the thermodynamic limit. For row-shift interior
+deviation: mean=4.6%, max=24.9% at K=15/α=0.8/t=0.4._
 
 **H4 (Mean contraction):** `μ_t^{(u+1)} = α μ_t^{(u)}` is t-independent. Exact. ✓
+_Verified: μ_t^k = e^{-t} α^k μ_0 matches AR(1) chain iteration to ~6e-17. See check H4._
 
-**H5 (Kalman propagator):** The Kalman filter/smoother provides the exact
-propagator: adding one new observed frame updates all smoothed estimates
-via the Kalman gain. This is the exact `P`.
+**H5 (Kalman propagator):** The Kalman filter/smoother provides the **exact**
+propagator for Gaussian AR(1): the RTS smoother score equals −Σ_t^{-1}(x−μ_t)
+to machine precision. ✓
+_Verified: max error ~1.8e-15 for K=15 and K=25. The propagator is Kalman-exact
+for the Gaussian case; the row-shift (Toeplitz) structure holds only approximately
+(H3 above). Non-Gaussian extension remains open._
+
+**K2 (K=2 factorisation failure):** The K=2 joint CF Gaussian factor has
+`M_{12} = −α Δ_t ≠ 0` whenever α≠0 and t>0. Exact product-of-1D-bonds
+factorisation fails for K≥2. ✓
+_Verified numerically: M_{12} = −αΔ to machine precision for α=0.5,0.7,0.9
+and t=0.2,0.5,1.0. Symbolic derivation in `Research/thesis_work_bundle/code/k2_attempt.py`._
 
 ---
 
 ## Next Milestones
+
+### Completed (2026-04-22)
+
+- [x] **`Experiments/scores_exact.py`** — 18-check numerical verification suite.
+  Run: `conda run -n vlm-sam3-py312 python Experiments/scores_exact.py` from repo root.
+  Result: **18/18 PASS**. H1, H2, H4, H5 confirmed exact; H3 quantified; K2 proven.
+  Full report: `Experiments/scores_exact_report.txt`.
 
 ### Immediate (before meeting Wed 2026-03-18)
 
